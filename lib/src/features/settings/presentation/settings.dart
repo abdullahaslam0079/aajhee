@@ -1,0 +1,456 @@
+import 'package:goluto/src/imports/core_imports.dart';
+import 'package:goluto/src/imports/packages_imports.dart';
+
+class SettingsScreen extends StatefulWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  bool _pushNotifications = true;
+  bool _emailUpdates = false;
+
+  static const String _userName = 'Alex Morgan';
+  static const String _userEmail = 'alex.morgan@email.com';
+  static const String _userLocation = 'Munich, Germany';
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.theme.colorScheme;
+    final textTheme = context.theme.textTheme;
+    final pagePadding = AppSpacing.pagePadding.w;
+
+    return Scaffold(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  pagePadding,
+                  AppSpacing.ml.h,
+                  pagePadding,
+                  AppSpacing.sm.h,
+                ),
+                child: Text(
+                  'Profile',
+                  style: textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _ProfileHeader(
+                  name: _userName,
+                  email: _userEmail,
+                  location: _userLocation,
+                  colorScheme: colorScheme,
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg.h)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SectionTitle(label: 'Account'),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.person_outline_rounded,
+                      iconColor: colorScheme.primary,
+                      title: 'Edit profile',
+                      subtitle: 'Photo, name, phone',
+                      onTap: () {},
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.lock_outline_rounded,
+                      iconColor: colorScheme.secondary,
+                      title: 'Security',
+                      subtitle: 'Password & 2FA',
+                      onTap: () {},
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.location_on_outlined,
+                      iconColor: colorScheme.secondary,
+                      title: 'Addresses',
+                      subtitle: 'Delivery locations',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ml.h)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SectionTitle(label: 'Preferences'),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.notifications_outlined,
+                      iconColor: colorScheme.primary,
+                      title: 'Push notifications',
+                      subtitle: 'Orders & offers',
+                      trailing: Switch.adaptive(
+                        value: _pushNotifications,
+                        onChanged: (v) =>
+                            setState(() => _pushNotifications = v),
+                      ),
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.mail_outline_rounded,
+                      iconColor: colorScheme.secondary,
+                      title: 'Email updates',
+                      subtitle: 'News & tips',
+                      trailing: Switch.adaptive(
+                        value: _emailUpdates,
+                        onChanged: (v) => setState(() => _emailUpdates = v),
+                      ),
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.language_rounded,
+                      iconColor: colorScheme.secondary,
+                      title: 'Language',
+                      subtitle: 'English (US)',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ml.h)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SectionTitle(label: 'Support'),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.help_outline_rounded,
+                      iconColor: colorScheme.primary,
+                      title: 'Help center',
+                      onTap: () {},
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.chat_bubble_outline_rounded,
+                      iconColor: colorScheme.secondary,
+                      title: 'Contact us',
+                      onTap: () {},
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.policy_outlined,
+                      iconColor: colorScheme.secondary,
+                      title: 'Privacy policy',
+                      onTap: () {},
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.description_outlined,
+                      iconColor: colorScheme.onSurfaceVariant,
+                      title: 'Terms of service',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ml.h)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.info_outline_rounded,
+                      iconColor: colorScheme.primary,
+                      title: 'About',
+                      subtitle: 'Version 1.0.0',
+                      showChevron: false,
+                      onTap: () {},
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.logout_rounded,
+                      iconColor: colorScheme.error,
+                      title: 'Log out',
+                      titleColor: colorScheme.error,
+                      showChevron: false,
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl.h)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _divider(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 56.w,
+      endIndent: AppSpacing.md.w,
+      color: cs.outlineVariant,
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.name,
+    required this.email,
+    required this.location,
+    required this.colorScheme,
+  });
+
+  final String name;
+  final String email;
+  final String location;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = context.theme.textTheme;
+    final muted = colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.ml.r),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primaryContainer.withValues(alpha: 0.65),
+            colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
+          ],
+        ),
+        borderRadius: AppBorders.xl,
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 36.r,
+            backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: TextStyle(
+                fontSize: 28.sp,
+                fontWeight: FontWeight.w700,
+                color: colorScheme.primary,
+              ),
+            ),
+          ),
+          SizedBox(width: AppSpacing.md.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: tt.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.xs.h),
+                Text(
+                  email,
+                  style: tt.bodyMedium?.copyWith(
+                    color: muted,
+                  ),
+                ),
+                SizedBox(height: AppSpacing.sm.h),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.place_outlined,
+                      size: 16,
+                      color: muted,
+                    ),
+                    SizedBox(width: AppSpacing.xs.w),
+                    Expanded(
+                      child: Text(
+                        location,
+                        style: tt.bodySmall?.copyWith(
+                          color: muted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = context.theme.textTheme;
+    final cs = context.theme.colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10.h, left: AppSpacing.xs.w),
+      child: Text(
+        label,
+        style: tt.titleSmall?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: cs.onSurfaceVariant,
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+
+    return Material(
+      color: cs.surfaceContainerLow,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppBorders.lg,
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+    this.showChevron = true,
+    this.titleColor,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool showChevron;
+  final Color? titleColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = context.theme.textTheme;
+    final cs = context.theme.colorScheme;
+    final effectiveTitleColor = titleColor ?? cs.onSurface;
+
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 14.w,
+          vertical: AppSpacing.ms.h,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: AppBorders.md,
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+            SizedBox(width: AppSpacing.ms.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: tt.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: effectiveTitleColor,
+                    ),
+                  ),
+                  if (subtitle != null) ...[
+                    SizedBox(height: AppSpacing.xxs.h),
+                    Text(
+                      subtitle!,
+                      style: tt.bodySmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (trailing != null) trailing!,
+            if (trailing == null && showChevron)
+              Icon(
+                Icons.chevron_right_rounded,
+                color: cs.outline,
+                size: 26,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
