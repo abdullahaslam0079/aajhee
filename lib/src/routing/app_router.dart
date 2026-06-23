@@ -5,6 +5,7 @@ import 'package:goluto/src/features/home/presentation/screens/item_detail_screen
 import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/add_address_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/addresses_screen.dart';
+import 'package:goluto/src/features/settings/presentation/screens/edit_profile_screen.dart';
 import 'package:goluto/src/features/offerScanner/presentation/offer_scanner_screen.dart';
 import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 import 'package:goluto/src/routing/global_navigator.dart';
@@ -94,6 +95,11 @@ final GoRouter appRouter = GoRouter(
           builder: (context, state) => const AddAddressScreen(),
         ),
       ],
+    ),
+    GoRoute(
+      path: AppRoutes.editProfile,
+      name: 'editProfile',
+      builder: (context, state) => const EditProfileScreen(),
     ),
   ],
 );

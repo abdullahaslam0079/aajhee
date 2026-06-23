@@ -25,6 +25,7 @@ class _MapScreenState extends State<MapScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
+    final carouselBottomOffset = MapConstants.carouselBottomOffset(context);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -36,6 +37,7 @@ class _MapScreenState extends State<MapScreen>
             zoomControlsEnabled: true,
             zoomGesturesEnabled: true,
             myLocationButtonEnabled: false,
+            padding: EdgeInsets.only(bottom: carouselBottomOffset),
             markers: buildMapMarkers(
               onMarkerTap: (index) => selectStore(index, fromMarker: true),
             ),
@@ -43,7 +45,7 @@ class _MapScreenState extends State<MapScreen>
           ),
           Positioned(
             right: AppSpacing.ms.w,
-            bottom: MapConstants.mapControlsBottomOffset,
+            bottom: MapConstants.mapControlsBottomOffset(context),
             child: Column(
               children: [
                 MapActionButton(
@@ -68,11 +70,14 @@ class _MapScreenState extends State<MapScreen>
           ),
           Align(
             alignment: Alignment.bottomCenter,
-            child: MapStoreCarousel(
-              stores: mapStores,
-              selectedIndex: selectedStoreIndex,
-              scrollController: storeCarouselController,
-              onStoreSelected: selectStore,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 150),
+              child: MapStoreCarousel(
+                stores: mapStores,
+                selectedIndex: selectedStoreIndex,
+                scrollController: storeCarouselController,
+                onStoreSelected: selectStore,
+              ),
             ),
           ),
         ],

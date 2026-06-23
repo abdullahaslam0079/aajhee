@@ -1,23 +1,23 @@
+import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _pushNotifications = true;
   bool _emailUpdates = false;
 
-  static const String _userName = 'Alex Morgan';
-  static const String _userEmail = 'alex.morgan@email.com';
   static const String _userLocation = 'Munich, Germany';
 
   @override
   Widget build(BuildContext context) {
+    final profile = ref.watch(userProfileProvider).profile;
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
@@ -49,8 +49,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
                 child: _ProfileHeader(
-                  name: _userName,
-                  email: _userEmail,
+                  name: profile.fullName,
+                  email: profile.email,
                   location: _userLocation,
                   colorScheme: colorScheme,
                 ),
@@ -72,8 +72,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.person_outline_rounded,
                       iconColor: colorScheme.primary,
                       title: 'Edit profile',
-                      subtitle: 'Photo, name, phone',
-                      onTap: () {},
+                      subtitle: 'Name & email',
+                      onTap: () => context.push(AppRoutes.editProfile),
                     ),
                     _divider(context),
                     _SettingsTile(

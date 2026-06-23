@@ -119,9 +119,11 @@ class MapStoreCard extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
               child: Text(
                 store.address,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

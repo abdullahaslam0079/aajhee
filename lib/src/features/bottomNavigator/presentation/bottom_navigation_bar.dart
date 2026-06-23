@@ -1,3 +1,4 @@
+import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:goluto/src/features/settings/presentation/settings.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
@@ -72,7 +73,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
           shape: const CircularNotchedRectangle(),
           notchMargin: 8,
           child: SizedBox(
-            height: 74,
+            height: kBottomNavBarHeight,
             child: Row(
             children: [
               Expanded(

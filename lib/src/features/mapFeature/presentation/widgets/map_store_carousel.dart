@@ -36,12 +36,9 @@ class MapStoreCarousel extends StatelessWidget {
     final colorScheme = context.theme.colorScheme;
 
     return Container(
-      height: 220,
+      height: MapConstants.carouselHeight,
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: AppBorders.bottomSheet,
-      ),
+      
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
