@@ -1,10 +1,11 @@
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:goluto/src/features/businessStore/presentation/widgets/business_store_card.dart';
+import 'package:goluto/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
 import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
 import 'package:goluto/src/features/home/presentation/widgets/category_widget.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -56,13 +57,13 @@ class _HomePageState extends ConsumerState<HomePage> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final session = ref.watch(sessionProvider);
     final locationState = ref.watch(locationProvider);
-    final user = session.user;
+    final savedAddressesState = ref.watch(savedAddressesProvider);
+    final selectedAddress = savedAddressesState.selectedAddress;
     final items = dummyBerlinItems;
-    final locationText =
+    final locationText = selectedAddress?.shortLabel ??
         locationState.address ??
-        (user?.name?.isNotEmpty == true ? user!.name! : 'Getting location...');
+        'Add delivery address';
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -70,6 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         colorScheme: colorScheme,
         textTheme: textTheme,
         locationText: locationText,
+        onLocationTap: () => showDeliveryAddressPicker(context, ref),
       ),
       body: SafeArea(
         child: Padding(
@@ -134,6 +136,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     required ColorScheme colorScheme,
     required TextTheme textTheme,
     required String locationText,
+    required VoidCallback onLocationTap,
   }) {
     return AppBar(
       backgroundColor: colorScheme.surface,
@@ -141,26 +144,42 @@ class _HomePageState extends ConsumerState<HomePage> {
       scrolledUnderElevation: 0,
       automaticallyImplyLeading: false,
       titleSpacing: AppSpacing.sm,
-      title: Row(
-        children: [
-          Icon(
-            Icons.location_on_outlined,
-            color: colorScheme.onSurface,
-            size: 22,
+      title: InkWell(
+        onTap: onLocationTap,
+        borderRadius: AppBorders.md,
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            vertical: AppSpacing.xs.h,
+            horizontal: AppSpacing.xs.w,
           ),
-          SizedBox(width: AppSpacing.sm),
-          SizedBox(
-            width: 200.w,
-            child: Text(
-              locationText,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.location_on_outlined,
+                color: colorScheme.primary,
+                size: 22,
               ),
-            ),
+              SizedBox(width: AppSpacing.xs.w),
+              Flexible(
+                child: Text(
+                  locationText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              SizedBox(width: AppSpacing.xxs.w),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                color: colorScheme.onSurfaceVariant,
+                size: 22,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       actions: [
         IconButton(

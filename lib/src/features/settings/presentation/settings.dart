@@ -89,7 +89,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       iconColor: colorScheme.secondary,
                       title: 'Addresses',
                       subtitle: 'Delivery locations',
-                      onTap: () {},
+                      onTap: () => context.push(AppRoutes.addresses),
                     ),
                   ],
                 ),

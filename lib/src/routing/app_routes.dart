@@ -16,4 +16,6 @@ abstract final class AppRoutes {
   static const String businessStore = '/business-store';
   static const String offerScanner = '/offer-scanner';
   static const String notifications = '/notifications';
+  static const String addresses = '/addresses';
+  static const String addAddress = '/addresses/add';
 }
