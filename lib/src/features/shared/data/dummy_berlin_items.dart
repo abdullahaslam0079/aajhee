@@ -159,7 +159,7 @@ const List<ItemModel> dummyBerlinItems = [
     eta: 'Pick up in 15-30 min',
   ),
   ItemModel(
-    id: 'ber-013',
+    id: 'ber-014',
     name: 'Arooj❤️',
     category: 'Italian',
     address: 'Rosenthaler Str. 38, 10178 Berlin',
@@ -170,7 +170,7 @@ const List<ItemModel> dummyBerlinItems = [
     eta: 'Pick up in 10-20 min',
   ),
   ItemModel(
-    id: 'ber-013',
+    id: 'ber-015',
     name: 'Mom👑',
     category: 'Italian',
     address: 'Rosenthaler Str. 38, 10178 Berlin',

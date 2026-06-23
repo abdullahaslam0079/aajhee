@@ -139,13 +139,28 @@ class _HomePageState extends ConsumerState<HomePage> {
       backgroundColor: colorScheme.surface,
       centerTitle: false,
       scrolledUnderElevation: 0,
-      leading: Icon(
-        Icons.location_on_outlined,
-        color: colorScheme.onSurface,
-      ),
-      title: Text(
-        locationText,
-        style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+      automaticallyImplyLeading: false,
+      titleSpacing: AppSpacing.sm,
+      title: Row(
+        children: [
+          Icon(
+            Icons.location_on_outlined,
+            color: colorScheme.onSurface,
+            size: 22,
+          ),
+          SizedBox(width: AppSpacing.sm),
+          SizedBox(
+            width: 200.w,
+            child: Text(
+              locationText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
       actions: [
         IconButton(
@@ -155,7 +170,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             color: colorScheme.onSurface,
           ),
         ),
-        SizedBox(width: AppSpacing.sm.w),
+        SizedBox(width: AppSpacing.sm),
       ],
     );
   }
