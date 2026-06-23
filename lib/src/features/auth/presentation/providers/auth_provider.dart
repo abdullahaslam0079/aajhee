@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 

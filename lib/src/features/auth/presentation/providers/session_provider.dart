@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:goluto/src/features/auth/domain/entities/user.dart';
 import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';

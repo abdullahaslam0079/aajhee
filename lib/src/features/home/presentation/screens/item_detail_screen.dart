@@ -99,6 +99,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                           ),
                         ),
                       ),
+                      
                       DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(

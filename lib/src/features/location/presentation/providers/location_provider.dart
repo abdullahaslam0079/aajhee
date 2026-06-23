@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
