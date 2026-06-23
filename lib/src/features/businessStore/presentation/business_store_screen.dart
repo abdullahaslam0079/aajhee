@@ -452,123 +452,133 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
     required Color muted,
     required _StoreOffer offer,
   }) {
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.sm.r),
-      decoration: BoxDecoration(
-        color: cs.onPrimary,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: AppBorders.lg,
+      child: InkWell(
         borderRadius: AppBorders.lg,
-        // border: Border.all(color: cs.onPrimary, width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm.w,
-              vertical: AppSpacing.sm.h,
-            ),
-            decoration: BoxDecoration(
-              color: cs.primary,
-              borderRadius: AppBorders.sm,
-            ),
-            child: Text(
-              offer.title,
-              style: tt.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: cs.onPrimary,
-              ),
-            ),
+        onTap: () {
+          context.push(AppRoutes.offerScanner);
+        },
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.sm.r),
+          decoration: BoxDecoration(
+            color: cs.onPrimary,
+            borderRadius: AppBorders.lg,
+            // border: Border.all(color: cs.onPrimary, width: 2),
           ),
-          SizedBox(height: AppSpacing.sm.h),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      offer.subtitle,
-                      style: tt.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: cs.onSurface.withValues(alpha: 0.9),
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.xxs.h),
-                    Text(
-                      offer.oldPriceText,
-                      style: tt.bodyMedium?.copyWith(
-                        color: muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.sm.h),
-                    Row(
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm.w,
+                  vertical: AppSpacing.sm.h,
+                ),
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  borderRadius: AppBorders.sm,
+                ),
+                child: Text(
+                  offer.title,
+                  style: tt.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: cs.onPrimary,
+                  ),
+                ),
+              ),
+              SizedBox(height: AppSpacing.sm.h),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _tagChip(
-                          cs: cs,
-                          tt: tt,
-                          label: 'Gold',
-                          icon: Icons.workspace_premium_rounded,
+                        Text(
+                          offer.subtitle,
+                          style: tt.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: cs.onSurface.withValues(alpha: 0.9),
+                          ),
                         ),
-                        SizedBox(width: AppSpacing.xs.w),
-                        _tagChip(
-                          cs: cs,
-                          tt: tt,
-                          label: 'Dine in',
-                          icon: Icons.storefront_outlined,
+                        SizedBox(height: AppSpacing.xxs.h),
+                        Text(
+                          offer.oldPriceText,
+                          style: tt.bodyMedium?.copyWith(
+                            color: muted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.sm.h),
+                        Row(
+                          children: [
+                            _tagChip(
+                              cs: cs,
+                              tt: tt,
+                              label: 'Gold',
+                              icon: Icons.workspace_premium_rounded,
+                            ),
+                            SizedBox(width: AppSpacing.xs.w),
+                            _tagChip(
+                              cs: cs,
+                              tt: tt,
+                              label: 'Dine in',
+                              icon: Icons.storefront_outlined,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              SizedBox(width: AppSpacing.sm.w),
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: AppBorders.md,
-                    child: Image.network(
-                      _coverImageUrl,
-                      width: 108.w,
-                      height: 96.h,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 108.w,
-                        height: 96.h,
-                        color: cs.surfaceContainerHighest,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          Icons.fastfood_outlined,
-                          color: muted,
-                          size: 24,
-                        ),
-                      ),
-                    ),
                   ),
-                  Positioned(
-                    right: 6.w,
-                    bottom: 6.h,
-                    child: Container(
-                      width: 26.w,
-                      height: 26.w,
-                      decoration: BoxDecoration(
-                        color: cs.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: cs.outlineVariant.withValues(alpha: 0.45),
+                  SizedBox(width: AppSpacing.sm.w),
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: AppBorders.md,
+                        child: Image.network(
+                          _coverImageUrl,
+                          width: 108.w,
+                          height: 96.h,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 108.w,
+                            height: 96.h,
+                            color: cs.surfaceContainerHighest,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              Icons.fastfood_outlined,
+                              color: muted,
+                              size: 24,
+                            ),
+                          ),
                         ),
                       ),
-                      child: Icon(Icons.qr_code_2_rounded,
-                          size: 17, color: cs.primary),
-                    ),
+                      Positioned(
+                        right: 6.w,
+                        bottom: 6.h,
+                        child: Container(
+                          width: 26.w,
+                          height: 26.w,
+                          decoration: BoxDecoration(
+                            color: cs.surface,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: cs.outlineVariant.withValues(alpha: 0.45),
+                            ),
+                          ),
+                          child: Icon(Icons.qr_code_2_rounded,
+                              size: 17, color: cs.primary),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

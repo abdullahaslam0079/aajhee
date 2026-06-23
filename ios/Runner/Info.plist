@@ -49,5 +49,7 @@
 	<string>We use your location to center the map on your current position.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>We use your location to center the map on your current position.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>We use the camera to scan offer QR codes.</string>
 </dict>
 </plist>

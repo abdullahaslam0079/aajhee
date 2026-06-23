@@ -46,6 +46,7 @@ class BusinessStoreCard extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              
               Container(
                 height: 176.h,
                 width: double.infinity,

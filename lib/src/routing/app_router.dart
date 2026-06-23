@@ -3,6 +3,7 @@ import 'package:goluto/src/features/bottomNavigator/presentation/bottom_navigati
 import 'package:goluto/src/features/businessStore/presentation/business_store_screen.dart';
 import 'package:goluto/src/features/home/presentation/screens/item_detail_screen.dart';
 import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
+import 'package:goluto/src/features/offerScanner/presentation/offer_scanner_screen.dart';
 import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 import 'package:goluto/src/routing/global_navigator.dart';
 import 'package:goluto/src/routing/app_routes.dart';
@@ -69,6 +70,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.businessStore,
       name: 'businessStore',
       builder: (context, state) => const BusinessStoreScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.offerScanner,
+      name: 'offerScanner',
+      builder: (context, state) => const OfferScannerScreen(),
     ),
     GoRoute(
       path: AppRoutes.notifications,
