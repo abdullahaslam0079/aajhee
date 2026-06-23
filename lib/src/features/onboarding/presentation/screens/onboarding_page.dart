@@ -1,15 +1,16 @@
+import 'package:goluto/src/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 
-class OnboardingPage extends StatefulWidget {
+class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
 
   @override
-  State<OnboardingPage> createState() => _OnboardingPageState();
+  ConsumerState<OnboardingPage> createState() => _OnboardingPageState();
 }
 
-class _OnboardingPageState extends State<OnboardingPage> {
+class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   late final PageController _pageController;
   int _currentIndex = 0;
 
@@ -47,9 +48,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  void _onGetStarted() {
-    // Navigate back or to home. For template purpose:
-    context.go(AppRoutes.home);
+  Future<void> _onGetStarted() async {
+    await ref.read(onboardingRepositoryProvider).markCompleted();
+    ref.invalidate(onboardingCompletedProvider);
+    if (!mounted) return;
+    context.go(AppRoutes.login);
   }
 
   @override

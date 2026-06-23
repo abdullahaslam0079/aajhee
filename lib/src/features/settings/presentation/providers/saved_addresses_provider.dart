@@ -48,13 +48,16 @@ class SavedAddressesNotifier extends StateNotifier<SavedAddressesState> {
   SavedAddressesNotifier({required AddressGeocodingService geocodingService})
       : _geocodingService = geocodingService,
         super(const SavedAddressesState(isLoading: true)) {
-    _load();
+    _initialLoad = _load();
   }
 
   static const _storageKey = 'saved_addresses';
 
   final AddressGeocodingService _geocodingService;
   SharedPreferences? _prefs;
+  late final Future<void> _initialLoad;
+
+  Future<void> ensureLoaded() => _initialLoad;
 
   Future<SharedPreferences> get _preferences async {
     _prefs ??= await SharedPreferences.getInstance();

@@ -92,7 +92,11 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'add',
           name: 'addAddress',
-          builder: (context, state) => const AddAddressScreen(),
+          builder: (context, state) {
+            final isOnboarding =
+                state.uri.queryParameters['onboarding'] == 'true';
+            return AddAddressScreen(isOnboardingFlow: isOnboarding);
+          },
         ),
       ],
     ),

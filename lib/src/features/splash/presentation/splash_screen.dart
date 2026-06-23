@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
-import 'package:goluto/src/routing/app_routes.dart';
+import 'package:goluto/src/routing/app_navigation.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -23,16 +23,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
   Future<void> _bootstrapAndContinue() async {
     try {
-     
-
-      final address = await ref.read(locationProvider.notifier).determineAddress();
-      debugPrint("address.......::::::::: ${address}");
-      
-
-
+      await ref.read(locationProvider.notifier).determineAddress();
     } catch (_) {}
+
     if (!mounted) return;
-    context.go(AppRoutes.login);
+    await navigateFromSplash(context, ref);
   }
 
   @override

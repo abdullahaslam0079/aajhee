@@ -1,4 +1,4 @@
-package com.example.goluto
+package com.goluto.app
 
 import io.flutter.embedding.android.FlutterActivity
 

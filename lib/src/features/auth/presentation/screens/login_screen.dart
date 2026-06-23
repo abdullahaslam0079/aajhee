@@ -3,6 +3,7 @@ import 'package:goluto/src/imports/packages_imports.dart';
 
 
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:goluto/src/routing/app_navigation.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -29,7 +30,10 @@ class LoginScreen extends ConsumerWidget {
       //   email: emailController.text, 
       //   password: passwordController.text,
       // );
-    context.go(AppRoutes.bottomNavigator);
+      navigateAfterAuthentication(
+        context,
+        hasSavedAddress: hasSavedAddress(ref),
+      );
     }
 
     return Scaffold(

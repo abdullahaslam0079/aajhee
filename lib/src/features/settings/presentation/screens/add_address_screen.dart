@@ -6,7 +6,9 @@ import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 class AddAddressScreen extends ConsumerStatefulWidget {
-  const AddAddressScreen({super.key});
+  const AddAddressScreen({super.key, this.isOnboardingFlow = false});
+
+  final bool isOnboardingFlow;
 
   @override
   ConsumerState<AddAddressScreen> createState() => _AddAddressScreenState();
@@ -114,7 +116,11 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
 
       if (!mounted) return;
       showToast(context, message: 'Address saved', status: 'success');
-      context.pop();
+      if (widget.isOnboardingFlow || !context.canPop()) {
+        context.go(AppRoutes.bottomNavigator);
+      } else {
+        context.pop();
+      }
     } on AddressValidationException catch (e) {
       if (!mounted) return;
       setState(() => _isVerifying = false);
@@ -136,13 +142,16 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
     final tt = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !widget.isOnboardingFlow,
+      child: Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
         title: const Text('Add address'),
         centerTitle: false,
         scrolledUnderElevation: 0,
         backgroundColor: cs.surface,
+        automaticallyImplyLeading: !widget.isOnboardingFlow,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -299,6 +308,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }

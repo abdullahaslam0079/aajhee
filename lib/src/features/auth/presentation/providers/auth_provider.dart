@@ -4,6 +4,7 @@ import 'package:goluto/src/imports/packages_imports.dart';
 
 import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:goluto/src/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:goluto/src/routing/app_navigation.dart';
 
 // Provides the single instance of AuthRepositoryImpl 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
@@ -34,7 +35,10 @@ class AuthController extends StateNotifier<bool> {
       (failure) => showToast(context, message: failure.message, status: 'error'),
       (user) {
         if (rootContext?.mounted ?? false) {
-          rootContext!.go(AppRoutes.home);
+          navigateAfterAuthentication(
+            rootContext!,
+            hasSavedAddress: hasSavedAddressFromContext(rootContext!),
+          );
         }
       },
     );
@@ -50,7 +54,10 @@ class AuthController extends StateNotifier<bool> {
       (failure) => showToast(context, message: failure.message, status: 'error'),
       (user) {
         if (rootContext?.mounted ?? false) {
-          rootContext!.go(AppRoutes.home);
+          navigateAfterAuthentication(
+            rootContext!,
+            hasSavedAddress: hasSavedAddressFromContext(rootContext!),
+          );
         }
       },
     );
