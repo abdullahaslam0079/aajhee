@@ -1,29 +1,12 @@
 import 'dart:async';
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+
 import 'package:goluto/src/features/auth/domain/entities/user.dart';
 import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';
+import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import 'package:goluto/src/features/auth/data/repositories/auth_repository_impl.dart';
+part 'session_provider.g.dart';
 
-/// Provides the AuthRepository instance
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return AuthRepositoryImpl();
-});
-
-/// Provides a stream of auth state changes
-final authStateStreamProvider = StreamProvider<AppUser?>((ref) {
-  final repo = ref.watch(authRepositoryProvider);
-  return repo.onAuthStateChanged;
-});
-
-/// Provides the current session state
-final sessionProvider = StateNotifierProvider<SessionNotifier, SessionState>((ref) {
-  final repo = ref.read(authRepositoryProvider);
-  return SessionNotifier(repository: repo);
-});
-
-/// Session states
 enum SessionStatus { unknown, authenticated, unauthenticated }
 
 class SessionState {
@@ -40,32 +23,43 @@ class SessionState {
   }
 }
 
-class SessionNotifier extends StateNotifier<SessionState> {
-  final AuthRepository _repository;
+@Riverpod(keepAlive: true)
+Stream<AppUser?> authStateStream(Ref ref) {
+  final repo = ref.watch(authRepositoryProvider);
+  return repo.onAuthStateChanged;
+}
+
+@Riverpod(keepAlive: true)
+class Session extends _$Session {
   StreamSubscription<AppUser?>? _authSub;
 
-  SessionNotifier({required AuthRepository repository})
-      : _repository = repository,
-        super(const SessionState()) {
-    _init();
+  @override
+  SessionState build() {
+    final repository = ref.read(authRepositoryProvider);
+
+    ref.onDispose(() {
+      _authSub?.cancel();
+    });
+
+    _initialize(repository);
+    return const SessionState();
   }
 
-  Future<void> _init() async {
-    // Check persisted session first
-    final result = await _repository.checkAuthState();
+  Future<void> _initialize(AuthRepository repository) async {
+    final result = await repository.checkAuthState();
     result.fold(
       (_) => state = const SessionState(status: SessionStatus.unauthenticated),
       (user) {
         if (user != null) {
-          state = SessionState(status: SessionStatus.authenticated, user: user);
+          state =
+              SessionState(status: SessionStatus.authenticated, user: user);
         } else {
           state = const SessionState(status: SessionStatus.unauthenticated);
         }
       },
     );
 
-    // Listen for future changes
-    _authSub = _repository.onAuthStateChanged.listen((user) {
+    _authSub = repository.onAuthStateChanged.listen((user) {
       if (user != null) {
         state = SessionState(status: SessionStatus.authenticated, user: user);
       } else {
@@ -75,14 +69,7 @@ class SessionNotifier extends StateNotifier<SessionState> {
   }
 
   Future<void> logout() async {
-    await _repository.logout();
+    await ref.read(authRepositoryProvider).logout();
     state = const SessionState(status: SessionStatus.unauthenticated);
   }
-
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
-  }
 }
-

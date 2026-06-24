@@ -183,6 +183,13 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
       actions: [
         IconButton(
+          onPressed: () => context.push(AppRoutes.favorites),
+          icon: Icon(
+            Icons.favorite_border_rounded,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        IconButton(
           onPressed: () => context.push(AppRoutes.notifications),
           icon: Icon(
             Icons.notifications_outlined,

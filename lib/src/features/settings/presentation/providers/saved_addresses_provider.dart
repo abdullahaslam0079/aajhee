@@ -1,9 +1,11 @@
 import 'dart:convert';
 
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:goluto/src/features/settings/data/services/address_geocoding_service.dart';
 import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'saved_addresses_provider.g.dart';
 
 class SavedAddressesState {
   const SavedAddressesState({
@@ -33,29 +35,25 @@ class SavedAddressesState {
   }
 }
 
-final addressGeocodingServiceProvider = Provider<AddressGeocodingService>(
-  (ref) => AddressGeocodingService(),
-);
+@Riverpod(keepAlive: true)
+AddressGeocodingService addressGeocodingService(Ref ref) {
+  return AddressGeocodingService();
+}
 
-final savedAddressesProvider =
-    StateNotifierProvider<SavedAddressesNotifier, SavedAddressesState>(
-  (ref) => SavedAddressesNotifier(
-    geocodingService: ref.read(addressGeocodingServiceProvider),
-  ),
-);
-
-class SavedAddressesNotifier extends StateNotifier<SavedAddressesState> {
-  SavedAddressesNotifier({required AddressGeocodingService geocodingService})
-      : _geocodingService = geocodingService,
-        super(const SavedAddressesState(isLoading: true)) {
-    _initialLoad = _load();
-  }
-
+@Riverpod(keepAlive: true)
+class SavedAddresses extends _$SavedAddresses {
   static const _storageKey = 'saved_addresses';
 
-  final AddressGeocodingService _geocodingService;
+  late final AddressGeocodingService _geocodingService;
   SharedPreferences? _prefs;
   late final Future<void> _initialLoad;
+
+  @override
+  SavedAddressesState build() {
+    _geocodingService = ref.read(addressGeocodingServiceProvider);
+    _initialLoad = _load();
+    return const SavedAddressesState(isLoading: true);
+  }
 
   Future<void> ensureLoaded() => _initialLoad;
 

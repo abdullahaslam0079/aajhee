@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
 import 'package:goluto/src/features/businessStore/presentation/business_store_screen.dart';
 import 'package:goluto/src/features/home/presentation/screens/item_detail_screen.dart';
+import 'package:goluto/src/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/add_address_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/addresses_screen.dart';
@@ -83,6 +84,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.notifications,
       name: 'notifications',
       builder: (context, state) => const NotificationScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.favorites,
+      name: 'favorites',
+      builder: (context, state) => const FavoritesScreen(),
     ),
     GoRoute(
       path: AppRoutes.addresses,

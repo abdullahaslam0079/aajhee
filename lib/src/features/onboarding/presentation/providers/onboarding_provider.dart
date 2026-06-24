@@ -1,4 +1,7 @@
 import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'onboarding_provider.g.dart';
 
 class OnboardingRepository {
   static const _storageKey = 'onboarding_completed';
@@ -14,10 +17,12 @@ class OnboardingRepository {
   }
 }
 
-final onboardingRepositoryProvider = Provider<OnboardingRepository>(
-  (ref) => OnboardingRepository(),
-);
+@Riverpod(keepAlive: true)
+OnboardingRepository onboardingRepository(Ref ref) {
+  return OnboardingRepository();
+}
 
-final onboardingCompletedProvider = FutureProvider<bool>((ref) {
-  return ref.read(onboardingRepositoryProvider).isCompleted();
-});
+@Riverpod(keepAlive: true)
+Future<bool> onboardingCompleted(Ref ref) {
+  return ref.watch(onboardingRepositoryProvider).isCompleted();
+}

@@ -1,20 +1,23 @@
 import 'dart:convert';
 
-import 'package:flutter_riverpod/legacy.dart';
-import 'package:goluto/src/features/settings/domain/entities/user_profile.dart';
+import 'package:goluto/src/features/settings/domain/entities/user_profile.dart'
+    as entities;
 import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+part 'user_profile_provider.g.dart';
 
 class UserProfileState {
   const UserProfileState({
-    this.profile = UserProfile.defaultProfile,
+    this.profile = entities.UserProfile.defaultProfile,
     this.isLoading = false,
   });
 
-  final UserProfile profile;
+  final entities.UserProfile profile;
   final bool isLoading;
 
   UserProfileState copyWith({
-    UserProfile? profile,
+    entities.UserProfile? profile,
     bool? isLoading,
   }) {
     return UserProfileState(
@@ -24,19 +27,17 @@ class UserProfileState {
   }
 }
 
-final userProfileProvider =
-    StateNotifierProvider<UserProfileNotifier, UserProfileState>(
-  (ref) => UserProfileNotifier(),
-);
-
-class UserProfileNotifier extends StateNotifier<UserProfileState> {
-  UserProfileNotifier() : super(const UserProfileState(isLoading: true)) {
-    _load();
-  }
-
+@Riverpod(keepAlive: true)
+class UserProfile extends _$UserProfile {
   static const _storageKey = 'user_profile';
 
   SharedPreferences? _prefs;
+
+  @override
+  UserProfileState build() {
+    _load();
+    return const UserProfileState(isLoading: true);
+  }
 
   Future<SharedPreferences> get _preferences async {
     _prefs ??= await SharedPreferences.getInstance();
@@ -53,7 +54,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
       }
 
       final decoded = jsonDecode(raw) as Map<String, dynamic>;
-      state = UserProfileState(profile: UserProfile.fromJson(decoded));
+      state = UserProfileState(profile: entities.UserProfile.fromJson(decoded));
     } catch (_) {
       state = const UserProfileState();
     }
@@ -64,7 +65,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
     required String lastName,
     required String email,
   }) async {
-    final profile = UserProfile(
+    final profile = entities.UserProfile(
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       email: email.trim(),

@@ -1,10 +1,11 @@
 import 'dart:math' as math;
 
+import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
 import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-class BusinessStoreCard extends StatelessWidget {
+class BusinessStoreCard extends ConsumerWidget {
   const BusinessStoreCard({
     super.key,
     required this.item,
@@ -29,10 +30,13 @@ class BusinessStoreCard extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.62);
+    final isFavorite = ref.watch(
+      favoriteStoresProvider.select((state) => state.isFavorite(item.id)),
+    );
     final imageIndex = item.id.hashCode.abs() % _coverImages.length;
     final logoIndex = item.id.hashCode.abs() % _logoImages.length;
 
@@ -120,17 +124,25 @@ class BusinessStoreCard extends StatelessWidget {
               Positioned(
                 right: AppSpacing.sm.w,
                 top: AppSpacing.sm.h,
-                child: Container(
-                  width: 36.w,
-                  height: 36.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: cs.primary.withValues(alpha: 0.88),
-                  ),
-                  child: Icon(
-                    Icons.favorite_border_rounded,
-                    color: cs.onPrimary,
-                    size: 20,
+                child: GestureDetector(
+                  onTap: () => ref
+                      .read(favoriteStoresProvider.notifier)
+                      .toggle(item.id),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    width: 36.w,
+                    height: 36.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: cs.primary.withValues(alpha: 0.88),
+                    ),
+                    child: Icon(
+                      isFavorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      color: cs.onPrimary,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
