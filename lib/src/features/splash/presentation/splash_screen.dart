@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
+import 'package:goluto/src/features/splash/presentation/widgets/goluto_splash_logo.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:goluto/src/routing/app_navigation.dart';
 
@@ -13,82 +14,54 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  Timer? _navigationTimer;
+  static const _splashDuration = Duration(seconds: 10);
+
+  Timer? _splashTimer;
+  var _splashTimerComplete = false;
+  var _bootstrapComplete = false;
 
   @override
   void initState() {
     super.initState();
-    _navigationTimer = Timer(const Duration(seconds: 3), _bootstrapAndContinue);
+    _splashTimer = Timer(_splashDuration, _onSplashTimerComplete);
+    Future.microtask(_bootstrap);
   }
 
-  Future<void> _bootstrapAndContinue() async {
+  Future<void> _bootstrap() async {
     try {
       await ref.read(locationProvider.notifier).determineAddress();
     } catch (_) {}
 
     if (!mounted) return;
+    _bootstrapComplete = true;
+    _tryNavigate();
+  }
+
+  void _onSplashTimerComplete() {
+    if (_splashTimerComplete) return;
+    _splashTimerComplete = true;
+    _tryNavigate();
+  }
+
+  Future<void> _tryNavigate() async {
+    if (!_splashTimerComplete || !_bootstrapComplete || !mounted) return;
     await navigateFromSplash(context, ref);
   }
 
   @override
   void dispose() {
-    _navigationTimer?.cancel();
+    _splashTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.onPrimary,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Icon(
-                  Icons.location_on_rounded,
-                  size: 52,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Goluto',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Discover your city with ease',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.primary.withValues(alpha: 0.9),
-                ),
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: 28,
-                height: 28,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
+      body: const Center(
+        child: GolutoSplashLogo(),
       ),
     );
   }

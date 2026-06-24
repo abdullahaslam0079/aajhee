@@ -37,11 +37,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
         height: 64,
         width: 64,
         child: FloatingActionButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Scanner coming soon')),
-          );
-        },
+        onPressed: () => context.push(AppRoutes.offerScanner),
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         elevation: 2,
