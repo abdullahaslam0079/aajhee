@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:goluto/src/theme/app_fonts.dart';
 
 abstract final class DiscountMarkerIconRenderer {
   static Future<BitmapDescriptor> render({
@@ -19,9 +20,10 @@ abstract final class DiscountMarkerIconRenderer {
     final text = '$discountPercent% off';
     final scale = devicePixelRatio.clamp(1.0, 3.0);
 
-    final textStyle = (labelStyle ?? const TextStyle()).copyWith(
+    final textStyle = (labelStyle ?? const TextStyle(fontFamily: AppFonts.primary)).copyWith(
+      fontFamily: AppFonts.primary,
       color: textColor,
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       fontSize: ((labelStyle?.fontSize ?? 14) * scale),
     );
 

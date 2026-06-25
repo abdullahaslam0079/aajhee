@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_fonts.dart';
+
 /// Defines the full Material 3 typescale for the application.
 ///
 /// Prefer accessing styles through [BuildContext] extensions:
@@ -105,7 +107,7 @@ TextTheme buildTextTheme() {
     bodyLarge: TextStyle(
       fontSize: 16,
       fontWeight: FontWeight.w400,
-      letterSpacing: 0.5,
+      letterSpacing: -0.01,
     ),
 
     /// 14 sp — Standard body text (most common).
@@ -114,7 +116,7 @@ TextTheme buildTextTheme() {
     bodyMedium: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w400,
-      letterSpacing: 0.25,
+      letterSpacing: -0.01,
     ),
 
     /// 12 sp — Small body / caption text.
@@ -123,7 +125,7 @@ TextTheme buildTextTheme() {
     bodySmall: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w400,
-      letterSpacing: 0.4,
+      letterSpacing: 0,
     ),
 
     // ── Label ─────────────────────────────────────────────────────────────────
@@ -136,7 +138,7 @@ TextTheme buildTextTheme() {
     labelLarge: TextStyle(
       fontSize: 14,
       fontWeight: FontWeight.w500,
-      letterSpacing: 0.1,
+      letterSpacing: 0,
     ),
 
     /// 12 sp — Standard control label.
@@ -145,7 +147,7 @@ TextTheme buildTextTheme() {
     labelMedium: TextStyle(
       fontSize: 12,
       fontWeight: FontWeight.w500,
-      letterSpacing: 0.5,
+      letterSpacing: 0,
     ),
 
     /// 11 sp — Smallest control label.
@@ -154,9 +156,9 @@ TextTheme buildTextTheme() {
     labelSmall: TextStyle(
       fontSize: 11,
       fontWeight: FontWeight.w500,
-      letterSpacing: 0.5,
+      letterSpacing: 0.02,
     ),
   );
 
-  return baseTextTheme;
+  return baseTextTheme.apply(fontFamily: AppFonts.primary);
 }

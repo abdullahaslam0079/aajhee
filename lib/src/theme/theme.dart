@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 
 import 'text_theme.dart';
 import 'color_schemes.dart';
+import 'app_fonts.dart';
 
 Color _colorFromHex(String hex) {
   final cleaned = hex.replaceFirst('#', '');
@@ -90,9 +91,11 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
   
   return ThemeData(
     useMaterial3: true,
+    fontFamily: AppFonts.primary,
     primaryColor: colorScheme.primary,
     colorScheme: colorScheme,
     textTheme: textTheme,
+    primaryTextTheme: textTheme,
     extensions: [
       customColors,
       AppDesignTokens.fallback,
@@ -129,6 +132,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
+        textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 48),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -143,6 +147,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
 
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
+        textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 48),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -151,6 +156,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
 
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
+        textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 48),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -160,6 +166,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
 
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
+        textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 40),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -197,7 +204,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: colorScheme.error),
       ),
-      floatingLabelStyle: TextStyle(color: colorScheme.primary),
+      floatingLabelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
       labelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant.withOpacity(0.6)),
       hintStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant.withOpacity(0.6)),
     ),
@@ -419,6 +426,7 @@ ThemeData buildDarkTheme({required String primaryColorHex}) {
 
 CupertinoThemeData buildCupertinoTheme({required String primaryColorHex}) {
   final seed = _colorFromHex(primaryColorHex.isNotEmpty ? primaryColorHex : '#007AFF');
+  const fontFamily = AppFonts.primary;
 
   return CupertinoThemeData(
     applyThemeToAll: true,
@@ -430,36 +438,43 @@ CupertinoThemeData buildCupertinoTheme({required String primaryColorHex}) {
     textTheme: CupertinoTextThemeData(
       primaryColor: seed,
       textStyle: const TextStyle(
+        fontFamily: fontFamily,
         fontSize: 17,
-        letterSpacing: -0.41,
+        letterSpacing: -0.01,
       ),
       actionTextStyle: TextStyle(
+        fontFamily: fontFamily,
         color: seed,
         fontSize: 17,
         fontWeight: FontWeight.w400,
       ),
       navTitleTextStyle: const TextStyle(
+        fontFamily: fontFamily,
         fontWeight: FontWeight.w600,
         fontSize: 17,
-        letterSpacing: -0.41,
+        letterSpacing: -0.01,
       ),
       navLargeTitleTextStyle: const TextStyle(
+        fontFamily: fontFamily,
         fontWeight: FontWeight.bold,
         fontSize: 34,
-        letterSpacing: 0.41,
+        letterSpacing: -0.02,
       ),
       tabLabelTextStyle: const TextStyle(
+        fontFamily: fontFamily,
         fontSize: 10,
         fontWeight: FontWeight.w500,
-        letterSpacing: -0.24,
+        letterSpacing: 0,
       ),
       pickerTextStyle: const TextStyle(
+        fontFamily: fontFamily,
         fontSize: 21,
-        letterSpacing: -0.41,
+        letterSpacing: -0.01,
       ),
       dateTimePickerTextStyle: const TextStyle(
+        fontFamily: fontFamily,
         fontSize: 21,
-        letterSpacing: -0.41,
+        letterSpacing: -0.01,
       ),
     ),
   );

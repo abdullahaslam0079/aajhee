@@ -78,7 +78,9 @@ class AddressesScreen extends ConsumerWidget {
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               'Delete',
-              style: TextStyle(color: context.theme.colorScheme.error),
+              style: context.textTheme.labelLarge?.copyWith(
+                color: context.theme.colorScheme.error,
+              ),
             ),
           ),
         ],

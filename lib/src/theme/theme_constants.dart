@@ -8,6 +8,7 @@
 /// Container(decoration: BoxDecoration(borderRadius: AppBorders.card))
 /// AnimatedContainer(duration: AppDurations.normal, curve: AppCurves.standard)
 /// ```
+export 'app_fonts.dart';
 export 'app_spacing.dart';
 export 'app_borders.dart';
 export 'app_shadows.dart';

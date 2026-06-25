@@ -213,7 +213,7 @@ class LoginScreen extends ConsumerWidget {
                       children: [
                         TextSpan(
                           text: 'auth.sign_up'.tr(),
-                          style: TextStyle(
+                          style: tt.bodyMedium?.copyWith(
                             color: cs.primary,
                             fontWeight: FontWeight.bold,
                           ),

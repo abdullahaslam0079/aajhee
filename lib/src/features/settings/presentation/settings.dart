@@ -269,7 +269,7 @@ class _ProfileHeader extends StatelessWidget {
             backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
             child: Text(
               name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: TextStyle(
+              style: context.textTheme.headlineMedium?.copyWith(
                 fontSize: 28.sp,
                 fontWeight: FontWeight.w700,
                 color: colorScheme.primary,

@@ -43,6 +43,7 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
     final appColors = context.theme.extension<AppColorsExtension>()!;
     final isDisabled = onPressed == null || isLoading;
 
@@ -103,7 +104,7 @@ class AppButton extends StatelessWidget {
                 ],
                 Text(
                   label,
-                  style: TextStyle(
+                  style: tt.labelLarge?.copyWith(
                     fontSize: fontSize,
                     fontWeight: FontWeight.w600,
                     color: isDisabled ? fg.withOpacity(0.5) : textColor ?? fg,

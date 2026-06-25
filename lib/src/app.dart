@@ -24,7 +24,11 @@ class App extends StatelessWidget {
       supportedLocales: context.supportedLocales,
       locale: context.locale,
       builder: (context, child) {
-        Widget current = child!;
+        final textTheme = Theme.of(context).textTheme;
+        Widget current = DefaultTextStyle(
+          style: textTheme.bodyMedium ?? const TextStyle(fontFamily: AppFonts.primary),
+          child: child!,
+        );
         current = SkeletonWrapper(child: current);
         current = SessionListenerWrapper(child: current);
         return current;
