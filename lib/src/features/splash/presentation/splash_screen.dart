@@ -14,7 +14,7 @@ class SplashScreen extends ConsumerStatefulWidget {
 }
 
 class _SplashScreenState extends ConsumerState<SplashScreen> {
-  static const _splashDuration = Duration(seconds: 10);
+  static const _splashDuration = Duration(seconds: 3);
 
   Timer? _splashTimer;
   var _splashTimerComplete = false;

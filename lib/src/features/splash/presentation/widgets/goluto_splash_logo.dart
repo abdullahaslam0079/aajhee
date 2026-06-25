@@ -8,7 +8,7 @@ import 'package:goluto/src/imports/packages_imports.dart';
 class GolutoSplashLogo extends StatefulWidget {
   const GolutoSplashLogo({super.key});
 
-  static const duration = Duration(milliseconds: 4000);
+  static const duration = Duration(seconds: 2);
 
   @override
   State<GolutoSplashLogo> createState() => _GolutoSplashLogoState();
