@@ -10,6 +10,9 @@ Color _colorFromHex(String hex) {
   return Color(int.parse('ff$cleaned', radix: 16));
 }
 
+/// Warm off-white canvas for the home feed and shell background.
+const Color kHomeCanvasColor = Color(0xFFF7F7F8);
+
 /// Custom theme extension for spacing and other design tokens
 class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
   const AppDesignTokens({

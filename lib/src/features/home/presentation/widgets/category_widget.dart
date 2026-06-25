@@ -5,6 +5,7 @@ class CategoryWidget extends StatelessWidget {
   final int selectedCategoryIndex;
   final int index;
   final String label;
+  final IconData icon;
   final VoidCallback onTap;
 
   const CategoryWidget({
@@ -12,6 +13,7 @@ class CategoryWidget extends StatelessWidget {
     required this.selectedCategoryIndex,
     required this.index,
     required this.label,
+    required this.icon,
     required this.onTap,
   });
 
@@ -30,12 +32,14 @@ class CategoryWidget extends StatelessWidget {
         duration: _animationDuration,
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
-          borderRadius: AppBorders.sm,
+          borderRadius: AppBorders.full,
           color: _selected
               ? colorScheme.primary
-              : colorScheme.surfaceContainerHighest,
+              : colorScheme.surfaceContainerLowest,
           border: Border.all(
-            color: _selected ? colorScheme.primary : colorScheme.outlineVariant,
+            color: _selected
+                ? colorScheme.primary
+                : colorScheme.outline.withValues(alpha: 0.35),
             width: 1,
           ),
           boxShadow: _selected
@@ -46,13 +50,13 @@ class CategoryWidget extends StatelessWidget {
                     offset: const Offset(0, 4),
                   ),
                 ]
-              : null,
+              : AppShadows.subtle,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: AppBorders.sm,
+            borderRadius: AppBorders.full,
             splashColor: colorScheme.primary.withValues(alpha: 0.12),
             highlightColor: colorScheme.primary.withValues(alpha: 0.06),
             child: Padding(
@@ -60,17 +64,30 @@ class CategoryWidget extends StatelessWidget {
                 horizontal: AppSpacing.md.w,
                 vertical: AppSpacing.sm.h,
               ),
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textTheme.labelLarge?.copyWith(
-                  fontWeight: _selected ? FontWeight.w600 : FontWeight.w500,
-                  letterSpacing: 0.15,
-                  color: _selected
-                      ? colorScheme.onPrimary
-                      : colorScheme.onSurfaceVariant,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 16,
+                    color: _selected
+                        ? colorScheme.onPrimary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                  SizedBox(width: AppSpacing.xs.w),
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.labelLarge?.copyWith(
+                      fontWeight: _selected ? FontWeight.w600 : FontWeight.w500,
+                      letterSpacing: 0.15,
+                      color: _selected
+                          ? colorScheme.onPrimary
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

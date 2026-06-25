@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
 import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
@@ -22,229 +23,210 @@ class BusinessStoreCard extends ConsumerWidget {
     'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=80',
   ];
 
-  static const List<String> _logoImages = [
-    'https://upload.wikimedia.org/wikipedia/commons/7/79/Logo_KFC.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/0/03/Subway_2016_logo.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/a/a8/Pizza_Hut_logo_2019.svg',
-    'https://upload.wikimedia.org/wikipedia/commons/4/4b/Burger_King_2020.svg',
-  ];
+  static const Color _starColor = Color(0xFFFFB800);
+  static const Color _discountColor = Color(0xFFFF9500);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
-    final muted = cs.onSurface.withValues(alpha: 0.62);
+    final muted = cs.onSurface.withValues(alpha: 0.55);
     final isFavorite = ref.watch(
       favoriteStoresProvider.select((state) => state.isFavorite(item.id)),
     );
     final imageIndex = item.id.hashCode.abs() % _coverImages.length;
-    final logoIndex = item.id.hashCode.abs() % _logoImages.length;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.sm,
-        child: SizedBox(
-          height: 225.h,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              
-              Container(
-                height: 176.h,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  borderRadius: AppBorders.md,
-                  color: cs.surfaceContainerHighest,
-                  // border: Border.all(
-                  //   color: cs.outlineVariant,
-                  //   width: 2,
-                  // ),
-                ),
-                child: ClipRRect(
-                  borderRadius: AppBorders.sm,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Image.network(
-                        _coverImages[imageIndex],
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Icon(
-                          Icons.fastfood_outlined,
-                          color: muted,
-                          size: 34,
-                        ),
+        borderRadius: AppBorders.xl,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            borderRadius: AppBorders.xl,
+            boxShadow: AppShadows.elevated,
+          ),
+          child: ClipRRect(
+            borderRadius: AppBorders.xl,
+            child: SizedBox(
+              height: 180.h,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    _coverImages[imageIndex],
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => ColoredBox(
+                      color: cs.surfaceContainerHighest,
+                      child: Icon(
+                        Icons.fastfood_outlined,
+                        color: muted,
+                        size: 34,
                       ),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.black.withValues(alpha: 0.12),
-                              Colors.black.withValues(alpha: 0.36),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-              Positioned(
-                left: AppSpacing.sm.w,
-                top: AppSpacing.sm.h,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: cs.onPrimaryContainer,
-                    borderRadius: AppBorders.sm,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.discount_rounded,
-                          size: 15, color: cs.onPrimary),
-                      SizedBox(width: AppSpacing.xxs.w),
-                      Text(
-                        'Flat ${item.discountPercent}% Off',
-                        style: tt.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                right: AppSpacing.sm.w,
-                top: AppSpacing.sm.h,
-                child: GestureDetector(
-                  onTap: () => ref
-                      .read(favoriteStoresProvider.notifier)
-                      .toggle(item.id),
-                  behavior: HitTestBehavior.opaque,
-                  child: Container(
-                    width: 36.w,
-                    height: 36.w,
+                  DecoratedBox(
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: cs.primary.withValues(alpha: 0.88),
-                    ),
-                    child: Icon(
-                      isFavorite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      color: cs.onPrimary,
-                      size: 20,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                left: AppSpacing.ms.w,
-                right: AppSpacing.ms.w,
-                bottom: 0,
-                child: Container(
-                  padding: EdgeInsets.all(AppSpacing.sm.r),
-                  decoration: BoxDecoration(
-                    color: cs.onPrimary,
-                    borderRadius: AppBorders.md,
-                    border: Border.all(
-                      color: cs.primary.withValues(alpha: 0.6),
-                      width: 1,
-                    ),
-                    //
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 52.w,
-                        height: 52.w,
-                        decoration: BoxDecoration(
-                          color: cs.surfaceContainerHighest,
-                          borderRadius: AppBorders.sm,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: AppBorders.sm,
-                          child: Image.network(
-                            _logoImages[logoIndex],
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Icon(
-                              Icons.storefront_outlined,
-                              color: muted,
-                            ),
-                          ),
-                        ),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.02),
+                          Colors.black.withValues(alpha: 0.55),
+                        ],
+                        stops: const [0.45, 1.0],
                       ),
-                      SizedBox(width: AppSpacing.sm.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    ),
+                  ),
+                  Positioned(
+                    left: AppSpacing.ms.w,
+                    top: AppSpacing.ms.h,
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(
+                        color: _discountColor,
+                        borderRadius: AppBorders.full,
+                        boxShadow: AppShadows.subtle,
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm.w,
+                          vertical: 7.h,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
+                            const Icon(
+                              Icons.local_offer_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: AppSpacing.xxs.w),
                             Text(
-                              item.name,
-                              style: tt.titleMedium?.copyWith(
+                              'Flat ${item.discountPercent}% Off',
+                              style: tt.labelLarge?.copyWith(
                                 fontWeight: FontWeight.w800,
-                                letterSpacing: -0.3,
+                                color: Colors.white,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: AppSpacing.xxs.h),
-                            Text(
-                              '${item.category} \u2022 ${_distanceText(item.position.latitude, item.position.longitude)} km',
-                              style: tt.bodyMedium?.copyWith(
-                                color: muted,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: AppSpacing.xs.h),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.storefront_outlined,
-                                  size: 14,
-                                  color: cs.primary,
-                                ),
-                                SizedBox(width: AppSpacing.xxs.w),
-                                Icon(
-                                  Icons.star_rounded,
-                                  size: 17,
-                                  color: cs.primary,
-                                ),
-                                SizedBox(width: AppSpacing.xxs.w),
-                                Text(
-                                  _ratingText(item.discountPercent),
-                                  style: tt.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                Text(
-                                  ' (${_reviewsCount(item.id)})',
-                                  style: tt.bodySmall?.copyWith(
-                                    color: muted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
                             ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                  Positioned(
+                    right: AppSpacing.ms.w,
+                    top: AppSpacing.ms.h,
+                    child: GestureDetector(
+                      onTap: () => ref
+                          .read(favoriteStoresProvider.notifier)
+                          .toggle(item.id),
+                      behavior: HitTestBehavior.opaque,
+                      child: ClipOval(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                          child: Container(
+                            width: 40.w,
+                            height: 40.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.22),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.55),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Icon(
+                              isFavorite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: isFavorite ? Colors.redAccent : Colors.white,
+                              size: 21,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: AppSpacing.ms.w,
+                    right: AppSpacing.ms.w,
+                    bottom: AppSpacing.ms.h,
+                    child: ClipRRect(
+                      borderRadius: AppBorders.lg,
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.78),
+                            borderRadius: AppBorders.lg,
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.85),
+                            ),
+                            boxShadow: AppShadows.card,
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(AppSpacing.sm.r),
+                            child: Row(
+                              children: [
+                                _StoreLogoBadge(name: item.name),
+                                SizedBox(width: AppSpacing.sm.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        item.name,
+                                        style: tt.titleMedium?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.3,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: 3.h),
+                                      Text(
+                                        '${item.category} \u2022 ${_distanceText(item.position.latitude, item.position.longitude)} km',
+                                        style: tt.bodyMedium?.copyWith(
+                                          color: muted,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      SizedBox(height: AppSpacing.xs.h),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.star_rounded,
+                                            size: 16,
+                                            color: _starColor,
+                                          ),
+                                          SizedBox(width: AppSpacing.xxs.w),
+                                          Text(
+                                            '${_ratingText(item.discountPercent)} (${_reviewsCount(item.id)} reviews)',
+                                            style: tt.bodySmall?.copyWith(
+                                              color: muted,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -266,4 +248,52 @@ class BusinessStoreCard extends ConsumerWidget {
   }
 
   int _reviewsCount(String id) => (id.hashCode.abs() % 90) + 7;
+}
+
+class _StoreLogoBadge extends StatelessWidget {
+  const _StoreLogoBadge({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
+    final label = _logoLabel(name);
+
+    return Container(
+      width: 48.w,
+      height: 48.w,
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: AppBorders.sm,
+        border: Border.all(
+          color: cs.outline.withValues(alpha: 0.15),
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        textAlign: TextAlign.center,
+        style: tt.labelSmall?.copyWith(
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.4,
+          height: 1.05,
+          color: cs.onSurface,
+        ),
+      ),
+    );
+  }
+
+  String _logoLabel(String storeName) {
+    final words = storeName
+        .split(RegExp(r'\s+'))
+        .where((word) => word.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return 'GO';
+    final firstWord = words.first;
+    return firstWord
+        .substring(0, math.min(firstWord.length, 9))
+        .toUpperCase();
+  }
 }

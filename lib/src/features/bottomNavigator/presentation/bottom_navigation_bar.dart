@@ -9,13 +9,15 @@ import 'package:goluto/src/features/mapFeature/presentation/map_screen.dart';
 class BottomNavigationBarScreen extends ConsumerWidget {
   const BottomNavigationBarScreen({super.key});
 
+  static const double _fabSize = 62;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(bottomNavBarControllerProvider);
     final colorScheme = context.theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: kHomeCanvasColor,
       extendBody: true,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
@@ -34,92 +36,88 @@ class BottomNavigationBarScreen extends ConsumerWidget {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: SizedBox(
-        height: 64,
-        width: 64,
+        height: _fabSize,
+        width: _fabSize,
         child: FloatingActionButton(
-        onPressed: () => context.push(AppRoutes.offerScanner),
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 2,
-        shape: const CircleBorder(),
-          child: const Icon(Icons.qr_code_scanner_rounded, size: 30),
+          onPressed: () => context.push(AppRoutes.offerScanner),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: Colors.white,
+          elevation: 8,
+          highlightElevation: 10,
+          focusElevation: 10,
+          hoverElevation: 10,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.qr_code_scanner_rounded, size: 28),
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: colorScheme.surfaceContainerHigh,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-          border: Border(
-            top: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.7),
-              width: 1.1,
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        elevation: 16,
+        shadowColor: Colors.black.withValues(alpha: 0.14),
+        height: kBottomNavBarHeight,
+        padding: EdgeInsets.zero,
+        notchMargin: 10,
+        clipBehavior: Clip.antiAlias,
+        shape: const AutomaticNotchedShape(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(kBottomNavBarBorderRadius),
             ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withValues(alpha: 0.18),
-              blurRadius: 20,
-              offset: const Offset(0, -8),
+          CircleBorder(),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _BottomItem(
+                icon: selectedIndex == 0
+                    ? Icons.home_rounded
+                    : Icons.home_outlined,
+                label: 'Home',
+                selected: selectedIndex == 0,
+                onTap: () => ref
+                    .read(bottomNavBarControllerProvider.notifier)
+                    .setSelectedIndex(0),
+              ),
+            ),
+            Expanded(
+              child: _BottomItem(
+                icon: selectedIndex == 1
+                    ? Icons.explore_rounded
+                    : Icons.explore_outlined,
+                label: 'Discover',
+                selected: selectedIndex == 1,
+                onTap: () => ref
+                    .read(bottomNavBarControllerProvider.notifier)
+                    .setSelectedIndex(1),
+              ),
+            ),
+            const SizedBox(width: 72),
+            Expanded(
+              child: _BottomItem(
+                icon: selectedIndex == 2
+                    ? Icons.local_offer_rounded
+                    : Icons.local_offer_outlined,
+                label: 'Deals',
+                selected: selectedIndex == 2,
+                onTap: () => ref
+                    .read(bottomNavBarControllerProvider.notifier)
+                    .setSelectedIndex(2),
+              ),
+            ),
+            Expanded(
+              child: _BottomItem(
+                icon: selectedIndex == 3
+                    ? Icons.tune_rounded
+                    : Icons.tune_outlined,
+                label: 'Settings',
+                selected: selectedIndex == 3,
+                onTap: () => ref
+                    .read(bottomNavBarControllerProvider.notifier)
+                    .setSelectedIndex(3),
+              ),
             ),
           ],
-        ),
-        child: BottomAppBar(
-          color: Colors.transparent,
-          elevation: 0,
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8,
-          child: SizedBox(
-            height: kBottomNavBarHeight,
-            child: Row(
-            children: [
-              Expanded(
-                child: _BottomItem(
-                  icon: selectedIndex == 0 ? Icons.home_rounded : Icons.home_outlined,
-                  label: 'Home',
-                  selected: selectedIndex == 0,
-                  onTap: () => ref
-                      .read(bottomNavBarControllerProvider.notifier)
-                      .setSelectedIndex(0),
-                ),
-              ),
-              Expanded(
-                child: _BottomItem(
-                  icon: selectedIndex == 1
-                      ? Icons.explore_rounded
-                      : Icons.explore_outlined,
-                  label: 'Discover',
-                  selected: selectedIndex == 1,
-                  onTap: () => ref
-                      .read(bottomNavBarControllerProvider.notifier)
-                      .setSelectedIndex(1),
-                ),
-              ),
-              const SizedBox(width: 56),
-              Expanded(
-                child: _BottomItem(
-                  icon: selectedIndex == 2
-                      ? Icons.local_offer_rounded
-                      : Icons.local_offer_outlined,
-                  label: 'Deals',
-                  selected: selectedIndex == 2,
-                  onTap: () => ref
-                      .read(bottomNavBarControllerProvider.notifier)
-                      .setSelectedIndex(2),
-                ),
-              ),
-              Expanded(
-                child: _BottomItem(
-                  icon: selectedIndex == 3 ? Icons.tune_rounded : Icons.tune_outlined,
-                  label: 'Settings',
-                  selected: selectedIndex == 3,
-                  onTap: () => ref
-                      .read(bottomNavBarControllerProvider.notifier)
-                      .setSelectedIndex(3),
-                ),
-              ),
-            ],
-            ),
-          ),
         ),
       ),
     );
@@ -142,6 +140,8 @@ class _BottomItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
+    final inactive = cs.onSurface.withValues(alpha: 0.45);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -150,14 +150,14 @@ class _BottomItem extends StatelessWidget {
         children: [
           Icon(
             icon,
-            size: 22,
-            color: selected ? cs.primary : cs.onSurface.withValues(alpha: 0.62),
+            size: 23,
+            color: selected ? cs.primary : inactive,
           ),
-          SizedBox(height: 2.h),
+          SizedBox(height: 3.h),
           Text(
             label,
             style: context.theme.textTheme.labelMedium?.copyWith(
-              color: selected ? cs.onSurface : cs.onSurface.withValues(alpha: 0.62),
+              color: selected ? cs.onSurface : inactive,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

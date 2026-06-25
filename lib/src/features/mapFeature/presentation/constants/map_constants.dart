@@ -13,6 +13,16 @@ const double kBottomNavBarBottomMargin = 16;
 /// Corner radius of the floating bottom navigation bar.
 const double kBottomNavBarBorderRadius = 28;
 
+/// Half of the docked FAB size in [BottomNavigationBarScreen].
+const double kHomeFabSize = 62;
+
+/// How far the docked FAB protrudes above the bottom nav bar.
+const double kHomeFabProtrusion = kHomeFabSize / 2;
+
+/// Extra scroll padding so home feed content clears the docked FAB + nav bar.
+const double kHomeFeedBottomInset =
+    kBottomNavBarHeight + kHomeFabProtrusion + 20;
+
 abstract final class MapConstants {
   static const CameraPosition initialCameraPosition = CameraPosition(
     target: LatLng(52.5200, 13.4050),

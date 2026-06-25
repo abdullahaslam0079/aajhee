@@ -5,6 +5,8 @@ import 'package:goluto/src/features/businessStore/presentation/widgets/business_
 import 'package:goluto/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
 import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
 import 'package:goluto/src/features/home/presentation/widgets/category_widget.dart';
+import 'package:goluto/src/features/home/presentation/widgets/home_header.dart';
+import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 
@@ -40,6 +42,30 @@ class _HomePageState extends ConsumerState<HomePage> {
     'Logistics',
   ];
 
+  static const List<IconData> _categoryIcons = [
+    Icons.apps_rounded,
+    Icons.restaurant_rounded,
+    Icons.checkroom_outlined,
+    Icons.spa_outlined,
+    Icons.movie_outlined,
+    Icons.content_cut_outlined,
+    Icons.health_and_safety_outlined,
+    Icons.flight_outlined,
+    Icons.fitness_center_outlined,
+    Icons.home_outlined,
+    Icons.palette_outlined,
+    Icons.devices_outlined,
+    Icons.child_care_outlined,
+    Icons.school_outlined,
+    Icons.card_giftcard_outlined,
+    Icons.directions_car_outlined,
+    Icons.work_outline_rounded,
+    Icons.shopping_basket_outlined,
+    Icons.smoke_free_outlined,
+    Icons.account_balance_outlined,
+    Icons.local_shipping_outlined,
+  ];
+
   late int _selectedCategoryIndex;
 
   @override
@@ -53,156 +79,163 @@ class _HomePageState extends ConsumerState<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = context.theme;
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final textTheme = context.theme.textTheme;
 
     final locationState = ref.watch(locationProvider);
     final savedAddressesState = ref.watch(savedAddressesProvider);
     final selectedAddress = savedAddressesState.selectedAddress;
-    final items = dummyBerlinItems;
+    const items = dummyBerlinItems;
     final locationText = selectedAddress?.shortLabel ??
         locationState.address ??
         'Add delivery address';
 
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: _buildAppBar(
-        colorScheme: colorScheme,
-        textTheme: textTheme,
-        locationText: locationText,
-        onLocationTap: () => showDeliveryAddressPicker(context, ref),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: AppSpacing.sm.h),
-              Text(
-                'Categories',
-                style: textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: AppSpacing.sm.h),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(
-                    _categoryLabels.length,
-                    (index) => CategoryWidget(
-                      label: _categoryLabels[index],
-                      onTap: () => _onCategoryTap(index),
-                      selectedCategoryIndex: _selectedCategoryIndex,
-                      index: index,
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
-                child: Divider(
-                  color: colorScheme.primary.withValues(alpha: 0.35),
-                  thickness: 0.5,
-                ),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  padding: EdgeInsets.only(bottom: AppSpacing.lg.h),
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return BusinessStoreCard(
-                      item: item,
-                      onTap: () {
-                        context.push(AppRoutes.businessStore);
-                      },
-                    );
-                  },
-                  separatorBuilder: (_, __) =>
-                      SizedBox(height: AppSpacing.md.h),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    final bottomInset = kHomeFeedBottomInset +
+        MediaQuery.paddingOf(context).bottom +
+        AppSpacing.lg.h;
 
-  AppBar _buildAppBar({
-    required ColorScheme colorScheme,
-    required TextTheme textTheme,
-    required String locationText,
-    required VoidCallback onLocationTap,
-  }) {
-    return AppBar(
-      backgroundColor: colorScheme.surface,
-      centerTitle: false,
-      scrolledUnderElevation: 0,
-      automaticallyImplyLeading: false,
-      titleSpacing: AppSpacing.sm,
-      title: InkWell(
-        onTap: onLocationTap,
-        borderRadius: AppBorders.md,
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            vertical: AppSpacing.xs.h,
-            horizontal: AppSpacing.xs.w,
+    return Scaffold(
+      backgroundColor: kHomeCanvasColor,
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.location_on_outlined,
-                color: colorScheme.primary,
-                size: 22,
+          slivers: [
+            SliverToBoxAdapter(
+              child: HomeHeader(
+                locationText: locationText,
+                onLocationTap: () => showDeliveryAddressPicker(context, ref),
+                onFavoritesTap: () => context.push(AppRoutes.favorites),
+                onNotificationsTap: () => context.push(AppRoutes.notifications),
               ),
-              SizedBox(width: AppSpacing.xs.w),
-              Flexible(
-                child: Text(
-                  locationText,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+            ),
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: _HomeCategoriesHeaderDelegate(
+                selectedCategoryIndex: _selectedCategoryIndex,
+                categoryLabels: _categoryLabels,
+                categoryIcons: _categoryIcons,
+                onCategoryTap: _onCategoryTap,
+                textTheme: textTheme,
+                backgroundColor: kHomeCanvasColor,
               ),
-              SizedBox(width: AppSpacing.xxs.w),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: colorScheme.onSurfaceVariant,
-                size: 22,
+            ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.sm.w,
+                AppSpacing.lg.h,
+                AppSpacing.sm.w,
+                0,
               ),
-            ],
-          ),
+              sliver: SliverList.separated(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  final item = items[index];
+                  return BusinessStoreCard(
+                    item: item,
+                    onTap: () {
+                      context.push(AppRoutes.businessStore);
+                    },
+                  );
+                },
+                separatorBuilder: (_, __) => SizedBox(height: AppSpacing.md.h),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
+          ],
         ),
       ),
-      actions: [
-        IconButton(
-          onPressed: () => context.push(AppRoutes.favorites),
-          icon: Icon(
-            Icons.favorite_border_rounded,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        IconButton(
-          onPressed: () => context.push(AppRoutes.notifications),
-          icon: Icon(
-            Icons.notifications_outlined,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        SizedBox(width: AppSpacing.sm),
-      ],
     );
   }
 
   void _onCategoryTap(int index) {
     if (_selectedCategoryIndex == index) return;
     setState(() => _selectedCategoryIndex = index);
+  }
+}
+
+class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _HomeCategoriesHeaderDelegate({
+    required this.selectedCategoryIndex,
+    required this.categoryLabels,
+    required this.categoryIcons,
+    required this.onCategoryTap,
+    required this.textTheme,
+    required this.backgroundColor,
+  });
+
+  final int selectedCategoryIndex;
+  final List<String> categoryLabels;
+  final List<IconData> categoryIcons;
+  final ValueChanged<int> onCategoryTap;
+  final TextTheme textTheme;
+  final Color backgroundColor;
+
+  static const double _chipRowHeight = 44;
+
+  double get _extent =>
+      AppSpacing.sm.h + 24.h + AppSpacing.sm.h + _chipRowHeight.h;
+
+  @override
+  double get minExtent => _extent;
+
+  @override
+  double get maxExtent => _extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: backgroundColor,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.sm.w,
+          AppSpacing.sm.h,
+          AppSpacing.sm.w,
+          0,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Categories',
+              style: textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.sm.h),
+            SizedBox(
+              height: _chipRowHeight.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: categoryLabels.length,
+                separatorBuilder: (_, __) => const SizedBox.shrink(),
+                itemBuilder: (context, index) {
+                  return CategoryWidget(
+                    label: categoryLabels[index],
+                    icon: categoryIcons[index],
+                    onTap: () => onCategoryTap(index),
+                    selectedCategoryIndex: selectedCategoryIndex,
+                    index: index,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _HomeCategoriesHeaderDelegate oldDelegate) {
+    return selectedCategoryIndex != oldDelegate.selectedCategoryIndex ||
+        textTheme != oldDelegate.textTheme ||
+        backgroundColor != oldDelegate.backgroundColor;
   }
 }
