@@ -47,6 +47,9 @@ class AppCachedImage extends StatelessWidget {
   /// Optional key to use for caching.
   final String? cacheKey;
 
+  /// Called when the image fails to load.
+  final void Function(Object error)? onError;
+
   const AppCachedImage({
     super.key,
     required this.imageUrl,
@@ -62,6 +65,7 @@ class AppCachedImage extends StatelessWidget {
     this.alignment = Alignment.center,
     this.useSkeleton = true,
     this.cacheKey,
+    this.onError,
   });
 
   @override
@@ -81,7 +85,10 @@ class AppCachedImage extends StatelessWidget {
       alignment: alignment,
       fadeInDuration: fadeInDuration ?? const Duration(milliseconds: 500),
       placeholder: (context, url) => placeholder ?? _buildDefaultPlaceholder(context),
-      errorWidget: (context, url, error) => errorWidget ?? _buildDefaultErrorWidget(context),
+      errorWidget: (context, url, error) {
+        onError?.call(error);
+        return errorWidget ?? _buildDefaultErrorWidget(context);
+      },
     );
 
     if (borderRadius != null) {

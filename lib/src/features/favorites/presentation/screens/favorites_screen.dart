@@ -1,6 +1,6 @@
 import 'package:goluto/src/features/businessStore/presentation/widgets/business_store_card.dart';
 import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
-import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
+import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -11,8 +11,9 @@ class FavoritesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = context.theme.colorScheme;
     final favoritesState = ref.watch(favoriteStoresProvider);
-    final favoriteItems = dummyBerlinItems
-        .where((item) => favoritesState.isFavorite(item.id))
+    final homeFeedState = ref.watch(homeFeedProvider);
+    final favoriteBranches = homeFeedState.branches
+        .where((branch) => favoritesState.isFavorite(branch.id.toString()))
         .toList();
 
     return Scaffold(
@@ -24,9 +25,9 @@ class FavoritesScreen extends ConsumerWidget {
         backgroundColor: colorScheme.surface,
       ),
       body: SafeArea(
-        child: favoritesState.isLoading
+        child: favoritesState.isLoading || homeFeedState.isLoading
             ? const Center(child: CircularProgressIndicator())
-            : favoriteItems.isEmpty
+            : favoriteBranches.isEmpty
                 ? _EmptyFavorites(
                     onBrowse: () => context.go(AppRoutes.bottomNavigator),
                   )
@@ -37,14 +38,17 @@ class FavoritesScreen extends ConsumerWidget {
                       AppSpacing.sm.w,
                       AppSpacing.lg.h,
                     ),
-                    itemCount: favoriteItems.length,
+                    itemCount: favoriteBranches.length,
                     separatorBuilder: (_, __) =>
                         SizedBox(height: AppSpacing.md.h),
                     itemBuilder: (context, index) {
-                      final item = favoriteItems[index];
+                      final branch = favoriteBranches[index];
                       return BusinessStoreCard(
-                        item: item,
-                        onTap: () => context.push(AppRoutes.businessStore),
+                        branch: branch,
+                        onTap: () => context.push(
+                          AppRoutes.businessStore,
+                          extra: branch,
+                        ),
                       );
                     },
                   ),
@@ -81,20 +85,16 @@ class _EmptyFavorites extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            SizedBox(height: AppSpacing.xs.h),
+            SizedBox(height: AppSpacing.sm.h),
             Text(
-              'Tap the heart on a store to save it here for quick access.',
+              'Tap the heart on a store to save it here.',
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
             SizedBox(height: AppSpacing.lg.h),
-            FilledButton.icon(
-              onPressed: onBrowse,
-              icon: const Icon(Icons.storefront_outlined),
-              label: const Text('Browse stores'),
-            ),
+            FilledButton(onPressed: onBrowse, child: const Text('Browse stores')),
           ],
         ),
       ),

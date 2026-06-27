@@ -2,18 +2,19 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
-import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 class BusinessStoreCard extends ConsumerWidget {
   const BusinessStoreCard({
     super.key,
-    required this.item,
+    required this.branch,
     this.onTap,
   });
 
-  final ItemModel item;
+  final MapBranchModel branch;
   final VoidCallback? onTap;
 
   static const List<String> _coverImages = [
@@ -31,10 +32,13 @@ class BusinessStoreCard extends ConsumerWidget {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.55);
+    final branchId = branch.id.toString();
     final isFavorite = ref.watch(
-      favoriteStoresProvider.select((state) => state.isFavorite(item.id)),
+      favoriteStoresProvider.select((state) => state.isFavorite(branchId)),
     );
-    final imageIndex = item.id.hashCode.abs() % _coverImages.length;
+    final imageIndex = branch.id.abs() % _coverImages.length;
+    final coverFallback = _coverImages[imageIndex];
+    final distanceKm = _distanceKm(ref);
 
     return Material(
       color: Colors.transparent,
@@ -54,10 +58,12 @@ class BusinessStoreCard extends ConsumerWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    _coverImages[imageIndex],
+                  NetworkImageWithFallback(
+                    primaryUrl: branch.coverImageUrl,
+                    fallbackUrl: coverFallback,
+                    debugLabel: 'cover ${branch.displayName}',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => ColoredBox(
+                    errorWidget: ColoredBox(
                       color: cs.surfaceContainerHighest,
                       child: Icon(
                         Icons.fastfood_outlined,
@@ -79,48 +85,49 @@ class BusinessStoreCard extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  Positioned(
-                    left: AppSpacing.ms.w,
-                    top: AppSpacing.ms.h,
-                    child: DecoratedBox(
-                      decoration: const BoxDecoration(
-                        color: _discountColor,
-                        borderRadius: AppBorders.full,
-                        boxShadow: AppShadows.subtle,
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm.w,
-                          vertical: 7.h,
+                  if (branch.highestDiscountPercent > 0)
+                    Positioned(
+                      left: AppSpacing.ms.w,
+                      top: AppSpacing.ms.h,
+                      child: DecoratedBox(
+                        decoration: const BoxDecoration(
+                          color: _discountColor,
+                          borderRadius: AppBorders.full,
+                          boxShadow: AppShadows.subtle,
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.local_offer_rounded,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                            SizedBox(width: AppSpacing.xxs.w),
-                            Text(
-                              'Flat ${item.discountPercent}% Off',
-                              style: tt.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm.w,
+                            vertical: 7.h,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.local_offer_rounded,
+                                size: 14,
                                 color: Colors.white,
                               ),
-                            ),
-                          ],
+                              SizedBox(width: AppSpacing.xxs.w),
+                              Text(
+                                'Flat ${branch.highestDiscountPercent.toStringAsFixed(0)}% Off',
+                                style: tt.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   Positioned(
                     right: AppSpacing.ms.w,
                     top: AppSpacing.ms.h,
                     child: GestureDetector(
                       onTap: () => ref
                           .read(favoriteStoresProvider.notifier)
-                          .toggle(item.id),
+                          .toggle(branchId),
                       behavior: HitTestBehavior.opaque,
                       child: ClipOval(
                         child: BackdropFilter(
@@ -140,7 +147,8 @@ class BusinessStoreCard extends ConsumerWidget {
                               isFavorite
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
-                              color: isFavorite ? Colors.redAccent : Colors.white,
+                              color:
+                                  isFavorite ? Colors.redAccent : Colors.white,
                               size: 21,
                             ),
                           ),
@@ -169,7 +177,11 @@ class BusinessStoreCard extends ConsumerWidget {
                             padding: EdgeInsets.all(AppSpacing.sm.r),
                             child: Row(
                               children: [
-                                _StoreLogoBadge(name: item.name),
+                                StoreLogoBadge(
+                                  name: branch.displayName,
+                                  imageUrl: branch.logoUrl,
+                                  size: 48,
+                                ),
                                 SizedBox(width: AppSpacing.sm.w),
                                 Expanded(
                                   child: Column(
@@ -178,7 +190,7 @@ class BusinessStoreCard extends ConsumerWidget {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        item.name,
+                                        branch.displayName,
                                         style: tt.titleMedium?.copyWith(
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: -0.3,
@@ -188,7 +200,7 @@ class BusinessStoreCard extends ConsumerWidget {
                                       ),
                                       SizedBox(height: 3.h),
                                       Text(
-                                        '${item.category} \u2022 ${_distanceText(item.position.latitude, item.position.longitude)} km',
+                                        '${branch.categoryName} \u2022 ${distanceKm.toStringAsFixed(2)} km',
                                         style: tt.bodyMedium?.copyWith(
                                           color: muted,
                                           fontWeight: FontWeight.w500,
@@ -206,7 +218,7 @@ class BusinessStoreCard extends ConsumerWidget {
                                           ),
                                           SizedBox(width: AppSpacing.xxs.w),
                                           Text(
-                                            '${_ratingText(item.discountPercent)} (${_reviewsCount(item.id)} reviews)',
+                                            '${_ratingText(branch.highestDiscountPercent)} (${_reviewsCount(branch.id)} reviews)',
                                             style: tt.bodySmall?.copyWith(
                                               color: muted,
                                               fontWeight: FontWeight.w600,
@@ -233,67 +245,37 @@ class BusinessStoreCard extends ConsumerWidget {
     );
   }
 
-  String _distanceText(double lat, double lng) {
-    const baseLat = 52.5200;
-    const baseLng = 13.4050;
-    final km =
-        math.sqrt(math.pow(lat - baseLat, 2) + math.pow(lng - baseLng, 2)) *
-            111.0;
-    return km.toStringAsFixed(2);
+  double _distanceKm(WidgetRef ref) {
+    final savedAddress = ref.watch(savedAddressesProvider).selectedAddress;
+    final userLat = savedAddress?.latitude;
+    final userLng = savedAddress?.longitude;
+
+    if (userLat != null && userLng != null) {
+      return _haversineKm(userLat, userLng, branch.latitude, branch.longitude);
+    }
+
+    return _haversineKm(52.52, 13.405, branch.latitude, branch.longitude);
   }
 
-  String _ratingText(int discountPercent) {
+  double _haversineKm(double lat1, double lng1, double lat2, double lng2) {
+    const earthRadiusKm = 6371.0;
+    final dLat = _toRadians(lat2 - lat1);
+    final dLng = _toRadians(lng2 - lng1);
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(_toRadians(lat1)) *
+            math.cos(_toRadians(lat2)) *
+            math.sin(dLng / 2) *
+            math.sin(dLng / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadiusKm * c;
+  }
+
+  double _toRadians(double degrees) => degrees * math.pi / 180;
+
+  String _ratingText(double discountPercent) {
     final rating = 4.2 + (discountPercent / 100);
     return rating.clamp(0.0, 5.0).toStringAsFixed(1);
   }
 
-  int _reviewsCount(String id) => (id.hashCode.abs() % 90) + 7;
-}
-
-class _StoreLogoBadge extends StatelessWidget {
-  const _StoreLogoBadge({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-    final label = _logoLabel(name);
-
-    return Container(
-      width: 48.w,
-      height: 48.w,
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest,
-        borderRadius: AppBorders.sm,
-        border: Border.all(
-          color: cs.outline.withValues(alpha: 0.15),
-        ),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        label,
-        textAlign: TextAlign.center,
-        style: tt.labelSmall?.copyWith(
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.4,
-          height: 1.05,
-          color: cs.onSurface,
-        ),
-      ),
-    );
-  }
-
-  String _logoLabel(String storeName) {
-    final words = storeName
-        .split(RegExp(r'\s+'))
-        .where((word) => word.isNotEmpty)
-        .toList();
-    if (words.isEmpty) return 'GO';
-    final firstWord = words.first;
-    return firstWord
-        .substring(0, math.min(firstWord.length, 9))
-        .toUpperCase();
-  }
+  int _reviewsCount(int id) => (id.abs() % 90) + 7;
 }

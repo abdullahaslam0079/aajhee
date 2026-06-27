@@ -82,7 +82,7 @@ final class AuthControllerProvider
   }
 }
 
-String _$authControllerHash() => r'6f62ca69d56f323f0f9f821885c309a68eb253cf';
+String _$authControllerHash() => r'8b7d72f9acf04515bef2b7cd7f19297362433f0c';
 
 abstract class _$AuthController extends $Notifier<bool> {
   bool build();

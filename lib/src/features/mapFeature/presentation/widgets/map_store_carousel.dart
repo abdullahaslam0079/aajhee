@@ -1,19 +1,19 @@
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:goluto/src/features/mapFeature/presentation/widgets/map_store_card.dart';
-import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 class MapStoreCarousel extends StatelessWidget {
   const MapStoreCarousel({
     super.key,
-    required this.stores,
+    required this.branches,
     required this.selectedIndex,
     required this.scrollController,
     required this.onStoreSelected,
   });
 
-  final List<ItemModel> stores;
+  final List<MapBranchModel> branches;
   final int selectedIndex;
   final ScrollController scrollController;
   final ValueChanged<int> onStoreSelected;
@@ -63,12 +63,12 @@ class MapStoreCarousel extends StatelessWidget {
               ),
               scrollDirection: Axis.horizontal,
               itemBuilder: (_, index) => MapStoreCard(
-                store: stores[index],
+                branch: branches[index],
                 isSelected: index == selectedIndex,
                 onTap: () => onStoreSelected(index),
               ),
               separatorBuilder: (_, __) => SizedBox(width: AppSpacing.ms),
-              itemCount: stores.length,
+              itemCount: branches.length,
             ),
           ),
         ],

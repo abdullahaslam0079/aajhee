@@ -3,7 +3,7 @@ import 'package:goluto/src/features/settings/presentation/settings.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/businessStore/presentation/business_store_screen.dart';
+import 'package:goluto/src/features/businessStore/presentation/deals_tab_screen.dart';
 import 'package:goluto/src/features/mapFeature/presentation/map_screen.dart';
 
 class BottomNavigationBarScreen extends ConsumerWidget {
@@ -30,7 +30,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
               : selectedIndex == 1
               ? const MapScreen()
               : selectedIndex == 2
-              ? const BusinessStoreScreen()
+              ? const DealsTabScreen()
               : const SettingsScreen(),
         ),
       ),

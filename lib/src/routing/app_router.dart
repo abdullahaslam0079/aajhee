@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
 import 'package:goluto/src/features/businessStore/presentation/business_store_screen.dart';
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/presentation/screens/item_detail_screen.dart';
 import 'package:goluto/src/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
@@ -74,7 +75,15 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.businessStore,
       name: 'businessStore',
-      builder: (context, state) => const BusinessStoreScreen(),
+      builder: (context, state) {
+        final branch = state.extra is MapBranchModel
+            ? state.extra! as MapBranchModel
+            : null;
+        if (branch == null) {
+          throw StateError('BusinessStoreScreen requires a MapBranchModel extra.');
+        }
+        return BusinessStoreScreen(branch: branch);
+      },
     ),
     GoRoute(
       path: AppRoutes.offerScanner,

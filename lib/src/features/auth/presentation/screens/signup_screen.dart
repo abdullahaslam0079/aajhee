@@ -4,35 +4,49 @@ import 'package:goluto/src/imports/packages_imports.dart';
 
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
 
-class SignupScreen extends ConsumerWidget {
+class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final formKey = GlobalKey<FormState>();
-    final nameController = TextEditingController();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    final confirmPasswordController = TextEditingController();
-    const obscurePassword = true;
-    const obscureConfirmPassword = true;
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
+}
 
+class _SignupScreenState extends ConsumerState<SignupScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider);
 
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
 
     Future<void> handleSignup() async {
-      if (!(formKey.currentState?.validate() ?? false)) {
+      if (!(_formKey.currentState?.validate() ?? false)) {
         return;
       }
 
       ref.read(authControllerProvider.notifier).signUp(
         context: context,
-        name: nameController.text,
-        email: emailController.text,
-        password: passwordController.text,
-        passwordConfirm: confirmPasswordController.text,
+        name: _nameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+        passwordConfirm: _confirmPasswordController.text,
       );
     }
 
@@ -58,11 +72,11 @@ class SignupScreen extends ConsumerWidget {
                 SizedBox(height: AppSpacing.xxxl.h),
                 // Form Card
                 Form(
-                  key: formKey,
+                  key: _formKey,
                   child: Column(
                     children: [
                       AppTextField(
-                        controller: nameController,
+                        controller: _nameController,
                         enabled: !isLoading,
                         label: 'auth.name'.tr(),
                         prefixIcon: const Icon(Icons.person_outline),
@@ -70,7 +84,7 @@ class SignupScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
-                        controller: emailController,
+                        controller: _emailController,
                         enabled: !isLoading,
                         keyboardType: TextInputType.emailAddress,
                         label: 'auth.email'.tr(),
@@ -87,14 +101,18 @@ class SignupScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
-                        controller: passwordController,
+                        controller: _passwordController,
                         enabled: !isLoading,
                         label: 'auth.password'.tr(),
-                        obscureText: obscurePassword,
+                        obscureText: _obscurePassword,
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.visibility),
-                          onPressed: () => null,
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: isLoading
+                              ? null
+                              : () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                          validator: (v) {
                           if (AppUtils.isBlank(v)) {
@@ -108,20 +126,26 @@ class SignupScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
-                        controller: confirmPasswordController,
+                        controller: _confirmPasswordController,
                         enabled: !isLoading,
                         label: 'auth.confirm_password'.tr(),
-                        obscureText: obscureConfirmPassword,
+                        obscureText: _obscureConfirmPassword,
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.visibility),
-                          onPressed: () => null,
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: isLoading
+                              ? null
+                              : () => setState(
+                                    () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                                  ),
                         ),
                         validator: (v) {
                           if (AppUtils.isBlank(v)) {
                             return 'auth.confirm_password_required'.tr();
                           }
-                          if (v != passwordController.text) {
+                          if (v != _passwordController.text) {
                             return 'auth.passwords_do_not_match'.tr();
                           }
                           return null;
@@ -203,7 +227,7 @@ class SignupScreen extends ConsumerWidget {
                       style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
                       children: [
                         TextSpan(
-                          text: 'auth.sign_up'.tr(),
+                          text: 'auth.sign_in'.tr(),
                           style: tt.bodyMedium?.copyWith(
                             color: cs.primary,
                             fontWeight: FontWeight.bold,

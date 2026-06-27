@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/mapFeature/presentation/utils/discount_marker_icon_renderer.dart';
-import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
+import 'package:goluto/src/features/mapFeature/presentation/utils/map_branch_extensions.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapMarkerTheme {
@@ -30,11 +31,11 @@ class MapMarkerTheme {
 
 class MapMarkerIconManager {
   MapMarkerIconManager({
-    required this.stores,
+    required this.branches,
     required this.onIconsUpdated,
   });
 
-  final List<ItemModel> stores;
+  final List<MapBranchModel> branches;
   final VoidCallback onIconsUpdated;
 
   final Map<String, BitmapDescriptor> _iconCache = {};
@@ -53,16 +54,16 @@ class MapMarkerIconManager {
     required int selectedIndex,
     required ValueChanged<int> onMarkerTap,
   }) {
-    return stores.asMap().entries.map((entry) {
+    return branches.asMap().entries.map((entry) {
       final index = entry.key;
-      final store = entry.value;
+      final branch = entry.value;
       final isSelected = index == selectedIndex;
-      final iconKey = _iconKey(store.discountPercent, isSelected);
+      final iconKey = _iconKey(branch.discountPercentInt, isSelected);
       final icon = _iconCache[iconKey];
 
       return Marker(
-        markerId: MarkerId(store.id),
-        position: store.position,
+        markerId: MarkerId(branch.id.toString()),
+        position: branch.mapPosition,
         anchor: const Offset(0.5, 1.0),
         icon: icon ??
             BitmapDescriptor.defaultMarkerWithHue(
@@ -71,8 +72,9 @@ class MapMarkerIconManager {
                   : BitmapDescriptor.hueViolet,
             ),
         infoWindow: InfoWindow(
-          title: store.name,
-          snippet: '${store.discountPercent}% off • ${store.category}',
+          title: branch.displayName,
+          snippet:
+              '${branch.discountPercentInt}% off • ${branch.categoryName}',
           onTap: () => onMarkerTap(index),
         ),
         onTap: () => onMarkerTap(index),
@@ -81,7 +83,7 @@ class MapMarkerIconManager {
   }
 
   void preloadIcons(MapMarkerTheme theme) {
-    final discounts = stores.map((s) => s.discountPercent).toSet();
+    final discounts = branches.map((b) => b.discountPercentInt).toSet();
     for (final discount in discounts) {
       _ensureIconLoaded(theme, discount, selected: false);
       _ensureIconLoaded(theme, discount, selected: true);
@@ -89,9 +91,9 @@ class MapMarkerIconManager {
   }
 
   void ensureSelectedIconsLoaded(MapMarkerTheme theme, int selectedIndex) {
-    final store = stores[selectedIndex];
-    _ensureIconLoaded(theme, store.discountPercent, selected: true);
-    _ensureIconLoaded(theme, store.discountPercent, selected: false);
+    final branch = branches[selectedIndex];
+    _ensureIconLoaded(theme, branch.discountPercentInt, selected: true);
+    _ensureIconLoaded(theme, branch.discountPercentInt, selected: false);
   }
 
   void _ensureIconLoaded(

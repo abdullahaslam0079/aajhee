@@ -1,19 +1,27 @@
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/mapFeature/presentation/utils/map_marker_icon_manager.dart';
-import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 mixin MapMarkerMixin<T extends StatefulWidget> on State<T> {
-  List<ItemModel> get mapStores;
+  List<MapBranchModel> get mapBranches;
   int get selectedStoreIndex;
 
   MapMarkerIconManager? _markerIconManager;
+  int? _cachedBranchesHash;
 
-  MapMarkerIconManager get markerIconManager =>
-      _markerIconManager ??= MapMarkerIconManager(
-        stores: mapStores,
+  MapMarkerIconManager get markerIconManager {
+    final branches = mapBranches;
+    final hash = Object.hashAll(branches.map((branch) => branch.id));
+    if (_markerIconManager == null || _cachedBranchesHash != hash) {
+      _cachedBranchesHash = hash;
+      _markerIconManager = MapMarkerIconManager(
+        branches: branches,
         onIconsUpdated: _handleMarkerIconsUpdated,
       );
+    }
+    return _markerIconManager!;
+  }
 
   MapMarkerTheme get markerTheme {
     final theme = context.theme;
@@ -30,9 +38,12 @@ mixin MapMarkerMixin<T extends StatefulWidget> on State<T> {
     );
   }
 
-  Set<Marker> buildMapMarkers({required ValueChanged<int> onMarkerTap}) {
+  Set<Marker> buildMapMarkers({
+    required ValueChanged<int> onMarkerTap,
+    int? selectedIndex,
+  }) {
     return markerIconManager.buildMarkers(
-      selectedIndex: selectedStoreIndex,
+      selectedIndex: selectedIndex ?? selectedStoreIndex,
       onMarkerTap: onMarkerTap,
     );
   }

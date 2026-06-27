@@ -1,48 +1,54 @@
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
+import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-class BusinessStoreScreen extends StatefulWidget {
-  const BusinessStoreScreen({super.key});
+class BusinessStoreScreen extends ConsumerStatefulWidget {
+  const BusinessStoreScreen({
+    super.key,
+    required this.branch,
+  });
+
+  final MapBranchModel branch;
 
   @override
-  State<BusinessStoreScreen> createState() => _BusinessStoreScreenState();
+  ConsumerState<BusinessStoreScreen> createState() =>
+      _BusinessStoreScreenState();
 }
 
-class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
-  static const String _coverImageUrl =
-      'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80';
-  static const String _storeLogoUrl =
-      'https://upload.wikimedia.org/wikipedia/sco/thumb/b/bf/KFC_logo.svg/768px-KFC_logo.svg.png';
-  static const List<_StoreOffer> _offers = [
-    _StoreOffer(
-      title: 'Flat 30% Off',
-      subtitle: 'On The Entire Bill',
-      oldPriceText: 'Valid till 11:59 PM',
-    ),
-    _StoreOffer(
-      title: 'Zinger + Drink Rs.400',
-      subtitle: 'Zinger + Drink In Rs. 400',
-      oldPriceText: 'Instead Of Rs. 780',
-    ),
-    _StoreOffer(
-      title: 'Family Meal Deal',
-      subtitle: '2 Burgers + 2 Drinks',
-      oldPriceText: 'Save Rs. 350',
-    ),
-    _StoreOffer(
-      title: 'Family Meal Deal',
-      subtitle: '2 Burgers + 2 Drinks',
-      oldPriceText: 'Save Rs. 350',
-    ),
-    _StoreOffer(
-      title: 'Family Meal Deal',
-      subtitle: '2 Burgers + 2 Drinks',
-      oldPriceText: 'Save Rs. 350',
-    ),
+class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
+  static const List<String> _coverImages = [
+    'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&w=1200&q=80',
+    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=80',
   ];
 
   late final ScrollController _scrollController;
   bool _showCompactHeader = false;
+
+  MapBranchModel get branch => widget.branch;
+
+  String get _coverFallback =>
+      _coverImages[branch.id.abs() % _coverImages.length];
+
+  String? _coverPrimaryUrl(List<OfferModel> offers) {
+    if (branch.coverImageUrl != null && branch.coverImageUrl!.isNotEmpty) {
+      return branch.coverImageUrl;
+    }
+
+    for (final offer in offers) {
+      final imageUrl = offer.imageUrl;
+      if (imageUrl != null && imageUrl.isNotEmpty) {
+        return imageUrl;
+      }
+    }
+
+    return null;
+  }
+
+  String? get _logoImageUrl => branch.logoUrl;
 
   @override
   void initState() {
@@ -71,6 +77,10 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.62);
+    final offersState = ref.watch(branchOffersProvider(branch.id));
+    final offers = offersState.offers;
+    final coverFallback = _coverFallback;
+    final coverPrimary = _coverPrimaryUrl(offers);
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -83,7 +93,12 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    _heroHeader(cs, muted),
+                    _heroHeader(
+                      cs,
+                      muted,
+                      primaryUrl: coverPrimary,
+                      fallbackUrl: coverFallback,
+                    ),
                     Positioned(
                       left: AppSpacing.ms.w,
                       right: AppSpacing.ms.w,
@@ -101,40 +116,70 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
                 ),
               ),
               SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ml.h)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
-                  child: Text(
-                    _offers.length > 1 ? 'All Offers' : 'Featured Offer',
-                    style: tt.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
+              if (offersState.isLoading)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (offersState.errorMessage != null)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _OffersError(
+                    message: offersState.errorMessage!,
+                    onRetry: () =>
+                        ref.invalidate(branchOffersProvider(branch.id)),
+                  ),
+                )
+              else if (offers.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: Text(
+                      'No offers available for this branch.',
+                      style: tt.bodyLarge?.copyWith(color: muted),
+                    ),
+                  ),
+                )
+              else ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
+                    child: Text(
+                      offers.length > 1 ? 'All Offers' : 'Featured Offer',
+                      style: tt.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ms.h)),
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  AppSpacing.ms.w,
-                  0,
-                  AppSpacing.ms.w,
-                  AppSpacing.xl.h,
-                ),
-                sliver: SliverList.list(
-                  children: _offers
-                      .map((offer) => Padding(
+                SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ms.h)),
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.ms.w,
+                    0,
+                    AppSpacing.ms.w,
+                    AppSpacing.xl.h,
+                  ),
+                  sliver: SliverList.list(
+                    children: offers
+                        .map(
+                          (offer) => Padding(
                             padding: EdgeInsets.only(bottom: AppSpacing.ms.h),
                             child: _offerCard(
                               cs: cs,
                               tt: tt,
                               muted: muted,
                               offer: offer,
+                              fallbackImageUrl: coverFallback,
                             ),
-                          ))
-                      .toList(),
+                          ),
+                        )
+                        .toList(),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
           _animatedCompactHeader(cs, tt, muted),
@@ -192,30 +237,14 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
                       icon: const Icon(Icons.arrow_back_rounded),
                     ),
                     SizedBox(width: AppSpacing.xs.w),
-                    Container(
-                      width: 34.w,
-                      height: 34.w,
-                      decoration: BoxDecoration(
-                        borderRadius: AppBorders.full,
-                        color: cs.surfaceContainerHighest,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: AppBorders.full,
-                        child: Image.network(
-                          _storeLogoUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
-                            Icons.store_outlined,
-                            color: muted,
-                            size: 18,
-                          ),
-                        ),
-                      ),
+                    _StoreLogoBadge(
+                      name: branch.displayName,
+                      imageUrl: _logoImageUrl,
                     ),
                     SizedBox(width: AppSpacing.xs.w),
                     Expanded(
                       child: Text(
-                        'Moraco Pizza',
+                        branch.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: tt.titleMedium?.copyWith(
@@ -233,7 +262,12 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
     );
   }
 
-  Widget _heroHeader(ColorScheme cs, Color muted) {
+  Widget _heroHeader(
+    ColorScheme cs,
+    Color muted, {
+    required String? primaryUrl,
+    required String fallbackUrl,
+  }) {
     return SizedBox(
       height: 225.h,
       width: double.infinity,
@@ -241,10 +275,12 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
         fit: StackFit.expand,
         children: [
           ColoredBox(color: cs.surfaceContainerHighest),
-          Image.network(
-            _coverImageUrl,
+          NetworkImageWithFallback(
+            primaryUrl: primaryUrl,
+            fallbackUrl: fallbackUrl,
+            debugLabel: 'hero ${branch.displayName}',
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Icon(
+            errorWidget: Icon(
               Icons.storefront_outlined,
               color: muted,
               size: 46,
@@ -320,26 +356,9 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 56.w,
-            height: 56.w,
-            decoration: BoxDecoration(
-              borderRadius: AppBorders.md,
-              color: cs.surfaceContainerHighest,
-              border:
-                  Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
-            ),
-            child: ClipRRect(
-              borderRadius: AppBorders.md,
-              child: Image.network(
-                _storeLogoUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Icon(
-                  Icons.store_outlined,
-                  color: muted,
-                ),
-              ),
-            ),
+          _StoreLogoBadge(
+            name: branch.displayName,
+            imageUrl: _logoImageUrl,
           ),
           SizedBox(width: AppSpacing.sm.w),
           Expanded(
@@ -347,38 +366,36 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Moraco Pizza',
+                  branch.displayName,
                   style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
                 ),
                 SizedBox(height: AppSpacing.xxs.h),
                 Text(
-                  'Food • 4970.44 km',
+                  '${branch.categoryName} • ${branch.formattedAddress}',
                   style: tt.bodyMedium?.copyWith(
                     color: muted,
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: AppSpacing.xs.h),
-                Row(
-                  children: [
-                    Icon(Icons.star_rounded, size: 18, color: cs.primary),
-                    SizedBox(width: AppSpacing.xxs.w),
-                    Text(
-                      '5.0',
-                      style: tt.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: cs.onSurface,
+                if (branch.highestDiscountPercent > 0) ...[
+                  SizedBox(height: AppSpacing.xs.h),
+                  Row(
+                    children: [
+                      Icon(Icons.local_offer_rounded,
+                          size: 18, color: cs.primary),
+                      SizedBox(width: AppSpacing.xxs.w),
+                      Text(
+                        'Up to ${branch.highestDiscountPercent.toStringAsFixed(0)}% off',
+                        style: tt.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                        ),
                       ),
-                    ),
-                    Text(
-                      ' (7)',
-                      style: tt.bodySmall?.copyWith(
-                        color: muted,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -418,29 +435,6 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
               ),
             ),
           ),
-          // Expanded(
-          //   child: Padding(
-          //     padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
-          //     child: Row(
-          //       mainAxisAlignment: MainAxisAlignment.center,
-          //       children: [
-          //         Icon(
-          //           Icons.delivery_dining_outlined,
-          //           size: 18,
-          //           color: cs.onSurface.withValues(alpha: 0.35),
-          //         ),
-          //         SizedBox(width: AppSpacing.xs.w),
-          //         Text(
-          //           'Delivery',
-          //           style: tt.titleSmall?.copyWith(
-          //             fontWeight: FontWeight.w700,
-          //             color: cs.onSurface.withValues(alpha: 0.35),
-          //           ),
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ),
         ],
       ),
     );
@@ -450,8 +444,13 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
     required ColorScheme cs,
     required TextTheme tt,
     required Color muted,
-    required _StoreOffer offer,
+    required OfferModel offer,
+    required String fallbackImageUrl,
   }) {
+    final imageUrl = (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
+        ? offer.imageUrl
+        : null;
+
     return Material(
       color: Colors.transparent,
       borderRadius: AppBorders.lg,
@@ -465,7 +464,6 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
           decoration: BoxDecoration(
             color: cs.onPrimary,
             borderRadius: AppBorders.lg,
-            // border: Border.all(color: cs.onPrimary, width: 2),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,28 +501,35 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
                             color: cs.onSurface.withValues(alpha: 0.9),
                           ),
                         ),
-                        SizedBox(height: AppSpacing.xxs.h),
-                        Text(
-                          offer.oldPriceText,
-                          style: tt.bodyMedium?.copyWith(
-                            color: muted,
-                            fontWeight: FontWeight.w600,
+                        if (offer.detailText.isNotEmpty) ...[
+                          SizedBox(height: AppSpacing.xxs.h),
+                          Text(
+                            offer.detailText,
+                            style: tt.bodyMedium?.copyWith(
+                              color: muted,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
+                        ],
                         SizedBox(height: AppSpacing.sm.h),
                         Row(
                           children: [
+                            if (offer.discountPercent > 0)
+                              _tagChip(
+                                cs: cs,
+                                tt: tt,
+                                label:
+                                    '${offer.discountPercent.toStringAsFixed(0)}% off',
+                                icon: Icons.local_offer_outlined,
+                              ),
+                            if (offer.discountPercent > 0)
+                              SizedBox(width: AppSpacing.xs.w),
                             _tagChip(
                               cs: cs,
                               tt: tt,
-                              label: 'Gold',
-                              icon: Icons.workspace_premium_rounded,
-                            ),
-                            SizedBox(width: AppSpacing.xs.w),
-                            _tagChip(
-                              cs: cs,
-                              tt: tt,
-                              label: 'Dine in',
+                              label: offer.offerType == OfferType.item
+                                  ? 'Item deal'
+                                  : 'Dine in',
                               icon: Icons.storefront_outlined,
                             ),
                           ],
@@ -537,12 +542,15 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
                     children: [
                       ClipRRect(
                         borderRadius: AppBorders.md,
-                        child: Image.network(
-                          _coverImageUrl,
-                          width: 108.w,
-                          height: 96.h,
+                        child: NetworkImageWithFallback(
+                          primaryUrl: imageUrl,
+                          fallbackUrl: fallbackImageUrl,
+                          debugLabel: 'offer ${offer.title}',
+                          width: 108,
+                          height: 96,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          borderRadius: AppBorders.md,
+                          errorWidget: Container(
                             width: 108.w,
                             height: 96.h,
                             color: cs.surfaceContainerHighest,
@@ -617,14 +625,62 @@ class _BusinessStoreScreenState extends State<BusinessStoreScreen> {
   }
 }
 
-class _StoreOffer {
-  const _StoreOffer({
-    required this.title,
-    required this.subtitle,
-    required this.oldPriceText,
+class _OffersError extends StatelessWidget {
+  const _OffersError({
+    required this.message,
+    required this.onRetry,
   });
 
-  final String title;
-  final String subtitle;
-  final String oldPriceText;
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = context.theme.textTheme;
+    final colorScheme = context.theme.colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline_rounded,
+            size: 48,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          SizedBox(height: AppSpacing.md.h),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: textTheme.bodyLarge?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: AppSpacing.lg.h),
+          FilledButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoreLogoBadge extends StatelessWidget {
+  const _StoreLogoBadge({
+    required this.name,
+    this.imageUrl,
+  });
+
+  final String name;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return StoreLogoBadge(
+      name: name,
+      imageUrl: imageUrl,
+      size: 34,
+      borderRadius: AppBorders.full,
+    );
+  }
 }

@@ -41,7 +41,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'704a84e66c4bcd6159774efdd47cf7f02816a5a4';
+String _$userProfileHash() => r'502bcaad3f0a2d639684da9d6ea9c631e6a39b5e';
 
 abstract class _$UserProfile extends $Notifier<UserProfileState> {
   UserProfileState build();

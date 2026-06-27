@@ -129,7 +129,7 @@ final class SavedAddressesProvider
   }
 }
 
-String _$savedAddressesHash() => r'503117eae1a1947751399a886941236619a58b4c';
+String _$savedAddressesHash() => r'fe58a397537264d7e21d0497586219b580871954';
 
 abstract class _$SavedAddresses extends $Notifier<SavedAddressesState> {
   SavedAddressesState build();

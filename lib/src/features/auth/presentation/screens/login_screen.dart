@@ -4,30 +4,42 @@ import 'package:goluto/src/imports/packages_imports.dart';
 
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
 
-class LoginScreen extends ConsumerWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final formKey = GlobalKey<FormState>();
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
-    const obscurePassword = true;
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends ConsumerState<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isLoading = ref.watch(authControllerProvider);
 
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
 
     Future<void> handleLogin() async {
-      if (!(formKey.currentState?.validate() ?? false)) {
+      if (!(_formKey.currentState?.validate() ?? false)) {
         return;
       }
 
       ref.read(authControllerProvider.notifier).login(
             context: context,
-            email: emailController.text.trim(),
-            password: passwordController.text,
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
           );
     }
 
@@ -53,11 +65,11 @@ class LoginScreen extends ConsumerWidget {
                 SizedBox(height: AppSpacing.xxxl.h),
                 // Form Card
                 Form(
-                  key: formKey,
+                  key: _formKey,
                   child: Column(
                     children: [
                       AppTextField(
-                        controller: emailController,
+                        controller: _emailController,
                         enabled: !isLoading,
                         label: 'auth.email'.tr(),
                         prefixIcon: const Icon(Icons.email_outlined),
@@ -73,14 +85,18 @@ class LoginScreen extends ConsumerWidget {
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
-                        controller: passwordController,
+                        controller: _passwordController,
                         enabled: !isLoading,
                         label: 'auth.password'.tr(),
-                        obscureText: obscurePassword,
+                        obscureText: _obscurePassword,
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
-                          icon: Icon(Icons.visibility),
-                          onPressed: () => null,
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: isLoading
+                              ? null
+                              : () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                          validator: (v) {
                           if (AppUtils.isBlank(v)) {
