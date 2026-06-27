@@ -34,26 +34,18 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  FutureEither<AuthSession> signUp({
+  FutureEither<String> signUp({
     required String name,
     required String email,
     required String password,
-  }) async {
-    final result = await _authService.signUp(
+    required String passwordConfirm,
+  }) {
+    return _authService.signUp(
       name: name,
       email: email,
       password: password,
+      passwordConfirm: passwordConfirm,
     );
-
-    return result.flatMap((response) {
-      if (response == null) {
-        return left(const ServerFailure('Sign up failed: User record corrupted'));
-      }
-
-      return right(
-        _parseAuthSession(response, email: email, name: name),
-      );
-    });
   }
 
   AuthSession _parseAuthSession(

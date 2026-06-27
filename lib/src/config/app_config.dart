@@ -25,10 +25,15 @@ class AppConfig {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          if (_isPublicAuthPath(options.path)) {
+            options.headers.remove('Authorization');
+            return handler.next(options);
+          }
+
           final token = await AuthService.instance.getAccessToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
-          } else if (!_isPublicAuthPath(options.path)) {
+          } else {
             AppLogger.warning(
               'No auth token available for protected request: ${options.path}',
             );

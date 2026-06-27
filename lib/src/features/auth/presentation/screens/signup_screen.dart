@@ -29,9 +29,10 @@ class SignupScreen extends ConsumerWidget {
 
       ref.read(authControllerProvider.notifier).signUp(
         context: context,
-        name: nameController.text, 
-        email: emailController.text, 
+        name: nameController.text,
+        email: emailController.text,
         password: passwordController.text,
+        passwordConfirm: confirmPasswordController.text,
       );
     }
 

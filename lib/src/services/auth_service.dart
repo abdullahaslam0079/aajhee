@@ -41,22 +41,22 @@ class AuthService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<Map<String, dynamic>?> signUp({
+  FutureEither<String> signUp({
     required String name,
     required String email,
     required String password,
+    required String passwordConfirm,
   }) async {
     return runTask(() async {
       final response = await _dio.post<Map<String, dynamic>>('/api/auth/register', data: {
         'name': name,
         'email': email,
         'password': password,
+        'password_confirm': passwordConfirm,
       });
       final data = response.data as Map<String, dynamic>;
-      await _persistSession(data, email: email, name: name);
-      final sessionUser = await _readStoredUser();
-      _authStateController.add(sessionUser);
-      return data;
+      final message = data['message'] as String?;
+      return message ?? 'Account created successfully.';
     }, requiresNetwork: true);
   }
 

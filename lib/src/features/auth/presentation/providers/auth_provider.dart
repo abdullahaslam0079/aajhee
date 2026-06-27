@@ -58,6 +58,7 @@ class AuthController extends _$AuthController {
     required String name,
     required String email,
     required String password,
+    required String passwordConfirm,
   }) async {
     state = true;
 
@@ -65,27 +66,18 @@ class AuthController extends _$AuthController {
           name: name,
           email: email,
           password: password,
+          passwordConfirm: passwordConfirm,
         );
 
     state = false;
-    await result.fold(
-      (failure) async {
-        showToast(context, message: failure.message, status: 'error');
-      },
-      (session) async {
-        await ref
-            .read(savedAddressesProvider.notifier)
-            .syncFromApi(session.addresses);
-        await ref
-            .read(userProfileProvider.notifier)
-            .syncFromAuthUser(session.user);
-
-        if (!context.mounted) return;
-
-        navigateAfterAuthentication(
-          context,
-          hasSavedAddress: session.hasSavedAddress,
-        );
+    result.fold(
+      (failure) =>
+          showToast(context, message: failure.message, status: 'error'),
+      (message) {
+        showToast(context, message: message, status: 'success');
+        if (context.mounted) {
+          context.go(AppRoutes.login);
+        }
       },
     );
   }
