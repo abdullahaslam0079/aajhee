@@ -1,4 +1,6 @@
-import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
+import 'package:goluto/src/features/settings/domain/entities/user_profile.dart';
+import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart'
+    hide UserProfile;
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -11,27 +13,29 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
 
-  bool _initialized = false;
   bool _isSaving = false;
+  String? _seedKey;
+
+  void _syncFields(UserProfile profile) {
+    final seedKey = '${profile.name}|${profile.email}';
+    if (_seedKey == seedKey) return;
+
+    _nameController.text = profile.displayName;
+    _emailController.text = profile.email;
+    _seedKey = seedKey;
+  }
 
   void _initializeFields(UserProfileState profileState) {
-    if (_initialized || profileState.isLoading) return;
-
-    final profile = profileState.profile;
-    _firstNameController.text = profile.firstName;
-    _lastNameController.text = profile.lastName;
-    _emailController.text = profile.email;
-    _initialized = true;
+    if (profileState.isLoading || _isSaving) return;
+    _syncFields(profileState.profile);
   }
 
   @override
   void dispose() {
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _nameController.dispose();
     _emailController.dispose();
     super.dispose();
   }
@@ -43,8 +47,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
     try {
       await ref.read(userProfileProvider.notifier).updateProfile(
-            firstName: _firstNameController.text,
-            lastName: _lastNameController.text,
+            name: _nameController.text,
             email: _emailController.text,
           );
 
@@ -109,25 +112,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       SizedBox(height: AppSpacing.lg.h),
                       AppTextField(
-                        controller: _firstNameController,
+                        controller: _nameController,
                         enabled: !_isSaving,
-                        label: 'First name',
-                        hint: 'e.g. Alex',
+                        label: 'Full name',
+                        hint: 'e.g. Alex Morgan',
                         prefixIcon: const Icon(Icons.person_outline_rounded),
                         textInputAction: TextInputAction.next,
                         validator: (v) =>
-                            AppUtils.isBlank(v) ? 'First name is required' : null,
-                      ),
-                      SizedBox(height: AppSpacing.md.h),
-                      AppTextField(
-                        controller: _lastNameController,
-                        enabled: !_isSaving,
-                        label: 'Last name',
-                        hint: 'e.g. Morgan',
-                        prefixIcon: const Icon(Icons.person_outline_rounded),
-                        textInputAction: TextInputAction.next,
-                        validator: (v) =>
-                            AppUtils.isBlank(v) ? 'Last name is required' : null,
+                            AppUtils.isBlank(v) ? 'Name is required' : null,
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(

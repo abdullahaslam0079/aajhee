@@ -1,3 +1,4 @@
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
@@ -13,11 +14,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _pushNotifications = true;
   bool _emailUpdates = false;
 
-  static const String _userLocation = 'Munich, Germany';
-
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(userProfileProvider).profile;
+    final profileState = ref.watch(userProfileProvider);
+    final profile = profileState.profile;
+    final defaultAddress =
+        ref.watch(savedAddressesProvider).selectedAddress?.shortLabel;
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
@@ -49,9 +51,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
                 child: _ProfileHeader(
-                  name: profile.fullName,
+                  name: profile.displayName,
                   email: profile.email,
-                  location: _userLocation,
+                  location: defaultAddress,
                   colorScheme: colorScheme,
                 ),
               ),
@@ -240,7 +242,7 @@ class _ProfileHeader extends StatelessWidget {
 
   final String name;
   final String email;
-  final String location;
+  final String? location;
   final ColorScheme colorScheme;
 
   @override
@@ -248,77 +250,97 @@ class _ProfileHeader extends StatelessWidget {
     final tt = context.theme.textTheme;
     final muted = colorScheme.onSurfaceVariant;
 
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.ml.r),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.65),
-            colorScheme.surfaceContainerHighest.withValues(alpha: 0.9),
-          ],
-        ),
-        borderRadius: AppBorders.xl,
-        border: Border.all(color: colorScheme.outlineVariant),
+    return Material(
+      color: colorScheme.surfaceContainerLow,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppBorders.lg,
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 36.r,
-            backgroundColor: colorScheme.primary.withValues(alpha: 0.15),
-            child: Text(
-              name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: context.textTheme.headlineMedium?.copyWith(
-                fontSize: 28.sp,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: EdgeInsets.all(AppSpacing.ml.r),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              name,
+              style: tt.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: colorScheme.primary,
+                letterSpacing: -0.4,
+                height: 1.2,
               ),
             ),
-          ),
-          SizedBox(width: AppSpacing.md.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: tt.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
+            if (email.isNotEmpty) ...[
+              SizedBox(height: AppSpacing.sm.h),
+              _ProfileMetaRow(
+                icon: Icons.mail_outline_rounded,
+                label: email,
+                muted: muted,
+                textStyle: tt.bodyMedium,
+              ),
+            ],
+            if (location != null && location!.isNotEmpty) ...[
+              SizedBox(height: AppSpacing.md.h),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.ms.w,
+                  vertical: AppSpacing.sm.h,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.65),
+                  borderRadius: AppBorders.md,
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.7),
                   ),
                 ),
-                SizedBox(height: AppSpacing.xs.h),
-                Text(
-                  email,
-                  style: tt.bodyMedium?.copyWith(
-                    color: muted,
-                  ),
+                child: _ProfileMetaRow(
+                  icon: Icons.location_on_outlined,
+                  label: location!,
+                  muted: muted,
+                  textStyle: tt.bodySmall,
                 ),
-                SizedBox(height: AppSpacing.sm.h),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.place_outlined,
-                      size: 16,
-                      color: muted,
-                    ),
-                    SizedBox(width: AppSpacing.xs.w),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: tt.bodySmall?.copyWith(
-                          color: muted,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileMetaRow extends StatelessWidget {
+  const _ProfileMetaRow({
+    required this.icon,
+    required this.label,
+    required this.muted,
+    required this.textStyle,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color muted;
+  final TextStyle? textStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: muted),
+        SizedBox(width: AppSpacing.sm.w),
+        Expanded(
+          child: Text(
+            label,
+            style: textStyle?.copyWith(
+              color: muted,
+              height: 1.35,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

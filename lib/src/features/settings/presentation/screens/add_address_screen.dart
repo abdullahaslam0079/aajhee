@@ -1,14 +1,22 @@
 import 'package:goluto/src/features/settings/data/services/address_geocoding_service.dart';
 import 'package:goluto/src/features/settings/domain/entities/address_suggestion.dart';
+import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/settings/presentation/widgets/address_search_field.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 class AddAddressScreen extends ConsumerStatefulWidget {
-  const AddAddressScreen({super.key, this.isOnboardingFlow = false});
+  const AddAddressScreen({
+    super.key,
+    this.isOnboardingFlow = false,
+    this.addressToEdit,
+  });
 
   final bool isOnboardingFlow;
+  final SavedAddress? addressToEdit;
+
+  bool get isEditMode => addressToEdit != null;
 
   @override
   ConsumerState<AddAddressScreen> createState() => _AddAddressScreenState();
@@ -23,6 +31,19 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
 
   bool _isVerifying = false;
   String? _verifiedAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    final address = widget.addressToEdit;
+    if (address != null) {
+      _streetController.text = address.street;
+      _houseNumberController.text = address.houseNumber;
+      _postalCodeController.text = address.postalCode;
+      _cityController.text = address.city;
+      _verifiedAddress = address.formattedAddress;
+    }
+  }
 
   void _applySuggestion(AddressSuggestion suggestion) {
     _streetController.text = suggestion.street;
@@ -106,16 +127,32 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
             city: _cityController.text,
           );
 
-      await ref.read(savedAddressesProvider.notifier).addAddress(
-            street: _streetController.text,
-            houseNumber: _houseNumberController.text,
-            postalCode: _postalCodeController.text,
-            city: _cityController.text,
-            geocoded: geocoded,
-          );
+      final notifier = ref.read(savedAddressesProvider.notifier);
+      if (widget.isEditMode) {
+        await notifier.updateAddress(
+          id: widget.addressToEdit!.id,
+          street: _streetController.text,
+          houseNumber: _houseNumberController.text,
+          postalCode: _postalCodeController.text,
+          city: _cityController.text,
+          geocoded: geocoded,
+        );
+      } else {
+        await notifier.addAddress(
+          street: _streetController.text,
+          houseNumber: _houseNumberController.text,
+          postalCode: _postalCodeController.text,
+          city: _cityController.text,
+          geocoded: geocoded,
+        );
+      }
 
       if (!mounted) return;
-      showToast(context, message: 'Address saved', status: 'success');
+      showToast(
+        context,
+        message: widget.isEditMode ? 'Address updated' : 'Address saved',
+        status: 'success',
+      );
       if (widget.isOnboardingFlow || !context.canPop()) {
         context.go(AppRoutes.bottomNavigator);
       } else {
@@ -147,7 +184,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
       child: Scaffold(
       backgroundColor: cs.surface,
       appBar: AppBar(
-        title: const Text('Add address'),
+        title: Text(widget.isEditMode ? 'Edit address' : 'Add address'),
         centerTitle: false,
         scrolledUnderElevation: 0,
         backgroundColor: cs.surface,
@@ -298,7 +335,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
                 ),
                 SizedBox(height: AppSpacing.sm.h),
                 AppButton(
-                  label: 'Save address',
+                  label: widget.isEditMode ? 'Update address' : 'Save address',
                   isLoading: _isVerifying,
                   onPressed: _isVerifying ? null : _saveAddress,
                   isFullWidth: true,

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:goluto/src/features/settings/data/services/address_geocoding_service.dart';
+import 'package:goluto/src/features/settings/data/services/user_address_service.dart';
 import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -41,16 +42,23 @@ AddressGeocodingService addressGeocodingService(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
+UserAddressService userAddressService(Ref ref) {
+  return UserAddressService.instance;
+}
+
+@Riverpod(keepAlive: true)
 class SavedAddresses extends _$SavedAddresses {
   static const _storageKey = 'saved_addresses';
 
   late final AddressGeocodingService _geocodingService;
+  late final UserAddressService _addressService;
   SharedPreferences? _prefs;
   late final Future<void> _initialLoad;
 
   @override
   SavedAddressesState build() {
     _geocodingService = ref.read(addressGeocodingServiceProvider);
+    _addressService = ref.read(userAddressServiceProvider);
     _initialLoad = _load();
     return const SavedAddressesState(isLoading: true);
   }
@@ -89,6 +97,10 @@ class SavedAddresses extends _$SavedAddresses {
     state = SavedAddressesState(addresses: addresses);
   }
 
+  Future<void> syncFromApi(List<SavedAddress> addresses) async {
+    await _persist(addresses);
+  }
+
   Future<GeocodedAddress> validateAddress({
     required String street,
     required String houseNumber,
@@ -111,8 +123,7 @@ class SavedAddresses extends _$SavedAddresses {
     required GeocodedAddress geocoded,
   }) async {
     final isFirst = state.addresses.isEmpty;
-    final address = SavedAddress(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+    final result = await _addressService.createAddress(
       street: street.trim(),
       houseNumber: houseNumber.trim(),
       postalCode: postalCode.trim(),
@@ -121,30 +132,84 @@ class SavedAddresses extends _$SavedAddresses {
       longitude: geocoded.longitude,
       formattedAddress: geocoded.formattedAddress,
       isDefault: isFirst,
+      county: geocoded.county,
     );
 
-    await _persist([...state.addresses, address]);
+    await result.fold(
+      (failure) async => throw AddressValidationException(failure.message),
+      (address) async {
+        await _persist([...state.addresses, address]);
+      },
+    );
+  }
+
+  Future<void> updateAddress({
+    required String id,
+    required String street,
+    required String houseNumber,
+    required String postalCode,
+    required String city,
+    required GeocodedAddress geocoded,
+  }) async {
+    final existing = state.addresses.firstWhere((a) => a.id == id);
+    final result = await _addressService.updateAddress(
+      id: id,
+      street: street.trim(),
+      houseNumber: houseNumber.trim(),
+      postalCode: postalCode.trim(),
+      city: city.trim(),
+      latitude: geocoded.latitude,
+      longitude: geocoded.longitude,
+      formattedAddress: geocoded.formattedAddress,
+      isDefault: existing.isDefault,
+      county: geocoded.county,
+    );
+
+    await result.fold(
+      (failure) async => throw AddressValidationException(failure.message),
+      (updated) async {
+        final addresses = state.addresses
+            .map((a) => a.id == id ? updated : a)
+            .toList();
+        await _persist(addresses);
+      },
+    );
   }
 
   Future<void> removeAddress(String id) async {
-    final updated = state.addresses.where((a) => a.id != id).toList();
-    if (updated.isEmpty) {
-      await _persist([]);
-      return;
-    }
+    final result = await _addressService.deleteAddress(id);
 
-    final hadDefault = state.addresses.any((a) => a.id == id && a.isDefault);
-    if (hadDefault) {
-      updated[0] = updated.first.copyWith(isDefault: true);
-    }
+    await result.fold(
+      (failure) async => throw AddressValidationException(failure.message),
+      (_) async {
+        final updated = state.addresses.where((a) => a.id != id).toList();
+        if (updated.isEmpty) {
+          await _persist([]);
+          return;
+        }
 
-    await _persist(updated);
+        final hadDefault =
+            state.addresses.any((a) => a.id == id && a.isDefault);
+        if (hadDefault) {
+          updated[0] = updated.first.copyWith(isDefault: true);
+        }
+
+        await _persist(updated);
+      },
+    );
   }
 
   Future<void> setDefault(String id) async {
-    final updated = state.addresses
-        .map((a) => a.copyWith(isDefault: a.id == id))
-        .toList();
-    await _persist(updated);
+    final result = await _addressService.setDefaultAddress(id);
+
+    await result.fold(
+      (failure) async => throw AddressValidationException(failure.message),
+      (updated) async {
+        final addresses = state.addresses
+            .map((a) => a.id == id ? updated : a.copyWith(isDefault: false))
+            .toList();
+        await _persist(addresses);
+      },
+    );
   }
 }

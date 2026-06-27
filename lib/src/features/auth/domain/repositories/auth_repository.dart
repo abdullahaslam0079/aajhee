@@ -1,18 +1,19 @@
-import 'package:goluto/src/utils/utils.dart';
+import 'package:goluto/src/features/auth/domain/entities/auth_session.dart';
 import 'package:goluto/src/features/auth/domain/entities/user.dart';
+import 'package:goluto/src/utils/utils.dart';
 
 abstract class AuthRepository {
   /// Stream of auth state changes. Emits AppUser when authenticated, null when not.
   Stream<AppUser?> get onAuthStateChanged;
 
   /// Sign in with email and password
-  FutureEither<AppUser> login({
+  FutureEither<AuthSession> login({
     required String email,
     required String password,
   });
 
   /// Sign up with email, password, and optional name
-  FutureEither<AppUser> signUp({
+  FutureEither<AuthSession> signUp({
     required String name,
     required String email,
     required String password,

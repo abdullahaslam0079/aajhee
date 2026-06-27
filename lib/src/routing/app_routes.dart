@@ -19,5 +19,6 @@ abstract final class AppRoutes {
   static const String favorites = '/favorites';
   static const String addresses = '/addresses';
   static const String addAddress = '/addresses/add';
+  static const String editAddress = '/addresses/edit';
   static const String editProfile = '/edit-profile';
 }

@@ -1,54 +1,69 @@
 import 'package:equatable/equatable.dart';
 
+import 'package:goluto/src/features/auth/domain/entities/user.dart';
+
 class UserProfile extends Equatable {
   const UserProfile({
-    required this.firstName,
-    required this.lastName,
+    required this.name,
     required this.email,
   });
 
-  final String firstName;
-  final String lastName;
+  final String name;
   final String email;
 
-  static const defaultProfile = UserProfile(
-    firstName: 'Alex',
-    lastName: 'Morgan',
-    email: 'alex.morgan@email.com',
+  static const empty = UserProfile(
+    name: '',
+    email: '',
   );
 
-  String get fullName {
-    final parts = [firstName.trim(), lastName.trim()]
-        .where((part) => part.isNotEmpty);
-    return parts.join(' ');
+  String get displayName {
+    if (name.isNotEmpty) return name;
+    if (email.isNotEmpty) return email.split('@').first;
+    return 'Your profile';
+  }
+
+  factory UserProfile.fromAppUser(AppUser user) {
+    return UserProfile(
+      name: user.name?.trim() ?? '',
+      email: user.email,
+    );
   }
 
   UserProfile copyWith({
-    String? firstName,
-    String? lastName,
+    String? name,
     String? email,
   }) {
     return UserProfile(
-      firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
+      name: name ?? this.name,
       email: email ?? this.email,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'firstName': firstName,
-        'lastName': lastName,
+        'name': name,
         'email': email,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final storedName = json['name'] as String?;
+    if (storedName != null) {
+      return UserProfile(
+        name: storedName,
+        email: json['email'] as String? ?? '',
+      );
+    }
+
+    final firstName = json['firstName'] as String? ?? '';
+    final lastName = json['lastName'] as String? ?? '';
+    final parts = [firstName.trim(), lastName.trim()]
+        .where((part) => part.isNotEmpty);
+
     return UserProfile(
-      firstName: json['firstName'] as String? ?? '',
-      lastName: json['lastName'] as String? ?? '',
+      name: parts.join(' '),
       email: json['email'] as String? ?? '',
     );
   }
 
   @override
-  List<Object?> get props => [firstName, lastName, email];
+  List<Object?> get props => [name, email];
 }

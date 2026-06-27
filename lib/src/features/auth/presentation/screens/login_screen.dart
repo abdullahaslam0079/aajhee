@@ -3,7 +3,6 @@ import 'package:goluto/src/imports/packages_imports.dart';
 
 
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
-import 'package:goluto/src/routing/app_navigation.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -21,19 +20,15 @@ class LoginScreen extends ConsumerWidget {
     final tt = context.theme.textTheme;
 
     Future<void> handleLogin() async {
-      // if (!(formKey.currentState?.validate() ?? false)) {
-      //   return;
-      // }
+      if (!(formKey.currentState?.validate() ?? false)) {
+        return;
+      }
 
-      // ref.read(authControllerProvider.notifier).login(
-      //   context: context, 
-      //   email: emailController.text, 
-      //   password: passwordController.text,
-      // );
-      navigateAfterAuthentication(
-        context,
-        hasSavedAddress: hasSavedAddress(ref),
-      );
+      ref.read(authControllerProvider.notifier).login(
+            context: context,
+            email: emailController.text.trim(),
+            password: passwordController.text,
+          );
     }
 
     return Scaffold(

@@ -1,8 +1,10 @@
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
-
+import 'package:goluto/src/features/auth/data/models/user_model.dart';
+import 'package:goluto/src/features/auth/domain/entities/auth_session.dart';
 import 'package:goluto/src/features/auth/domain/entities/user.dart';
 import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';
+import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
+import 'package:goluto/src/imports/core_imports.dart';
+import 'package:goluto/src/imports/packages_imports.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthService _authService = AuthService.instance;
@@ -11,42 +13,30 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<AppUser?> get onAuthStateChanged {
     return _authService.authStateChanges.map((userData) {
       if (userData == null) return null;
-      return AppUser(
-        id: userData['id'] ?? '',
-        email: userData['email'] ?? '',
-        name: userData['name'],
-        photoUrl: userData['photoUrl'],
-      );
+      return UserModel.fromJson(userData).toEntity();
     });
   }
 
   @override
-  FutureEither<AppUser> login({
-    required String email, 
+  FutureEither<AuthSession> login({
+    required String email,
     required String password,
   }) async {
     final result = await _authService.login(email: email, password: password);
-    
-    return result.flatMap((userData) {
-      if (userData == null) {
+
+    return result.flatMap((response) {
+      if (response == null) {
         return left(const ServerFailure('Login failed: User record not found'));
       }
 
-      final data = userData['user'] ?? userData;
-      final user = AppUser(
-        id: data['id'].toString(), 
-        email: data['email'] ?? email, 
-        name: data['name'],
-      );
-      
-      return right(user);
+      return right(_parseAuthSession(response, email: email));
     });
   }
 
   @override
-  FutureEither<AppUser> signUp({
-    required String name, 
-    required String email, 
+  FutureEither<AuthSession> signUp({
+    required String name,
+    required String email,
     required String password,
   }) async {
     final result = await _authService.signUp(
@@ -55,20 +45,41 @@ class AuthRepositoryImpl implements AuthRepository {
       password: password,
     );
 
-    return result.flatMap((userData) {
-      if (userData == null) {
+    return result.flatMap((response) {
+      if (response == null) {
         return left(const ServerFailure('Sign up failed: User record corrupted'));
       }
 
-      final data = userData['user'] ?? userData;
-      final user = AppUser(
-        id: data['id'].toString(), 
-        email: data['email'] ?? email, 
-        name: name,
+      return right(
+        _parseAuthSession(response, email: email, name: name),
       );
-      
-      return right(user);
     });
+  }
+
+  AuthSession _parseAuthSession(
+    Map<String, dynamic> response, {
+    String? email,
+    String? name,
+  }) {
+    final rawUser = response['user'] ?? response;
+    final user = UserModel.fromJson({
+      ...Map<String, dynamic>.from(rawUser as Map),
+      if (rawUser['email'] == null && email != null) 'email': email,
+      if (rawUser['name'] == null && name != null) 'name': name,
+    }).toEntity();
+
+    final addresses = _parseAddresses(response['addresses']);
+
+    return AuthSession(user: user, addresses: addresses);
+  }
+
+  List<SavedAddress> _parseAddresses(dynamic raw) {
+    if (raw is! List) return const [];
+
+    return raw
+        .whereType<Map<String, dynamic>>()
+        .map(SavedAddress.fromJson)
+        .toList();
   }
 
   @override
@@ -84,16 +95,11 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   FutureEither<AppUser?> checkAuthState() async {
     final result = await _authService.getCurrentUser();
-    
+
     return result.map((userData) {
       if (userData == null) return null;
 
-      return AppUser(
-        id: userData['id'], 
-        email: userData['email'] ?? '', 
-        name: userData['name'],
-        photoUrl: userData['photoUrl'],
-      );
+      return UserModel.fromJson(userData).toEntity();
     });
   }
 }

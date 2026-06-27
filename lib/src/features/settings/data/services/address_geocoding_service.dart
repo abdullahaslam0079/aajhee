@@ -14,11 +14,13 @@ class GeocodedAddress {
     required this.latitude,
     required this.longitude,
     required this.formattedAddress,
+    this.county,
   });
 
   final double latitude;
   final double longitude;
   final String formattedAddress;
+  final String? county;
 }
 
 class AddressGeocodingService {
@@ -79,6 +81,7 @@ class AddressGeocodingService {
       latitude: location.latitude,
       longitude: location.longitude,
       formattedAddress: _formatPlacemark(place),
+      county: place.country?.trim(),
     );
   }
 

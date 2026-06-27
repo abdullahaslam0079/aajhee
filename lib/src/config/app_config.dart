@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:goluto/src/services/auth_service.dart';
 import 'package:goluto/src/utils/utils.dart';
 
 class AppConfig {
@@ -23,8 +24,27 @@ class AppConfig {
 
     dio.interceptors.add(
       InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await AuthService.instance.getAccessToken();
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          } else if (!_isPublicAuthPath(options.path)) {
+            AppLogger.warning(
+              'No auth token available for protected request: ${options.path}',
+            );
+          }
+          return handler.next(options);
+        },
+      ),
+    );
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
         onRequest: (options, handler) {
-          AppLogger.info('🌐 [DIO] REQUEST[${options.method}] => PATH: ${options.path}');
+          final hasAuth = options.headers['Authorization'] != null;
+          AppLogger.info(
+            '🌐 [DIO] REQUEST[${options.method}] => PATH: ${options.path} (auth: $hasAuth)',
+          );
           return handler.next(options);
         },
         onResponse: (response, handler) {
@@ -38,9 +58,19 @@ class AppConfig {
       ),
     );
 
+    await AuthService.instance.restoreAccessToken();
+  }
+
+  static bool _isPublicAuthPath(String path) {
+    return path.contains('/api/auth/token') ||
+        path.contains('/api/auth/register') ||
+        path.contains('/auth/forgot-password');
   }
 
   static String _getBaseUrl() {
-    return dotenv.get('API_BASE_URL', fallback: 'http://example.com');
+    return dotenv.get(
+      'API_BASE_URL',
+      fallback: 'https://goluto-backend.onrender.com',
+    );
   }
 }

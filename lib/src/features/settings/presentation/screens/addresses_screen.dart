@@ -1,3 +1,4 @@
+import 'package:goluto/src/features/settings/data/services/address_geocoding_service.dart';
 import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -46,15 +47,42 @@ class AddressesScreen extends ConsumerWidget {
                       final address = addresses[index];
                       return _AddressCard(
                         address: address,
-                        onSetDefault: () => ref
-                            .read(savedAddressesProvider.notifier)
-                            .setDefault(address.id),
+                        onEdit: () => context.push(
+                          AppRoutes.editAddress,
+                          extra: address,
+                        ),
+                        onSetDefault: () => _setDefault(context, ref, address.id),
                         onDelete: () => _confirmDelete(context, ref, address.id),
                       );
                     },
                   ),
       ),
     );
+  }
+
+  Future<void> _setDefault(
+    BuildContext context,
+    WidgetRef ref,
+    String id,
+  ) async {
+    try {
+      await ref.read(savedAddressesProvider.notifier).setDefault(id);
+      if (context.mounted) {
+        showToast(context, message: 'Default address updated', status: 'success');
+      }
+    } on AddressValidationException catch (e) {
+      if (context.mounted) {
+        showToast(context, message: e.message, status: 'error');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        showToast(
+          context,
+          message: 'Could not update default address. Please try again.',
+          status: 'error',
+        );
+      }
+    }
   }
 
   Future<void> _confirmDelete(
@@ -87,10 +115,24 @@ class AddressesScreen extends ConsumerWidget {
       ),
     );
 
-    if ((confirmed ?? false) && context.mounted) {
+    if (!(confirmed ?? false) || !context.mounted) return;
+
+    try {
       await ref.read(savedAddressesProvider.notifier).removeAddress(id);
       if (context.mounted) {
         showToast(context, message: 'Address removed', status: 'success');
+      }
+    } on AddressValidationException catch (e) {
+      if (context.mounted) {
+        showToast(context, message: e.message, status: 'error');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        showToast(
+          context,
+          message: 'Could not delete address. Please try again.',
+          status: 'error',
+        );
       }
     }
   }
@@ -144,11 +186,13 @@ class _EmptyAddresses extends StatelessWidget {
 class _AddressCard extends StatelessWidget {
   const _AddressCard({
     required this.address,
+    required this.onEdit,
     required this.onSetDefault,
     required this.onDelete,
   });
 
   final SavedAddress address;
+  final VoidCallback onEdit;
   final VoidCallback onSetDefault;
   final VoidCallback onDelete;
 
@@ -251,6 +295,11 @@ class _AddressCard extends StatelessWidget {
                     child: const Text('Set as default'),
                   ),
                 const Spacer(),
+                IconButton(
+                  onPressed: onEdit,
+                  icon: Icon(Icons.edit_outlined, color: cs.primary),
+                  tooltip: 'Edit address',
+                ),
                 IconButton(
                   onPressed: onDelete,
                   icon: Icon(Icons.delete_outline_rounded, color: cs.error),

@@ -1,5 +1,7 @@
 import 'package:goluto/src/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:goluto/src/routing/app_navigation.dart';
@@ -29,16 +31,24 @@ class AuthController extends _$AuthController {
         .login(email: email, password: password);
 
     state = false;
-    result.fold(
-      (failure) =>
-          showToast(context, message: failure.message, status: 'error'),
-      (user) {
-        if (rootContext?.mounted ?? false) {
-          navigateAfterAuthentication(
-            rootContext!,
-            hasSavedAddress: hasSavedAddressFromContext(rootContext!),
-          );
-        }
+    await result.fold(
+      (failure) async {
+        showToast(context, message: failure.message, status: 'error');
+      },
+      (session) async {
+        await ref
+            .read(savedAddressesProvider.notifier)
+            .syncFromApi(session.addresses);
+        await ref
+            .read(userProfileProvider.notifier)
+            .syncFromAuthUser(session.user);
+
+        if (!context.mounted) return;
+
+        navigateAfterAuthentication(
+          context,
+          hasSavedAddress: session.hasSavedAddress,
+        );
       },
     );
   }
@@ -58,16 +68,24 @@ class AuthController extends _$AuthController {
         );
 
     state = false;
-    result.fold(
-      (failure) =>
-          showToast(context, message: failure.message, status: 'error'),
-      (user) {
-        if (rootContext?.mounted ?? false) {
-          navigateAfterAuthentication(
-            rootContext!,
-            hasSavedAddress: hasSavedAddressFromContext(rootContext!),
-          );
-        }
+    await result.fold(
+      (failure) async {
+        showToast(context, message: failure.message, status: 'error');
+      },
+      (session) async {
+        await ref
+            .read(savedAddressesProvider.notifier)
+            .syncFromApi(session.addresses);
+        await ref
+            .read(userProfileProvider.notifier)
+            .syncFromAuthUser(session.user);
+
+        if (!context.mounted) return;
+
+        navigateAfterAuthentication(
+          context,
+          hasSavedAddress: session.hasSavedAddress,
+        );
       },
     );
   }

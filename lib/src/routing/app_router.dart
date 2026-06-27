@@ -4,6 +4,7 @@ import 'package:goluto/src/features/businessStore/presentation/business_store_sc
 import 'package:goluto/src/features/home/presentation/screens/item_detail_screen.dart';
 import 'package:goluto/src/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
+import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/features/settings/presentation/screens/add_address_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/addresses_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/edit_profile_screen.dart';
@@ -102,6 +103,14 @@ final GoRouter appRouter = GoRouter(
             final isOnboarding =
                 state.uri.queryParameters['onboarding'] == 'true';
             return AddAddressScreen(isOnboardingFlow: isOnboarding);
+          },
+        ),
+        GoRoute(
+          path: 'edit',
+          name: 'editAddress',
+          builder: (context, state) {
+            final address = state.extra as SavedAddress?;
+            return AddAddressScreen(addressToEdit: address);
           },
         ),
       ],

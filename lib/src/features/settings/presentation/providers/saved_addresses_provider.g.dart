@@ -53,6 +53,50 @@ final class AddressGeocodingServiceProvider extends $FunctionalProvider<
 String _$addressGeocodingServiceHash() =>
     r'9d0feb21bd1c81b3a806f3841ad50baec73f1bc0';
 
+@ProviderFor(userAddressService)
+final userAddressServiceProvider = UserAddressServiceProvider._();
+
+final class UserAddressServiceProvider extends $FunctionalProvider<
+    UserAddressService,
+    UserAddressService,
+    UserAddressService> with $Provider<UserAddressService> {
+  UserAddressServiceProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'userAddressServiceProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$userAddressServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<UserAddressService> $createElement(
+          $ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  UserAddressService create(Ref ref) {
+    return userAddressService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserAddressService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserAddressService>(value),
+    );
+  }
+}
+
+String _$userAddressServiceHash() =>
+    r'7fa53cbf7c3f073482fd9f55ab024e4deb343536';
+
 @ProviderFor(SavedAddresses)
 final savedAddressesProvider = SavedAddressesProvider._();
 
@@ -85,7 +129,7 @@ final class SavedAddressesProvider
   }
 }
 
-String _$savedAddressesHash() => r'1d0f0c62a09f1e29b8716567e39fe3947a5d87d2';
+String _$savedAddressesHash() => r'503117eae1a1947751399a886941236619a58b4c';
 
 abstract class _$SavedAddresses extends $Notifier<SavedAddressesState> {
   SavedAddressesState build();
