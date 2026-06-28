@@ -3,12 +3,16 @@
     "get_started": "Get Started"
   },
   "onboarding": {
-    "onboarding_title_1": "Your Journey,\nPerfectly Planned",
-    "onboarding_subtitle_1": "Effortlessly create and organize your\ndream trips. Start exploring now!",
-    "onboarding_title_2": "Discover\nFriends Nearby",
-    "onboarding_subtitle_2": "See where your friends are traveling and\nexplore the world together.",
-    "onboarding_title_3": "Stay Updated\nwith Top Places",
-    "onboarding_subtitle_3": "Find trending destinations and must-see attractions,\nall tailored to enhance your travel plans."
+    "skip": "Skip",
+    "next": "Next",
+    "step": "{current} of {total}",
+    "nearby_label": "Nearby",
+    "onboarding_title_1": "Discover deals\nnear you",
+    "onboarding_subtitle_1": "Browse nearby offers and save your favorites.",
+    "onboarding_title_2": "Explore on\nthe map",
+    "onboarding_subtitle_2": "Find stores on the map and compare deals.",
+    "onboarding_title_3": "Scan & redeem\ninstantly",
+    "onboarding_subtitle_3": "Scan a QR code to redeem offers in seconds."
   },
   "home": {
     "home_title": "Home",

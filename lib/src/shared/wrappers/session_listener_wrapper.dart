@@ -1,6 +1,7 @@
 import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:goluto/src/routing/app_routes.dart';
 import 'package:goluto/src/routing/global_navigator.dart';
+import 'package:goluto/src/services/auth_service.dart';
 import 'package:goluto/src/shared/helpers/show_toast.dart';
 
 import 'package:goluto/src/imports/core_imports.dart';
@@ -31,7 +32,8 @@ class SessionListenerWrapper extends ConsumerWidget {
           prev?.status == SessionStatus.authenticated;
 
       if (becameUnauthenticated) {
-        _redirectToLogin(showExpiredMessage: true);
+        final isExplicitLogout = AuthService.instance.consumeExplicitLogout();
+        _redirectToLogin(showExpiredMessage: !isExplicitLogout);
       }
     });
 

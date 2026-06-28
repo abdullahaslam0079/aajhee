@@ -1,6 +1,7 @@
 import 'package:goluto/src/features/home/data/models/category_model.dart';
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/data/services/discovery_service.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -66,51 +67,88 @@ class HomeFeed extends _$HomeFeed {
   @override
   HomeFeedState build() {
     _discoveryService = ref.read(discoveryServiceProvider);
-    Future.microtask(load);
+
+    ref.listen(savedAddressesProvider, (previous, next) {
+      if (next.isLoading) return;
+      if (previous == null || previous.isLoading) return;
+
+      final nextAddressId = next.selectedAddress?.id;
+      if (previous.selectedAddress != next.selectedAddress) {
+        _scheduleLoad(nextAddressId);
+      }
+    });
+
+    _scheduleLoad(null);
     return const HomeFeedState(isLoading: true);
   }
 
-  Future<void> load() async {
+  void _scheduleLoad(String? addressId) {
+    Future.microtask(() => load(addressId: addressId));
+  }
+
+  Future<void> load({String? addressId}) async {
+    if (!ref.mounted) return;
+
     state = state.copyWith(isLoading: true, errorMessage: null);
 
-    final categoriesResult = await _discoveryService.getCategories();
-    final branchesResult = await _discoveryService.getMapBranches();
+    try {
+      await ref.read(savedAddressesProvider.notifier).ensureLoaded();
+      if (!ref.mounted) return;
 
-    categoriesResult.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          errorMessage: failure.message,
-        );
-      },
-      (categories) {
-        branchesResult.fold(
-          (failure) {
-            state = state.copyWith(
-              categories: categories,
-              isLoading: false,
-              errorMessage: failure.message,
-            );
-          },
-          (branches) {
-            for (final branch in branches) {
-              AppLogger.info(
-                '[Branch ${branch.id}] ${branch.displayName} '
-                'logo=${branch.logoUrl ?? 'none'} '
-                'cover=${branch.coverImageUrl ?? 'none'}',
+      final resolvedAddressId =
+          addressId ?? ref.read(savedAddressesProvider).selectedAddress?.id;
+
+      final categoriesResult = await _discoveryService.getCategories();
+      if (!ref.mounted) return;
+
+      final branchesResult = await _discoveryService.getMapBranches(
+        addressId: resolvedAddressId,
+      );
+      if (!ref.mounted) return;
+
+      categoriesResult.fold(
+        (failure) {
+          state = state.copyWith(
+            isLoading: false,
+            errorMessage: failure.message,
+          );
+        },
+        (categories) {
+          branchesResult.fold(
+            (failure) {
+              state = state.copyWith(
+                categories: categories,
+                isLoading: false,
+                errorMessage: failure.message,
               );
-            }
+            },
+            (branches) {
+              for (final branch in branches) {
+                AppLogger.info(
+                  '[Branch ${branch.id}] ${branch.displayName} '
+                  'logo=${branch.logoUrl ?? 'none'} '
+                  'cover=${branch.coverImageUrl ?? 'none'}',
+                );
+              }
 
-            state = state.copyWith(
-              categories: categories,
-              branches: branches,
-              isLoading: false,
-              errorMessage: null,
-            );
-          },
-        );
-      },
-    );
+              state = state.copyWith(
+                categories: categories,
+                branches: branches,
+                isLoading: false,
+                errorMessage: null,
+              );
+            },
+          );
+        },
+      );
+    } catch (error, stackTrace) {
+      AppLogger.error('Failed to load home feed', error, stackTrace);
+      if (!ref.mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Could not load offers. Please try again.',
+      );
+    }
   }
 
   void selectCategory(int index) {

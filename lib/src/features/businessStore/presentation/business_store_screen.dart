@@ -1,9 +1,12 @@
+import 'dart:ui';
+
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
-import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -21,6 +24,9 @@ class BusinessStoreScreen extends ConsumerStatefulWidget {
 }
 
 class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
+  static const double _heroHeight = 238;
+  static const double _cardOverlap = 88;
+
   late final ScrollController _scrollController;
   bool _showCompactHeader = false;
 
@@ -82,6 +88,24 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     );
   }
 
+  Future<void> _openDirections() async {
+    final result = await UrlLauncherService.instance.launchMapDirections(
+      latitude: branch.latitude,
+      longitude: branch.longitude,
+    );
+
+    if (!mounted) return;
+
+    result.fold(
+      (failure) => showToast(
+        context,
+        message: failure.message,
+        status: 'error',
+      ),
+      (_) {},
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
@@ -99,31 +123,47 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
             controller: _scrollController,
             slivers: [
               SliverToBoxAdapter(
-                child: Stack(
-                  clipBehavior: Clip.none,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _heroHeader(
-                      cs,
-                      muted,
-                      primaryUrl: coverPrimary,
+                    SizedBox(
+                      height: (_heroHeight - _cardOverlap).h,
+                      width: double.infinity,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            height: _heroHeight.h,
+                            child: _heroHeader(
+                              cs,
+                              muted,
+                              primaryUrl: coverPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Positioned(
-                      left: AppSpacing.ms.w,
-                      right: AppSpacing.ms.w,
-                      bottom: -58.h,
-                      child: _storeSummaryCard(cs, tt, muted),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.ms.w,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _storeSummaryCard(cs, tt, muted),
+                          SizedBox(height: AppSpacing.sm.h),
+                          _sectionTabs(cs, tt),
+                        ],
+                      ),
                     ),
+                    SizedBox(height: AppSpacing.ml.h),
                   ],
                 ),
               ),
-              SliverToBoxAdapter(child: SizedBox(height: 74.h)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
-                  child: _sectionTabs(cs, tt),
-                ),
-              ),
-              SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ml.h)),
               if (offersState.isLoading)
                 const SliverFillRemaining(
                   hasScrollBody: false,
@@ -149,20 +189,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                   ),
                 )
               else ...[
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding:
-                        EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
-                    child: Text(
-                      offers.length > 1 ? 'All Offers' : 'Featured Offer',
-                      style: tt.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                ),
-                SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ms.h)),
+                
                 SliverPadding(
                   padding: EdgeInsets.fromLTRB(
                     AppSpacing.ms.w,
@@ -186,6 +213,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                         .toList(),
                   ),
                 ),
+                
               ],
             ],
           ),
@@ -275,7 +303,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     required String? primaryUrl,
   }) {
     return SizedBox(
-      height: 225.h,
+      height: 238.h,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
@@ -297,11 +325,11 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.52),
+                  Colors.black.withValues(alpha: 0.45),
                   Colors.transparent,
-                  Colors.black.withValues(alpha: 0.34),
+                  Colors.black.withValues(alpha: 0.55),
                 ],
-                stops: const [0, 0.38, 1],
+                stops: const [0, 0.42, 1],
               ),
             ),
           ),
@@ -317,22 +345,14 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                 ),
                 child: Row(
                   children: [
-                    IconButton.filledTonal(
+                    _HeroIconButton(
+                      icon: Icons.arrow_back_rounded,
                       onPressed: () => context.pop(),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.black.withValues(alpha: 0.38),
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: const Icon(Icons.arrow_back_rounded),
                     ),
                     const Spacer(),
-                    IconButton.filledTonal(
+                    _HeroIconButton(
+                      icon: Icons.info_outline_rounded,
                       onPressed: () {},
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.black.withValues(alpha: 0.38),
-                        foregroundColor: Colors.white,
-                      ),
-                      icon: const Icon(Icons.info_outline_rounded),
                     ),
                   ],
                 ),
@@ -345,64 +365,137 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
   }
 
   Widget _storeSummaryCard(ColorScheme cs, TextTheme tt, Color muted) {
+    final savedAddress = ref.watch(savedAddressesProvider).selectedAddress;
+    final userLat = savedAddress?.latitude;
+    final userLng = savedAddress?.longitude;
+    final distanceKm = GeoDistanceUtils.haversineKm(
+      userLat ?? 52.52,
+      userLng ?? 13.405,
+      branch.latitude,
+      branch.longitude,
+    );
+    final distanceLabel = GeoDistanceUtils.formatDistanceLabel(distanceKm);
+
     return Container(
-      padding: EdgeInsets.all(AppSpacing.ms.r),
+      width: double.infinity,
+      padding: EdgeInsets.all(AppSpacing.ms.w),
       decoration: BoxDecoration(
-        color: cs.onPrimary,
+        color: cs.surfaceContainerLowest,
         borderRadius: AppBorders.lg,
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.45)),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: Border.all(
+          color: cs.outline.withValues(alpha: 0.28),
+        ),
+        boxShadow: AppShadows.card,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _StoreLogoBadge(
-            name: branch.displayName,
-            imageUrl: _logoImageUrl,
-          ),
-          SizedBox(width: AppSpacing.sm.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  branch.displayName,
-                  style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-                ),
-                SizedBox(height: AppSpacing.xxs.h),
-                Text(
-                  '${branch.categoryName} • ${branch.formattedAddress}',
-                  style: tt.bodyMedium?.copyWith(
-                    color: muted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (branch.highestDiscountPercent > 0) ...[
-                  SizedBox(height: AppSpacing.xs.h),
-                  Row(
-                    children: [
-                      Icon(Icons.local_offer_rounded,
-                          size: 18, color: cs.primary),
-                      SizedBox(width: AppSpacing.xxs.w),
+          Row(
+            children: [
+              _StoreLogoBadge(
+                name: branch.displayName,
+                imageUrl: _logoImageUrl,
+                size: 48,
+              ),
+              SizedBox(width: AppSpacing.sm.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      branch.displayName,
+                      style: tt.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    if (branch.categoryName.isNotEmpty) ...[
+                      SizedBox(height: AppSpacing.xxs.h),
                       Text(
-                        'Up to ${branch.highestDiscountPercent.toStringAsFixed(0)}% off',
-                        style: tt.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
+                        branch.categoryName,
+                        style: tt.bodyMedium?.copyWith(
+                          color: muted,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (branch.formattedAddress.isNotEmpty) ...[
+            SizedBox(height: AppSpacing.sm.h),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 18,
+                  color: cs.primary,
+                ),
+                SizedBox(width: AppSpacing.xs.w),
+                Expanded(
+                  child: Text(
+                    branch.formattedAddress,
+                    style: tt.bodyMedium?.copyWith(
+                      color: muted,
+                      fontWeight: FontWeight.w500,
+                      height: 1.35,
+                    ),
                   ),
-                ],
+                ),
               ],
             ),
+          ],
+          SizedBox(height: AppSpacing.sm.h),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm.w,
+                  vertical: 6.h,
+                ),
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer.withValues(alpha: 0.45),
+                  borderRadius: AppBorders.full,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.near_me_rounded,
+                      size: 14,
+                      color: cs.primary,
+                    ),
+                    SizedBox(width: AppSpacing.xxs.w),
+                    Text(
+                      distanceLabel,
+                      style: tt.labelMedium?.copyWith(
+                        color: cs.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              FilledButton.tonalIcon(
+                onPressed: _openDirections,
+                icon: const Icon(Icons.directions_rounded, size: 18),
+                label: const Text('Directions'),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm.w,
+                    vertical: AppSpacing.xs.h,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  textStyle: tt.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -414,33 +507,27 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(4.r),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHighest.withValues(alpha: 0.05),
-        borderRadius: AppBorders.md,
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 1)),
+        color: cs.surfaceContainerHigh.withValues(alpha: 0.65),
+        borderRadius: AppBorders.full,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: AppBorders.full,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.discount_outlined, size: 18, color: cs.primary),
-                  SizedBox(width: AppSpacing.xs.w),
-                  Text(
-                    'Offers',
-                    style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm.h),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerLowest,
+          borderRadius: AppBorders.full,
+          boxShadow: AppShadows.subtle,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.local_offer_rounded, size: 18, color: cs.primary),
+            SizedBox(width: AppSpacing.xs.w),
+            Text(
+              'Offers',
+              style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w800),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -455,6 +542,12 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     final imageUrl = (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
         ? offer.imageUrl
         : null;
+    final statusLabel = _shortStatusLabel(usageStatus);
+    final dealTypeLabel = offer.offerType == OfferType.item
+        ? 'Item deal'
+        : 'Flat off';
+    final hasDescription = offer.subtitle.isNotEmpty ||
+        offer.detailText.isNotEmpty;
 
     return Material(
       color: Colors.transparent,
@@ -466,168 +559,256 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
             : null,
         child: Opacity(
           opacity: usageStatus.isAvailable ? 1 : 0.72,
-          child: Container(
-          padding: EdgeInsets.all(AppSpacing.sm.r),
-          decoration: BoxDecoration(
-            color: cs.onPrimary,
-            borderRadius: AppBorders.lg,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm.w,
-                  vertical: AppSpacing.sm.h,
-                ),
-                decoration: BoxDecoration(
-                  color: cs.primary,
-                  borderRadius: AppBorders.sm,
-                ),
-                child: Text(
-                  offer.title,
-                  style: tt.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: cs.onPrimary,
-                  ),
-                ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerLowest,
+              borderRadius: AppBorders.lg,
+              border: Border.all(
+                color: cs.outline.withValues(alpha: 0.28),
               ),
-              SizedBox(height: AppSpacing.sm.h),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+              boxShadow: AppShadows.card,
+            ),
+            child: ClipRRect(
+              borderRadius: AppBorders.lg,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.ms.w,
+                      vertical: AppSpacing.sm.h,
+                    ),
+                    color: cs.inverseSurface,
+                    child: Text(
+                      offer.title,
+                      style: tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onInverseSurface,
+                        letterSpacing: -0.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(AppSpacing.ms.r),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        Text(
-                          offer.subtitle,
-                          style: tt.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: cs.onSurface.withValues(alpha: 0.9),
-                          ),
-                        ),
-                        if (offer.detailText.isNotEmpty) ...[
-                          SizedBox(height: AppSpacing.xxs.h),
-                          Text(
-                            offer.detailText,
-                            style: tt.bodyMedium?.copyWith(
-                              color: muted,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: AppSpacing.sm.h),
-                        OfferUsageStatusBanner(
-                          status: usageStatus,
-                          compact: true,
-                        ),
-                        SizedBox(height: AppSpacing.sm.h),
-                        Row(
-                          children: [
-                            if (offer.discountPercent > 0)
-                              _tagChip(
-                                cs: cs,
-                                tt: tt,
-                                label:
-                                    '${offer.discountPercent.toStringAsFixed(0)}% off',
-                                icon: Icons.local_offer_outlined,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (offer.subtitle.isNotEmpty)
+                                Text(
+                                  offer.subtitle,
+                                  style: tt.titleSmall?.copyWith(
+                                    color: cs.onSurface,
+                                    height: 1.3,
+                                  ),
+                                ),
+                              if (offer.detailText.isNotEmpty) ...[
+                                SizedBox(height: AppSpacing.xxs.h),
+                                Text(
+                                  offer.detailText,
+                                  style: tt.bodyMedium?.copyWith(
+                                    color: muted,
+                                    fontWeight: FontWeight.w500,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ],
+                              if (hasDescription)
+                                SizedBox(height: AppSpacing.sm.h),
+                              _OfferStatusPill(
+                                label: statusLabel,
+                                isAvailable: usageStatus.isAvailable,
                               ),
-                            if (offer.discountPercent > 0)
-                              SizedBox(width: AppSpacing.xs.w),
-                            _tagChip(
-                              cs: cs,
-                              tt: tt,
-                              label: offer.offerType == OfferType.item
-                                  ? 'Item deal'
-                                  : 'Dine in',
-                              icon: Icons.storefront_outlined,
+                              SizedBox(height: AppSpacing.sm.h),
+                              Wrap(
+                                spacing: AppSpacing.xs.w,
+                                runSpacing: AppSpacing.xxs.h,
+                                children: [
+                                  if (offer.discountPercent > 0)
+                                    _OfferTagChip(
+                                      label:
+                                          '${offer.discountPercent.toStringAsFixed(0)}% off',
+                                      icon: Icons.local_offer_outlined,
+                                      accent: true,
+                                    ),
+                                  _OfferTagChip(
+                                    label: dealTypeLabel,
+                                    icon: Icons.storefront_outlined,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: AppSpacing.sm.w),
+                        Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            ClipRRect(
+                              borderRadius: AppBorders.md,
+                              child: NetworkImageWithFallback(
+                                primaryUrl: imageUrl,
+                                debugLabel: 'offer ${offer.title}',
+                                width: 104,
+                                height: 96,
+                                fit: BoxFit.cover,
+                                borderRadius: AppBorders.md,
+                                errorWidget: Container(
+                                  width: 104.w,
+                                  height: 96.h,
+                                  color: cs.surfaceContainerHighest,
+                                  alignment: Alignment.center,
+                                  child: Icon(
+                                    Icons.fastfood_outlined,
+                                    color: muted,
+                                    size: 26,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: -4.w,
+                              bottom: -4.h,
+                              child: Container(
+                                width: 28.w,
+                                height: 28.w,
+                                decoration: BoxDecoration(
+                                  color: cs.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: cs.surfaceContainerLowest,
+                                    width: 2,
+                                  ),
+                                  boxShadow: AppShadows.subtle,
+                                ),
+                                child: Icon(
+                                  Icons.qr_code_2_rounded,
+                                  size: 15,
+                                  color: cs.onPrimary,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  SizedBox(width: AppSpacing.sm.w),
-                  Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: AppBorders.md,
-                        child: NetworkImageWithFallback(
-                          primaryUrl: imageUrl,
-                          debugLabel: 'offer ${offer.title}',
-                          width: 108,
-                          height: 96,
-                          fit: BoxFit.cover,
-                          borderRadius: AppBorders.md,
-                          errorWidget: Container(
-                            width: 108.w,
-                            height: 96.h,
-                            color: cs.surfaceContainerHighest,
-                            alignment: Alignment.center,
-                            child: Icon(
-                              Icons.fastfood_outlined,
-                              color: muted,
-                              size: 24,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: 6.w,
-                        bottom: 6.h,
-                        child: Container(
-                          width: 26.w,
-                          height: 26.w,
-                          decoration: BoxDecoration(
-                            color: cs.surface,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: cs.outlineVariant.withValues(alpha: 0.45),
-                            ),
-                          ),
-                          child: Icon(Icons.qr_code_2_rounded,
-                              size: 17, color: cs.primary),
-                        ),
-                      ),
-                    ],
-                  ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
         ),
       ),
     );
   }
 
-  Widget _tagChip({
-    required ColorScheme cs,
-    required TextTheme tt,
-    required String label,
-    required IconData icon,
-  }) {
+  String _shortStatusLabel(OfferUsageStatus status) {
+    if (!status.isOfferActive) return 'Unavailable';
+    if (status.isAvailable) {
+      if (status.remainingUses == status.maxUses) return 'Available for you';
+      return '${status.remainingUses} uses left';
+    }
+    return 'Limit reached';
+  }
+}
+
+class _OfferStatusPill extends StatelessWidget {
+  const _OfferStatusPill({
+    required this.label,
+    required this.isAvailable,
+  });
+
+  final String label;
+  final bool isAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
+    final backgroundColor = isAvailable
+        ? cs.primary.withValues(alpha: 0.08)
+        : cs.errorContainer.withValues(alpha: 0.35);
+    final foregroundColor =
+        isAvailable ? cs.primary : cs.onErrorContainer;
+    final icon = isAvailable
+        ? Icons.check_circle_outline_rounded
+        : Icons.block_rounded;
+
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.xs.w,
         vertical: AppSpacing.xxs.h,
       ),
       decoration: BoxDecoration(
-        color: cs.primary,
-        borderRadius: AppBorders.sm,
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+        color: backgroundColor,
+        borderRadius: AppBorders.full,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: cs.onPrimary),
-          SizedBox(width: 4.w),
+          Icon(icon, size: 14, color: foregroundColor),
+          SizedBox(width: AppSpacing.xxs.w),
           Text(
             label,
             style: tt.labelMedium?.copyWith(
-              color: cs.onPrimary,
+              color: foregroundColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferTagChip extends StatelessWidget {
+  const _OfferTagChip({
+    required this.label,
+    required this.icon,
+    this.accent = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool accent;
+
+  static const Color _discountAccent = Color(0xFFFF9500);
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
+    final backgroundColor = accent
+        ? _discountAccent.withValues(alpha: 0.12)
+        : cs.surfaceContainerHigh;
+    final foregroundColor =
+        accent ? const Color(0xFF9A5200) : cs.onSurfaceVariant;
+    final iconColor = accent ? _discountAccent : cs.onSurfaceVariant;
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs.w,
+        vertical: AppSpacing.xxs.h,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: AppBorders.full,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: iconColor),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: tt.labelSmall?.copyWith(
+              color: foregroundColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -681,18 +862,50 @@ class _StoreLogoBadge extends StatelessWidget {
   const _StoreLogoBadge({
     required this.name,
     this.imageUrl,
+    this.size = 34,
   });
 
   final String name;
   final String? imageUrl;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return StoreLogoBadge(
       name: name,
       imageUrl: imageUrl,
-      size: 34,
+      size: size,
       borderRadius: AppBorders.full,
+    );
+  }
+}
+
+class _HeroIconButton extends StatelessWidget {
+  const _HeroIconButton({
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipOval(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Material(
+          color: Colors.white.withValues(alpha: 0.22),
+          child: InkWell(
+            onTap: onPressed,
+            child: SizedBox(
+              width: 44.w,
+              height: 44.w,
+              child: Icon(icon, color: Colors.white, size: 22),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

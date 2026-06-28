@@ -17,7 +17,7 @@ mixin MapStoreSelectionMixin<T extends StatefulWidget>
     super.dispose();
   }
 
-  Future<void> selectStore(int index, {bool fromMarker = false}) async {
+  Future<void> selectStore(int index) async {
     if (index < 0 || index >= mapBranches.length) return;
 
     setState(() {
@@ -25,10 +25,8 @@ mixin MapStoreSelectionMixin<T extends StatefulWidget>
       ensureSelectedMarkerIconsLoaded(index);
     });
 
-    await focusMapOnStore(mapBranches[selectedStoreIndex].mapPosition);
+    MapStoreCarousel.scrollToIndex(storeCarouselController, index);
 
-    if (fromMarker) {
-      MapStoreCarousel.scrollToIndex(storeCarouselController, index);
-    }
+    await focusMapOnStore(mapBranches[selectedStoreIndex].mapPosition);
   }
 }

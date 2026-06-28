@@ -19,6 +19,7 @@ class MapBranchModel {
     this.businessLogoUrl,
     this.highestDiscountOfferImageUrl,
     this.highestDiscountOffer,
+    this.distanceKm,
   });
 
   final int id;
@@ -35,6 +36,7 @@ class MapBranchModel {
   final String? businessLogoUrl;
   final String? highestDiscountOfferImageUrl;
   final BranchTopOfferModel? highestDiscountOffer;
+  final double? distanceKm;
 
   String get displayName => businessName.isNotEmpty ? businessName : name;
 
@@ -58,6 +60,7 @@ class MapBranchModel {
     String? businessLogoUrl,
     String? highestDiscountOfferImageUrl,
     BranchTopOfferModel? highestDiscountOffer,
+    double? distanceKm,
   }) {
     return MapBranchModel(
       id: id ?? this.id,
@@ -76,6 +79,7 @@ class MapBranchModel {
       highestDiscountOfferImageUrl:
           highestDiscountOfferImageUrl ?? this.highestDiscountOfferImageUrl,
       highestDiscountOffer: highestDiscountOffer ?? this.highestDiscountOffer,
+      distanceKm: distanceKm ?? this.distanceKm,
     );
   }
 
@@ -107,6 +111,7 @@ class MapBranchModel {
         parseApiString(json['highest_discount_offer_image_url']),
       ),
       highestDiscountOffer: topOffer,
+      distanceKm: parseApiNullableDouble(json['distance_km']),
     );
   }
 }

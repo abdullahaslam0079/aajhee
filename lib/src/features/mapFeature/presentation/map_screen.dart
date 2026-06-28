@@ -9,6 +9,7 @@ import 'package:goluto/src/features/mapFeature/presentation/widgets/map_action_b
 import 'package:goluto/src/features/mapFeature/presentation/widgets/map_store_carousel.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:goluto/src/routing/app_routes.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -56,7 +57,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ? const {}
                 : buildMapMarkers(
                     selectedIndex: selectedIndex,
-                    onMarkerTap: (index) => selectStore(index, fromMarker: true),
+                    onMarkerTap: (index) => selectStore(index),
                   ),
             onMapCreated: onMapCreated,
           ),
@@ -95,6 +96,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                   selectedIndex: selectedIndex,
                   scrollController: storeCarouselController,
                   onStoreSelected: selectStore,
+                  onViewDetails: (branch) {
+                    context.push(AppRoutes.businessStore, extra: branch);
+                  },
                 ),
               ),
             ),

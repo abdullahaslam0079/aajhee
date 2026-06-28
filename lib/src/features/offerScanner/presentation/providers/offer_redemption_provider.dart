@@ -6,6 +6,7 @@ import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.da
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'offer_redemption_provider.g.dart';
@@ -108,7 +109,11 @@ class OfferRedemption extends _$OfferRedemption {
         return;
       }
     } else {
-      final lookupResult = await service.findOfferByScannedCode(code);
+      final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
+      final lookupResult = await service.findOfferByScannedCode(
+        code,
+        addressId: addressId,
+      );
       if (!ref.mounted) return;
 
       final resolvedOffer = lookupResult.fold(

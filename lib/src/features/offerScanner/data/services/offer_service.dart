@@ -4,6 +4,7 @@ import 'package:goluto/src/features/availedOffers/data/models/availed_offer_mode
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_qr_codec.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_result.dart';
+import 'package:goluto/src/utils/location_query_params.dart';
 import 'package:goluto/src/utils/utils.dart';
 
 class OfferService {
@@ -71,9 +72,15 @@ class OfferService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<OfferModel?> findOfferByScannedCode(String code) async {
+  FutureEither<OfferModel?> findOfferByScannedCode(
+    String code, {
+    String? addressId,
+  }) async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>('/api/offers');
+      final response = await _dio.get<List<dynamic>>(
+        '/api/offers',
+        queryParameters: LocationQueryParams.fromAddressId(addressId),
+      );
       final offers = (response.data ?? const [])
           .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
           .toList();

@@ -12,10 +12,12 @@ class AuthService {
   static final AuthService instance = AuthService._();
 
   static const accessTokenKey = 'auth_access_token';
+  static const refreshTokenKey = 'auth_refresh_token';
   static const userKey = 'auth_user';
 
   String? _cachedAccessToken;
   var _isHandlingSessionExpiry = false;
+  var _explicitLogout = false;
 
   Dio get _dio => AppConfig.dio;
 
@@ -67,10 +69,36 @@ class AuthService {
     }, requiresNetwork: true);
   }
 
+  /// Returns true once when logout was initiated by the user (not session expiry).
+  bool consumeExplicitLogout() {
+    if (!_explicitLogout) return false;
+    _explicitLogout = false;
+    return true;
+  }
+
   FutureEither<void> logout() async {
     return runTask(() async {
-      await _clearSession();
-      _authStateController.add(null);
+      _explicitLogout = true;
+      try {
+        final refreshToken = await _readRefreshToken();
+        try {
+          await _dio.post<Map<String, dynamic>>(
+            '/api/auth/logout',
+            data: {
+              if (refreshToken != null && refreshToken.isNotEmpty)
+                'refresh': refreshToken,
+            },
+          );
+        } catch (error, stackTrace) {
+          AppLogger.warning(
+            'Logout API call failed; clearing local session anyway: $error',
+          );
+          AppLogger.error('Logout API error details', [error, stackTrace]);
+        }
+      } finally {
+        await _clearSession();
+        _authStateController.add(null);
+      }
     });
   }
 
@@ -181,6 +209,14 @@ class AuthService {
       );
     }
 
+    final refresh = data['refresh'] ?? data['refresh_token'];
+    if (refresh != null && refresh.toString().isNotEmpty) {
+      await SecureStorageService.instance.write(
+        refreshTokenKey,
+        refresh.toString(),
+      );
+    }
+
     final rawUser = data['user'];
     final user = rawUser is Map<String, dynamic> ? rawUser : data;
     final sessionUser = <String, dynamic>{
@@ -210,9 +246,15 @@ class AuthService {
     return jsonDecode(userJson) as Map<String, dynamic>;
   }
 
+  Future<String?> _readRefreshToken() async {
+    final result = await SecureStorageService.instance.read(refreshTokenKey);
+    return result.fold((_) => null, (value) => value);
+  }
+
   Future<void> _clearSession() async {
     _cachedAccessToken = null;
     await SecureStorageService.instance.delete(accessTokenKey);
+    await SecureStorageService.instance.delete(refreshTokenKey);
     await SecureStorageService.instance.delete(userKey);
   }
 

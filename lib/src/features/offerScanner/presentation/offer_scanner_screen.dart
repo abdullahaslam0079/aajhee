@@ -3,6 +3,7 @@ import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
 import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
@@ -153,8 +154,11 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
       if (branch.id == branchId) return branch;
     }
 
-    final result =
-        await ref.read(discoveryServiceProvider).findBranchById(branchId);
+    final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
+    final result = await ref.read(discoveryServiceProvider).findBranchById(
+          branchId,
+          addressId: addressId,
+        );
     return result.fold((_) => null, (branch) => branch);
   }
 

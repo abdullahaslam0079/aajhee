@@ -1,3 +1,4 @@
+import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -207,7 +208,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: 'Log out',
                       titleColor: colorScheme.error,
                       showChevron: false,
-                      onTap: () {},
+                      onTap: () => _confirmLogout(context),
                     ),
                   ],
                 ),
@@ -218,6 +219,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmLogout(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Log out?'),
+        content: const Text('You will need to sign in again to access your account.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              'Log out',
+              style: context.textTheme.labelLarge?.copyWith(
+                color: context.theme.colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!(confirmed ?? false) || !context.mounted) return;
+
+    await ref.read(authControllerProvider.notifier).logout(context: context);
   }
 
   Widget _divider(BuildContext context) {

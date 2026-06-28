@@ -1,6 +1,7 @@
 export 'api_value_parsers.dart';
 export 'app_utils.dart';
 export 'debouncer.dart';
+export 'geo_distance_utils.dart';
 export 'error_handler.dart';
 export 'failure.dart';
 export 'input_formatters.dart';

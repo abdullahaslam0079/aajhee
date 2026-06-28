@@ -82,6 +82,27 @@ class AuthController extends _$AuthController {
     );
   }
 
+  Future<void> logout({required BuildContext context}) async {
+    state = true;
+
+    final result = await ref.read(authRepositoryProvider).logout();
+
+    await ref.read(savedAddressesProvider.notifier).syncFromApi([]);
+
+    state = false;
+
+    if (!context.mounted) return;
+
+    result.fold(
+      (_) {},
+      (_) {
+        showToast(context, message: 'Logged out successfully', status: 'success');
+      },
+    );
+
+    context.go(AppRoutes.login);
+  }
+
   void forgotPassword({
     required BuildContext context,
     required String email,
