@@ -17,14 +17,6 @@ class BusinessStoreCard extends ConsumerWidget {
   final MapBranchModel branch;
   final VoidCallback? onTap;
 
-  static const List<String> _coverImages = [
-    'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=80',
-  ];
-
-  static const Color _starColor = Color(0xFFFFB800);
   static const Color _discountColor = Color(0xFFFF9500);
 
   @override
@@ -36,8 +28,6 @@ class BusinessStoreCard extends ConsumerWidget {
     final isFavorite = ref.watch(
       favoriteStoresProvider.select((state) => state.isFavorite(branchId)),
     );
-    final imageIndex = branch.id.abs() % _coverImages.length;
-    final coverFallback = _coverImages[imageIndex];
     final distanceKm = _distanceKm(ref);
 
     return Material(
@@ -60,7 +50,6 @@ class BusinessStoreCard extends ConsumerWidget {
                 children: [
                   NetworkImageWithFallback(
                     primaryUrl: branch.coverImageUrl,
-                    fallbackUrl: coverFallback,
                     debugLabel: 'cover ${branch.displayName}',
                     fit: BoxFit.cover,
                     errorWidget: ColoredBox(
@@ -208,24 +197,6 @@ class BusinessStoreCard extends ConsumerWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      SizedBox(height: AppSpacing.xs.h),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.star_rounded,
-                                            size: 16,
-                                            color: _starColor,
-                                          ),
-                                          SizedBox(width: AppSpacing.xxs.w),
-                                          Text(
-                                            '${_ratingText(branch.highestDiscountPercent)} (${_reviewsCount(branch.id)} reviews)',
-                                            style: tt.bodySmall?.copyWith(
-                                              color: muted,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
                                     ],
                                   ),
                                 ),
@@ -271,11 +242,4 @@ class BusinessStoreCard extends ConsumerWidget {
   }
 
   double _toRadians(double degrees) => degrees * math.pi / 180;
-
-  String _ratingText(double discountPercent) {
-    final rating = 4.2 + (discountPercent / 100);
-    return rating.clamp(0.0, 5.0).toStringAsFixed(1);
-  }
-
-  int _reviewsCount(int id) => (id.abs() % 90) + 7;
 }

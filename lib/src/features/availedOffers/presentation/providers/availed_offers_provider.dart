@@ -1,27 +1,27 @@
 import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:goluto/src/features/availedOffers/data/models/availed_offer_model.dart';
+import 'package:goluto/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'branch_offers_provider.g.dart';
+part 'availed_offers_provider.g.dart';
 
-class BranchOffersState {
-  const BranchOffersState({
+class AvailedOffersState {
+  const AvailedOffersState({
     this.offers = const [],
     this.isLoading = false,
     this.errorMessage,
   });
 
-  final List<OfferModel> offers;
+  final List<AvailedOfferModel> offers;
   final bool isLoading;
   final String? errorMessage;
 
-  BranchOffersState copyWith({
-    List<OfferModel>? offers,
+  AvailedOffersState copyWith({
+    List<AvailedOfferModel>? offers,
     bool? isLoading,
     String? errorMessage,
   }) {
-    return BranchOffersState(
+    return AvailedOffersState(
       offers: offers ?? this.offers,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
@@ -30,19 +30,28 @@ class BranchOffersState {
 }
 
 @Riverpod(keepAlive: false)
-class BranchOffers extends _$BranchOffers {
+class AvailedOffers extends _$AvailedOffers {
   @override
-  BranchOffersState build(int branchId) {
-    ref.watch(sessionProvider);
+  AvailedOffersState build() {
+    final session = ref.watch(sessionProvider);
+    if (session.status != SessionStatus.authenticated) {
+      return const AvailedOffersState();
+    }
+
     Future.microtask(load);
-    return const BranchOffersState(isLoading: true);
+    return const AvailedOffersState(isLoading: true);
   }
 
   Future<void> load() async {
+    final session = ref.read(sessionProvider);
+    if (session.status != SessionStatus.authenticated) {
+      state = const AvailedOffersState();
+      return;
+    }
+
     state = state.copyWith(isLoading: true, errorMessage: null);
 
-    final result =
-        await ref.read(discoveryServiceProvider).getBranchOffers(branchId);
+    final result = await ref.read(offerServiceProvider).fetchAvailedOffers();
 
     result.fold(
       (failure) {

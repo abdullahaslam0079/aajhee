@@ -1,19 +1,37 @@
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
+import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
+import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:goluto/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
+import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
+import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_redemption_success_dialog.dart';
+import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
-class OfferScannerScreen extends StatefulWidget {
-  const OfferScannerScreen({super.key});
+class OfferScannerScreen extends ConsumerStatefulWidget {
+  const OfferScannerScreen({
+    super.key,
+    this.offer,
+    this.branchId,
+    this.navigateToBranchOnSuccess = false,
+  });
+
+  final OfferModel? offer;
+  final int? branchId;
+  final bool navigateToBranchOnSuccess;
 
   @override
-  State<OfferScannerScreen> createState() => _OfferScannerScreenState();
+  ConsumerState<OfferScannerScreen> createState() => _OfferScannerScreenState();
 }
 
-class _OfferScannerScreenState extends State<OfferScannerScreen>
+class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
     with WidgetsBindingObserver {
   late final MobileScannerController _scannerController;
   bool _hasHandledScan = false;
-  String? _lastScannedCode;
 
   @override
   void initState() {
@@ -34,7 +52,8 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
       _scannerController.start();
       return;
     }
-    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
       _scannerController.stop();
     }
   }
@@ -46,21 +65,97 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
     super.dispose();
   }
 
+  OfferScannerSession get _session => OfferScannerSession(
+        offer: widget.offer,
+        branchId: widget.branchId,
+        navigateToBranchOnSuccess: widget.navigateToBranchOnSuccess,
+      );
+
+  OfferRedemptionState get _redemptionState =>
+      ref.watch(offerRedemptionProvider(_session));
+
+  OfferRedemption get _redemptionNotifier =>
+      ref.read(offerRedemptionProvider(_session).notifier);
+
   void _onDetect(BarcodeCapture capture) {
-    if (_hasHandledScan) return;
+    if (_hasHandledScan || _redemptionState.isBusy) return;
     final code = capture.barcodes.first.rawValue;
     if (code == null || code.isEmpty) return;
 
-    setState(() {
-      _hasHandledScan = true;
-      _lastScannedCode = code;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Code scanned successfully'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    final selectedOffer = _redemptionState.selectedOffer ?? widget.offer;
+    if (selectedOffer != null) {
+      final usageStatus = ref.read(offerUsageStatusProvider(selectedOffer));
+      if (!usageStatus.isAvailable) {
+        showToast(
+          context,
+          message: usageStatus.availabilityLabel,
+          status: 'warning',
+        );
+        return;
+      }
+    }
+
+    setState(() => _hasHandledScan = true);
+    _redeemCode(code);
+  }
+
+  Future<void> _redeemCode(String code) async {
+    await _redemptionNotifier.redeemScannedCode(code);
+
+    if (!mounted) return;
+
+    final state = ref.read(offerRedemptionProvider(_session));
+    if (state.status == OfferRedemptionStatus.redeemed &&
+        state.redeemedOffer != null) {
+      await _scannerController.stop();
+      if (!mounted) return;
+
+      final redeemedOffer = state.redeemedOffer!;
+      final usageStatus = state.usageStatus ??
+          OfferUsageStatus.fromOffer(redeemedOffer);
+
+      await OfferRedemptionSuccessDialog.show(
+        context,
+        offer: redeemedOffer,
+        usageStatus: usageStatus,
+      );
+
+      if (!mounted) return;
+      final branchId = state.branchId ?? widget.branchId ?? _session.branchId;
+      if (branchId != null) {
+        ref.invalidate(branchOffersProvider(branchId));
+      }
+
+      if (widget.navigateToBranchOnSuccess && branchId != null) {
+        final branch = await _resolveBranch(branchId);
+        if (!mounted) return;
+        context.pop();
+        if (branch != null) {
+          context.push(AppRoutes.businessStore, extra: branch);
+        }
+        return;
+      }
+
+      context.pop();
+      return;
+    }
+
+    if (state.status == OfferRedemptionStatus.error &&
+        state.errorMessage != null) {
+      showToast(context, message: state.errorMessage!, status: 'error');
+      setState(() => _hasHandledScan = false);
+    }
+  }
+
+  Future<MapBranchModel?> _resolveBranch(int branchId) async {
+    final cachedBranches = ref.read(homeFeedProvider).branches;
+    for (final branch in cachedBranches) {
+      if (branch.id == branchId) return branch;
+    }
+
+    final result =
+        await ref.read(discoveryServiceProvider).findBranchById(branchId);
+    return result.fold((_) => null, (branch) => branch);
   }
 
   @override
@@ -68,6 +163,11 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.65);
+    final redemption = _redemptionState;
+    final isProcessing = redemption.isBusy;
+    final selectedOffer = redemption.selectedOffer ?? widget.offer;
+    final usageStatus =
+        selectedOffer != null ? ref.watch(offerUsageStatusProvider(selectedOffer)) : null;
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -95,17 +195,28 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
                 children: [
                   SizedBox(height: AppSpacing.sm.h),
                   _header(cs, tt),
+                  if (usageStatus != null) ...[
+                    SizedBox(height: AppSpacing.md.h),
+                    OfferUsageStatusBanner(status: usageStatus),
+                  ],
                   SizedBox(height: AppSpacing.xl.h),
                   Expanded(
                     child: Center(
-                      child: _scannerCard(cs, tt, muted),
+                      child: _scannerCard(
+                        cs,
+                        tt,
+                        muted,
+                        isProcessing: isProcessing,
+                        selectedOffer: selectedOffer,
+                      ),
                     ),
                   ),
                   SizedBox(height: AppSpacing.lg.h),
                   Text(
-                    _lastScannedCode == null
-                        ? 'Align the QR code inside the frame'
-                        : 'Code: $_lastScannedCode',
+                    _statusHeadline(
+                      isProcessing: isProcessing,
+                      selectedOffer: selectedOffer,
+                    ),
                     style: tt.bodyMedium?.copyWith(
                       color: muted,
                       fontWeight: FontWeight.w600,
@@ -114,9 +225,12 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
                   ),
                   SizedBox(height: AppSpacing.sm.h),
                   Text(
-                    _lastScannedCode == null ? 'Scanning starts automatically' : 'Scan complete',
+                    _statusSubline(
+                      isProcessing: isProcessing,
+                      hasSelectedOffer: selectedOffer != null,
+                    ),
                     style: tt.labelLarge?.copyWith(
-                      color: _lastScannedCode == null ? cs.primary : Colors.green,
+                      color: cs.primary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -128,6 +242,26 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
         ],
       ),
     );
+  }
+
+  String _statusHeadline({
+    required bool isProcessing,
+    required OfferModel? selectedOffer,
+  }) {
+    if (isProcessing) return 'Processing your offer...';
+    if (selectedOffer != null) {
+      return 'Scan the in-store QR for "${selectedOffer.title}"';
+    }
+    return 'Point your camera at the store QR code';
+  }
+
+  String _statusSubline({
+    required bool isProcessing,
+    required bool hasSelectedOffer,
+  }) {
+    if (isProcessing) return 'Please wait';
+    if (hasSelectedOffer) return 'Show this screen at checkout';
+    return 'Offer will be redeemed automatically';
   }
 
   Widget _header(ColorScheme cs, TextTheme tt) {
@@ -204,7 +338,13 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
     );
   }
 
-  Widget _scannerCard(ColorScheme cs, TextTheme tt, Color muted) {
+  Widget _scannerCard(
+    ColorScheme cs,
+    TextTheme tt,
+    Color muted, {
+    required bool isProcessing,
+    required OfferModel? selectedOffer,
+  }) {
     return Container(
       width: 305.w,
       padding: EdgeInsets.all(AppSpacing.ms.r),
@@ -224,9 +364,20 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Scan Offer Code',
+            selectedOffer?.title ?? 'Scan Offer Code',
             style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+            textAlign: TextAlign.center,
           ),
+          if (selectedOffer != null) ...[
+            SizedBox(height: AppSpacing.xxs.h),
+            Text(
+              selectedOffer.businessName,
+              style: tt.bodySmall?.copyWith(
+                color: muted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
           SizedBox(height: AppSpacing.sm.h),
           Container(
             width: 232.w,
@@ -248,7 +399,7 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
                     onDetect: _onDetect,
                   ),
                 ),
-                if (_lastScannedCode == null)
+                if (!isProcessing)
                   Align(
                     alignment: Alignment.center,
                     child: Icon(
@@ -257,7 +408,7 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
                       size: 74,
                     ),
                   ),
-                if (_lastScannedCode != null)
+                if (isProcessing)
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.35),
@@ -267,29 +418,13 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.verified_rounded, color: Colors.white, size: 40),
-                        SizedBox(height: AppSpacing.xxs.h),
+                        const CircularProgressIndicator(color: Colors.white),
+                        SizedBox(height: AppSpacing.sm.h),
                         Text(
-                          'Scanned',
+                          'Redeeming offer...',
                           style: tt.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.xs.h),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _hasHandledScan = false;
-                              _lastScannedCode = null;
-                            });
-                          },
-                          child: Text(
-                            'Scan Again',
-                            style: tt.labelLarge?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                            ),
                           ),
                         ),
                       ],
@@ -341,7 +476,6 @@ class _OfferScannerScreenState extends State<OfferScannerScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                
                 Icon(Icons.security_rounded, size: 16, color: cs.primary),
                 SizedBox(width: AppSpacing.xxs.w),
                 Text(

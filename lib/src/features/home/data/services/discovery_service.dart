@@ -31,6 +31,19 @@ class DiscoveryService {
     }, requiresNetwork: true);
   }
 
+  FutureEither<MapBranchModel?> findBranchById(int branchId) async {
+    return runTask(() async {
+      final response = await _dio.get<List<dynamic>>('/api/map/branches');
+      final data = response.data ?? const [];
+      for (final item in data) {
+        final branch =
+            MapBranchModel.fromJson(item as Map<String, dynamic>);
+        if (branch.id == branchId) return branch;
+      }
+      return null;
+    }, requiresNetwork: true);
+  }
+
   FutureEither<List<OfferModel>> getOffers() async {
     return runTask(() async {
       final response = await _dio.get<List<dynamic>>('/api/offers');

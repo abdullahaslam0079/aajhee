@@ -15,6 +15,7 @@ class AuthService {
   static const userKey = 'auth_user';
 
   String? _cachedAccessToken;
+  var _isHandlingSessionExpiry = false;
 
   Dio get _dio => AppConfig.dio;
 
@@ -80,8 +81,24 @@ class AuthService {
         return null;
       }
 
+      if (_isTokenExpired(token)) {
+        await handleSessionExpired();
+        return null;
+      }
+
       return _readStoredUser();
     });
+  }
+
+  Future<void> handleSessionExpired() async {
+    if (_isHandlingSessionExpiry) return;
+    _isHandlingSessionExpiry = true;
+    try {
+      await _clearSession();
+      _authStateController.add(null);
+    } finally {
+      _isHandlingSessionExpiry = false;
+    }
   }
 
   /// Returns the JWT access token, preferring the in-memory cache from login.
@@ -119,6 +136,26 @@ class AuthService {
       return trimmed.substring(7).trim();
     }
     return trimmed;
+  }
+
+  bool _isTokenExpired(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final json = jsonDecode(decoded) as Map<String, dynamic>;
+      final exp = json['exp'];
+      if (exp is! num) return false;
+
+      final expiry =
+          DateTime.fromMillisecondsSinceEpoch(exp.toInt() * 1000);
+      return DateTime.now().isAfter(expiry);
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _persistSession(

@@ -8,7 +8,7 @@ class NetworkImageWithFallback extends StatefulWidget {
   const NetworkImageWithFallback({
     super.key,
     this.primaryUrl,
-    required this.fallbackUrl,
+    this.fallbackUrl,
     this.fit = BoxFit.cover,
     this.width,
     this.height,
@@ -18,7 +18,7 @@ class NetworkImageWithFallback extends StatefulWidget {
   });
 
   final String? primaryUrl;
-  final String fallbackUrl;
+  final String? fallbackUrl;
   final BoxFit fit;
   final double? width;
   final double? height;
@@ -39,7 +39,7 @@ class _NetworkImageWithFallbackState extends State<NetworkImageWithFallback> {
   String get _activeUrl {
     final primary = _resolvedPrimary;
     if (primary.isEmpty || primary == _failedPrimaryUrl) {
-      return widget.fallbackUrl;
+      return widget.fallbackUrl?.trim() ?? '';
     }
     return primary;
   }
@@ -49,7 +49,7 @@ class _NetworkImageWithFallbackState extends State<NetworkImageWithFallback> {
     if (primary.isEmpty || url != primary || _failedPrimaryUrl == primary) {
       AppLogger.warning(
         '[Image${widget.debugLabel != null ? ' ${widget.debugLabel}' : ''}] '
-        'Failed to load fallback url=$url error=$error',
+        'Failed to load url=$url error=$error',
       );
       return;
     }
@@ -65,16 +65,37 @@ class _NetworkImageWithFallbackState extends State<NetworkImageWithFallback> {
     });
   }
 
+  Widget _buildPlaceholder(BuildContext context) {
+    return widget.errorWidget ??
+        ColoredBox(
+          color: context.theme.colorScheme.surfaceContainerHighest,
+          child: Icon(
+            Icons.storefront_outlined,
+            color: context.theme.colorScheme.onSurfaceVariant,
+            size: 34,
+          ),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activeUrl = _activeUrl;
+    if (activeUrl.isEmpty) {
+      return SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: _buildPlaceholder(context),
+      );
+    }
+
     return CommonImage(
-      key: ValueKey(_activeUrl),
-      imageUrl: _activeUrl,
+      key: ValueKey(activeUrl),
+      imageUrl: activeUrl,
       width: widget.width,
       height: widget.height,
       fit: widget.fit,
       borderRadius: widget.borderRadius,
-      errorWidget: widget.errorWidget,
+      errorWidget: widget.errorWidget ?? _buildPlaceholder(context),
       onError: _handleImageError,
     );
   }

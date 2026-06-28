@@ -45,6 +45,18 @@ class AppConfig {
 
     dio.interceptors.add(
       InterceptorsWrapper(
+        onError: (DioException error, handler) async {
+          if (error.response?.statusCode == 401 &&
+              !_isPublicAuthPath(error.requestOptions.path)) {
+            await AuthService.instance.handleSessionExpired();
+          }
+          return handler.next(error);
+        },
+      ),
+    );
+
+    dio.interceptors.add(
+      InterceptorsWrapper(
         onRequest: (options, handler) {
           final hasAuth = options.headers['Authorization'] != null;
           AppLogger.info(

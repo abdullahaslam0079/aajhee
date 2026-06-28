@@ -11,6 +11,7 @@ Future<void> main() async {
   await dotenv.load(fileName: '.env');
   
   await AppConfig.init();
+  await StorageService.instance.init();
 
   runApp(
     const LocalizationWrapper(

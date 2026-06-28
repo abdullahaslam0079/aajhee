@@ -1,6 +1,9 @@
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
+import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -18,20 +21,10 @@ class BusinessStoreScreen extends ConsumerStatefulWidget {
 }
 
 class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
-  static const List<String> _coverImages = [
-    'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=80',
-  ];
-
   late final ScrollController _scrollController;
   bool _showCompactHeader = false;
 
   MapBranchModel get branch => widget.branch;
-
-  String get _coverFallback =>
-      _coverImages[branch.id.abs() % _coverImages.length];
 
   String? _coverPrimaryUrl(List<OfferModel> offers) {
     if (branch.coverImageUrl != null && branch.coverImageUrl!.isNotEmpty) {
@@ -72,6 +65,23 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     }
   }
 
+  void _availAndScanOffer(OfferModel offer) {
+    final usageStatus = ref.read(offerUsageStatusProvider(offer));
+    if (!usageStatus.isAvailable) {
+      showToast(
+        context,
+        message: usageStatus.availabilityLabel,
+        status: 'warning',
+      );
+      return;
+    }
+
+    context.push(
+      AppRoutes.offerScanner,
+      extra: OfferScannerSession(offer: offer, branchId: branch.id),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
@@ -79,7 +89,6 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     final muted = cs.onSurface.withValues(alpha: 0.62);
     final offersState = ref.watch(branchOffersProvider(branch.id));
     final offers = offersState.offers;
-    final coverFallback = _coverFallback;
     final coverPrimary = _coverPrimaryUrl(offers);
 
     return Scaffold(
@@ -97,7 +106,6 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                       cs,
                       muted,
                       primaryUrl: coverPrimary,
-                      fallbackUrl: coverFallback,
                     ),
                     Positioned(
                       left: AppSpacing.ms.w,
@@ -172,7 +180,6 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                               tt: tt,
                               muted: muted,
                               offer: offer,
-                              fallbackImageUrl: coverFallback,
                             ),
                           ),
                         )
@@ -266,7 +273,6 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     ColorScheme cs,
     Color muted, {
     required String? primaryUrl,
-    required String fallbackUrl,
   }) {
     return SizedBox(
       height: 225.h,
@@ -277,7 +283,6 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
           ColoredBox(color: cs.surfaceContainerHighest),
           NetworkImageWithFallback(
             primaryUrl: primaryUrl,
-            fallbackUrl: fallbackUrl,
             debugLabel: 'hero ${branch.displayName}',
             fit: BoxFit.cover,
             errorWidget: Icon(
@@ -445,8 +450,8 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     required TextTheme tt,
     required Color muted,
     required OfferModel offer,
-    required String fallbackImageUrl,
   }) {
+    final usageStatus = ref.watch(offerUsageStatusProvider(offer));
     final imageUrl = (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
         ? offer.imageUrl
         : null;
@@ -456,10 +461,12 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
       borderRadius: AppBorders.lg,
       child: InkWell(
         borderRadius: AppBorders.lg,
-        onTap: () {
-          context.push(AppRoutes.offerScanner);
-        },
-        child: Container(
+        onTap: usageStatus.isAvailable
+            ? () => _availAndScanOffer(offer)
+            : null,
+        child: Opacity(
+          opacity: usageStatus.isAvailable ? 1 : 0.72,
+          child: Container(
           padding: EdgeInsets.all(AppSpacing.sm.r),
           decoration: BoxDecoration(
             color: cs.onPrimary,
@@ -512,6 +519,11 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                           ),
                         ],
                         SizedBox(height: AppSpacing.sm.h),
+                        OfferUsageStatusBanner(
+                          status: usageStatus,
+                          compact: true,
+                        ),
+                        SizedBox(height: AppSpacing.sm.h),
                         Row(
                           children: [
                             if (offer.discountPercent > 0)
@@ -544,7 +556,6 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                         borderRadius: AppBorders.md,
                         child: NetworkImageWithFallback(
                           primaryUrl: imageUrl,
-                          fallbackUrl: fallbackImageUrl,
                           debugLabel: 'offer ${offer.title}',
                           width: 108,
                           height: 96,
@@ -586,6 +597,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

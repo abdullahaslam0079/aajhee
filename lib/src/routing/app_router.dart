@@ -2,15 +2,15 @@ import 'package:go_router/go_router.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
 import 'package:goluto/src/features/businessStore/presentation/business_store_screen.dart';
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/presentation/screens/item_detail_screen.dart';
+import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
 import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/features/settings/presentation/screens/add_address_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/addresses_screen.dart';
 import 'package:goluto/src/features/settings/presentation/screens/edit_profile_screen.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
 import 'package:goluto/src/features/offerScanner/presentation/offer_scanner_screen.dart';
-import 'package:goluto/src/features/shared/data/dummy_berlin_items.dart';
 import 'package:goluto/src/routing/global_navigator.dart';
 import 'package:goluto/src/routing/app_routes.dart';
 
@@ -63,16 +63,6 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const HomePage(),
     ),
     GoRoute(
-      path: AppRoutes.itemDetail,
-      name: 'itemDetail',
-      builder: (context, state) {
-        final item = state.extra is ItemModel
-            ? state.extra! as ItemModel
-            : dummyBerlinItems.first;
-        return ItemDetailScreen(item: item);
-      },
-    ),
-    GoRoute(
       path: AppRoutes.businessStore,
       name: 'businessStore',
       builder: (context, state) {
@@ -88,7 +78,20 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.offerScanner,
       name: 'offerScanner',
-      builder: (context, state) => const OfferScannerScreen(),
+      builder: (context, state) {
+        if (state.extra is OfferScannerSession) {
+          final session = state.extra! as OfferScannerSession;
+          return OfferScannerScreen(
+            offer: session.offer,
+            branchId: session.branchId,
+            navigateToBranchOnSuccess: session.navigateToBranchOnSuccess,
+          );
+        }
+
+        final offer =
+            state.extra is OfferModel ? state.extra! as OfferModel : null;
+        return OfferScannerScreen(offer: offer);
+      },
     ),
     GoRoute(
       path: AppRoutes.notifications,

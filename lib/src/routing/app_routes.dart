@@ -12,7 +12,6 @@ abstract final class AppRoutes {
   static const String signup = '/signup';
   static const String forgotPassword = '/forgot-password';
   static const String bottomNavigator = '/bottom-navigator';
-  static const String itemDetail = '/item-detail';
   static const String businessStore = '/business-store';
   static const String offerScanner = '/offer-scanner';
   static const String notifications = '/notifications';

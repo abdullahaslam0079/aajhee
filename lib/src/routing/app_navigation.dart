@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:goluto/src/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/routing/app_routes.dart';
@@ -27,10 +28,17 @@ bool hasSavedAddressFromContext(BuildContext context) {
       .isNotEmpty;
 }
 
+Future<void> _waitForSession(WidgetRef ref) async {
+  while (ref.read(sessionProvider).status == SessionStatus.unknown) {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+  }
+}
+
 Future<void> navigateFromSplash(BuildContext context, WidgetRef ref) async {
   await Future.wait([
     ref.read(savedAddressesProvider.notifier).ensureLoaded(),
     ref.read(onboardingCompletedProvider.future),
+    _waitForSession(ref),
   ]);
 
   if (!context.mounted) return;
@@ -43,6 +51,12 @@ Future<void> navigateFromSplash(BuildContext context, WidgetRef ref) async {
     return;
   }
 
+  final session = ref.read(sessionProvider);
+  if (session.status != SessionStatus.authenticated) {
+    context.go(AppRoutes.login);
+    return;
+  }
+
   final savedAddress =
       ref.read(savedAddressesProvider).addresses.isNotEmpty;
   if (savedAddress) {
@@ -50,5 +64,5 @@ Future<void> navigateFromSplash(BuildContext context, WidgetRef ref) async {
     return;
   }
 
-  context.go(AppRoutes.login);
+  context.go('${AppRoutes.addAddress}?onboarding=true');
 }

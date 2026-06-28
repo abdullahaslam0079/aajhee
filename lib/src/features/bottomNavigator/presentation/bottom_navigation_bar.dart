@@ -1,9 +1,10 @@
+import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:goluto/src/features/settings/presentation/settings.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/businessStore/presentation/deals_tab_screen.dart';
+import 'package:goluto/src/features/availedOffers/presentation/availed_offers_tab_screen.dart';
 import 'package:goluto/src/features/mapFeature/presentation/map_screen.dart';
 
 class BottomNavigationBarScreen extends ConsumerWidget {
@@ -30,7 +31,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
               : selectedIndex == 1
               ? const MapScreen()
               : selectedIndex == 2
-              ? const DealsTabScreen()
+              ? const AvailedOffersTabScreen()
               : const SettingsScreen(),
         ),
       ),
@@ -39,7 +40,12 @@ class BottomNavigationBarScreen extends ConsumerWidget {
         height: _fabSize,
         width: _fabSize,
         child: FloatingActionButton(
-          onPressed: () => context.push(AppRoutes.offerScanner),
+          onPressed: () => context.push(
+            AppRoutes.offerScanner,
+            extra: const OfferScannerSession(
+              navigateToBranchOnSuccess: true,
+            ),
+          ),
           backgroundColor: colorScheme.primary,
           foregroundColor: Colors.white,
           elevation: 8,
@@ -98,7 +104,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                 icon: selectedIndex == 2
                     ? Icons.local_offer_rounded
                     : Icons.local_offer_outlined,
-                label: 'Deals',
+                label: 'My Offers',
                 selected: selectedIndex == 2,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)

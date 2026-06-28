@@ -14,18 +14,10 @@ class MapStoreCard extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  static const List<String> _coverFallbacks = [
-    'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?auto=format&fit=crop&w=1200&q=80',
-    'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=80',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
-    final coverFallback = _coverFallbacks[branch.id.abs() % _coverFallbacks.length];
     final discountPercent = branch.highestDiscountPercent.round();
 
     return Container(
@@ -51,7 +43,6 @@ class MapStoreCard extends StatelessWidget {
                 children: [
                   NetworkImageWithFallback(
                     primaryUrl: branch.coverImageUrl,
-                    fallbackUrl: coverFallback,
                     debugLabel: 'map cover ${branch.displayName}',
                     fit: BoxFit.cover,
                     errorWidget: ColoredBox(

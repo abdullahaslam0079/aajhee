@@ -5,11 +5,25 @@ class AppErrorHandler {
     if (error is String) return error;
 
     if (error is DioException) {
+      if (error.response?.statusCode == 401) {
+        return 'Your session has expired. Please log in again.';
+      }
+
       final data = error.response?.data;
       if (data is Map<String, dynamic>) {
         final message = data['message'];
         if (message is String && message.isNotEmpty) {
           return message;
+        }
+
+        final detail = data['detail'];
+        if (detail is String && detail.isNotEmpty) {
+          return detail;
+        }
+
+        final error = data['error'];
+        if (error is String && error.isNotEmpty) {
+          return error;
         }
 
         final errors = data['errors'];

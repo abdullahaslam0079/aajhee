@@ -76,7 +76,7 @@ class CommonImage extends StatelessWidget {
           return placeholder ?? _buildLoadingPlaceholder(context, width, height);
         },
         errorBuilder: (context, error, stackTrace) {
-          _reportError(resolvedUrl, error);
+          _reportError(resolvedUrl, error, syncCallback: true);
           return errorWidget ?? _buildDefaultErrorWidget(context, width, height);
         },
       );
@@ -129,10 +129,15 @@ class CommonImage extends StatelessWidget {
     return image;
   }
 
-  void _reportError(String url, Object error) {
+  void _reportError(String url, Object error, {bool syncCallback = false}) {
     AppLogger.warning('[Image] Failed to load url=$url error=$error');
     final callback = onError;
     if (callback == null) return;
+
+    if (syncCallback) {
+      callback(url, error);
+      return;
+    }
 
     // AvifImage may invoke errorBuilder synchronously during build.
     WidgetsBinding.instance.addPostFrameCallback((_) {

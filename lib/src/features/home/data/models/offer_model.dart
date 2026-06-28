@@ -43,6 +43,11 @@ class OfferModel {
     required this.endsAt,
     required this.qrCode,
     required this.isActive,
+    this.userRedemptionCount,
+    this.userRemainingUses,
+    this.isAvailableForUser,
+    this.lastRedeemedAt,
+    this.periodResetsAt,
   });
 
   final int id;
@@ -68,6 +73,11 @@ class OfferModel {
   final DateTime? endsAt;
   final String qrCode;
   final bool isActive;
+  final int? userRedemptionCount;
+  final int? userRemainingUses;
+  final bool? isAvailableForUser;
+  final DateTime? lastRedeemedAt;
+  final DateTime? periodResetsAt;
 
   String get subtitle {
     if (description.trim().isNotEmpty) return description.trim();
@@ -121,7 +131,29 @@ class OfferModel {
       endsAt: _parseNullableDate(json['ends_at']),
       qrCode: parseApiString(json['qr_code']) ?? '',
       isActive: json['is_active'] as bool? ?? true,
+      userRedemptionCount: _parseNullableInt(
+        json['user_redemption_count'] ??
+            json['redemption_count'] ??
+            json['times_redeemed'] ??
+            json['user_redeem_count'],
+      ),
+      userRemainingUses: _parseNullableInt(
+        json['user_remaining_uses'] ??
+            json['remaining_uses'] ??
+            json['remaining_count'],
+      ),
+      isAvailableForUser: json['is_available_for_user'] as bool? ??
+          json['can_redeem'] as bool?,
+      lastRedeemedAt: _parseNullableDate(json['last_redeemed_at']),
+      periodResetsAt: _parseNullableDate(json['period_resets_at']),
     );
+  }
+
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
   }
 
   static DateTime? _parseNullableDate(dynamic value) {
