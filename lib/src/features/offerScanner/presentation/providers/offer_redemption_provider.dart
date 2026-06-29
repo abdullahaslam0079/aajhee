@@ -1,12 +1,12 @@
 import 'package:goluto/src/features/availedOffers/presentation/providers/availed_offers_provider.dart';
+import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
 import 'package:goluto/src/features/offerScanner/data/services/offer_service.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_qr_codec.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'offer_redemption_provider.g.dart';
@@ -14,6 +14,8 @@ part 'offer_redemption_provider.g.dart';
 enum OfferRedemptionStatus {
   idle,
   processing,
+  awaitingBillAmount,
+  awaitingConfirmation,
   redeemed,
   error,
 }
@@ -23,39 +25,64 @@ class OfferRedemptionState {
     this.status = OfferRedemptionStatus.idle,
     this.selectedOffer,
     this.branchId,
+    this.branchName,
+    this.branchAddress,
     this.redeemedOffer,
     this.usageStatus,
+    this.paymentPreview,
+    this.qrCode,
     this.errorMessage,
   });
 
   final OfferRedemptionStatus status;
   final OfferModel? selectedOffer;
   final int? branchId;
+  final String? branchName;
+  final String? branchAddress;
   final OfferModel? redeemedOffer;
   final OfferUsageStatus? usageStatus;
+  final OfferPaymentPreview? paymentPreview;
+  final String? qrCode;
   final String? errorMessage;
 
   bool get isBusy => status == OfferRedemptionStatus.processing;
+
+  bool get needsBillAmount =>
+      status == OfferRedemptionStatus.awaitingBillAmount;
+
+  bool get needsConfirmation =>
+      status == OfferRedemptionStatus.awaitingConfirmation;
 
   OfferRedemptionState copyWith({
     OfferRedemptionStatus? status,
     OfferModel? selectedOffer,
     int? branchId,
+    String? branchName,
+    String? branchAddress,
     OfferModel? redeemedOffer,
     OfferUsageStatus? usageStatus,
+    OfferPaymentPreview? paymentPreview,
+    String? qrCode,
     String? errorMessage,
     bool clearError = false,
     bool clearRedeemedOffer = false,
     bool clearUsageStatus = false,
+    bool clearPaymentPreview = false,
   }) {
     return OfferRedemptionState(
       status: status ?? this.status,
       selectedOffer: selectedOffer ?? this.selectedOffer,
       branchId: branchId ?? this.branchId,
+      branchName: branchName ?? this.branchName,
+      branchAddress: branchAddress ?? this.branchAddress,
       redeemedOffer:
           clearRedeemedOffer ? null : (redeemedOffer ?? this.redeemedOffer),
       usageStatus:
           clearUsageStatus ? null : (usageStatus ?? this.usageStatus),
+      paymentPreview: clearPaymentPreview
+          ? null
+          : (paymentPreview ?? this.paymentPreview),
+      qrCode: qrCode ?? this.qrCode,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -77,6 +104,10 @@ class OfferRedemption extends _$OfferRedemption {
   }
 
   Future<void> redeemScannedCode(String code) async {
+    await resolveScannedCode(code);
+  }
+
+  Future<void> resolveScannedCode(String code) async {
     if (state.isBusy || !ref.mounted) return;
 
     state = state.copyWith(
@@ -95,51 +126,8 @@ class OfferRedemption extends _$OfferRedemption {
       return;
     }
 
-    OfferModel? offer = state.selectedOffer;
-
-    if (offer != null) {
-      final matchesSelected = service.matchOfferFromCode(code, [offer]) != null;
-      if (!matchesSelected) {
-        if (!ref.mounted) return;
-        state = state.copyWith(
-          status: OfferRedemptionStatus.error,
-          errorMessage:
-              'This QR code does not match the selected offer. Please scan the correct code.',
-        );
-        return;
-      }
-    } else {
-      final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
-      final lookupResult = await service.findOfferByScannedCode(
-        code,
-        addressId: addressId,
-      );
-      if (!ref.mounted) return;
-
-      final resolvedOffer = lookupResult.fold(
-        (failure) {
-          state = state.copyWith(
-            status: OfferRedemptionStatus.error,
-            errorMessage: failure.message,
-          );
-          return null;
-        },
-        (value) => value,
-      );
-      if (resolvedOffer == null) {
-        if (state.status != OfferRedemptionStatus.error) {
-          state = state.copyWith(
-            status: OfferRedemptionStatus.error,
-            errorMessage: 'No offer found for this QR code.',
-          );
-        }
-        return;
-      }
-      offer = resolvedOffer;
-    }
-
     final branchId = _resolveBranchId(
-      offer: offer,
+      offer: state.selectedOffer,
       sessionBranchId: state.branchId,
       payloadBranchId: payload?.branchId,
     );
@@ -152,26 +140,13 @@ class OfferRedemption extends _$OfferRedemption {
       return;
     }
 
-    if (!offer.branchIds.contains(branchId)) {
-      state = state.copyWith(
-        status: OfferRedemptionStatus.error,
-        errorMessage: 'This offer is not available at this branch.',
-      );
-      return;
-    }
-
-    if (offer.qrCode.isNotEmpty && offer.qrCode != qrCode) {
-      state = state.copyWith(
-        status: OfferRedemptionStatus.error,
-        errorMessage: 'Invalid QR code for this offer.',
-      );
-      return;
-    }
-
-    final usageCheck = await service.fetchOfferUsage(offerId: offer.id);
+    final byQrResult = await service.fetchOfferByQr(
+      qrCode: qrCode,
+      branchId: branchId,
+    );
     if (!ref.mounted) return;
 
-    final usageResult = usageCheck.fold(
+    final resolved = byQrResult.fold(
       (failure) {
         state = state.copyWith(
           status: OfferRedemptionStatus.error,
@@ -181,43 +156,128 @@ class OfferRedemption extends _$OfferRedemption {
       },
       (value) => value,
     );
-    if (usageResult == null) return;
+    if (resolved == null) return;
 
-    final usageStatus = OfferUsageStatus.fromUsageResult(offer, usageResult);
-    if (!usageStatus.isAvailable) {
+    final offer = resolved.offer;
+    final selectedOffer = state.selectedOffer;
+    if (selectedOffer != null &&
+        selectedOffer.id != offer.id &&
+        service.matchOfferFromCode(code, [selectedOffer]) == null) {
       state = state.copyWith(
         status: OfferRedemptionStatus.error,
-        errorMessage: (usageResult.message?.isNotEmpty ?? false)
-            ? usageResult.message!
-            : 'You have reached the usage limit for this offer. ${usageStatus.usageSummary}.',
+        errorMessage:
+            'This QR code does not match the selected offer. Please scan the correct code.',
       );
       return;
     }
 
-    final scanResult = await service.scanOffer(
-      offerId: offer.id,
-      branchId: branchId,
-      qrCode: qrCode,
-    );
-    if (!ref.mounted) return;
-
-    final scanFailure = scanResult.fold((failure) => failure, (_) => null);
-    if (scanFailure != null) {
+    if (!resolved.canAvail) {
+      final usageStatus = resolved.usage != null
+          ? OfferUsageStatus.fromUsageResult(offer, resolved.usage!)
+          : OfferUsageStatus.fromOffer(offer);
       state = state.copyWith(
         status: OfferRedemptionStatus.error,
-        errorMessage: scanFailure.message,
+        errorMessage: resolved.usage?.message?.isNotEmpty == true
+            ? resolved.usage!.message!
+            : usageStatus.availabilityLabel,
       );
       return;
     }
 
-    final redeemResult = await service.redeemOffer(
-      offerId: offer.id,
-      branchId: branchId,
+    final payment = resolved.payment;
+    state = state.copyWith(
+      selectedOffer: offer,
+      branchId: resolved.branch.id,
+      branchName: resolved.branch.name,
+      branchAddress: resolved.branch.formattedAddress,
       qrCode: qrCode,
+      paymentPreview: payment,
+      status: payment.requiresBillAmount && !payment.isComplete
+          ? OfferRedemptionStatus.awaitingBillAmount
+          : OfferRedemptionStatus.awaitingConfirmation,
+    );
+  }
+
+  Future<void> submitBillAmount(String rawAmount) async {
+    if (state.isBusy || !ref.mounted) return;
+
+    final offer = state.selectedOffer;
+    final branchId = state.branchId;
+    final qrCode = state.qrCode;
+    if (offer == null || branchId == null || qrCode == null) return;
+
+    final billAmount = double.tryParse(rawAmount.replaceAll(',', '.').trim());
+    if (billAmount == null || billAmount <= 0) {
+      state = state.copyWith(
+        status: OfferRedemptionStatus.error,
+        errorMessage: 'Enter a valid bill amount greater than zero.',
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      status: OfferRedemptionStatus.processing,
+      clearError: true,
+    );
+
+    final service = ref.read(offerServiceProvider);
+    final previewResult = await service.fetchPaymentPreview(
+      offerId: offer.id,
+      billAmount: billAmount,
     );
     if (!ref.mounted) return;
 
-    final redeemedUsage = redeemResult.fold(
+    previewResult.fold(
+      (failure) {
+        state = state.copyWith(
+          status: OfferRedemptionStatus.awaitingBillAmount,
+          errorMessage: failure.message,
+        );
+      },
+      (payment) {
+        state = state.copyWith(
+          status: OfferRedemptionStatus.awaitingConfirmation,
+          paymentPreview: payment,
+          clearError: true,
+        );
+      },
+    );
+  }
+
+  Future<void> confirmAvail() async {
+    if (state.isBusy || !ref.mounted) return;
+
+    final offer = state.selectedOffer;
+    final branchId = state.branchId;
+    final qrCode = state.qrCode;
+    final payment = state.paymentPreview;
+    if (offer == null || branchId == null || qrCode == null || payment == null) {
+      return;
+    }
+
+    if (!payment.isComplete) {
+      state = state.copyWith(
+        status: OfferRedemptionStatus.awaitingBillAmount,
+        errorMessage: 'Enter your bill total to calculate what you pay.',
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      status: OfferRedemptionStatus.processing,
+      clearError: true,
+    );
+
+    final service = ref.read(offerServiceProvider);
+    final availResult = await service.availOffer(
+      offerId: offer.id,
+      branchId: branchId,
+      qrCode: qrCode,
+      billAmount: payment.billAmount,
+    );
+    if (!ref.mounted) return;
+
+    final result = availResult.fold(
       (failure) {
         state = state.copyWith(
           status: OfferRedemptionStatus.error,
@@ -227,36 +287,39 @@ class OfferRedemption extends _$OfferRedemption {
       },
       (value) => value,
     );
-    if (redeemedUsage == null) return;
+    if (result == null) return;
 
     ref.invalidate(branchOffersProvider(branchId));
     ref.invalidate(offerUsageStatusProvider(offer));
     ref.invalidate(availedOffersProvider);
 
     final updatedUsageStatus =
-        OfferUsageStatus.fromUsageResult(offer, redeemedUsage);
+        OfferUsageStatus.fromUsageResult(offer, result.usage);
     state = state.copyWith(
       status: OfferRedemptionStatus.redeemed,
       redeemedOffer: offer,
-      selectedOffer: offer,
-      branchId: branchId,
       usageStatus: updatedUsageStatus,
+      paymentPreview: result.payment,
     );
   }
 
   int? _resolveBranchId({
-    required OfferModel offer,
+    OfferModel? offer,
     required int? sessionBranchId,
     required int? payloadBranchId,
   }) {
     final candidates = [
       sessionBranchId,
       payloadBranchId,
-    ].whereType<int>().where(offer.branchIds.contains);
+    ].whereType<int>();
 
-    if (candidates.isNotEmpty) return candidates.first;
-
-    if (offer.branchIds.length == 1) return offer.branchIds.first;
+    if (offer != null) {
+      final matching = candidates.where(offer.branchIds.contains);
+      if (matching.isNotEmpty) return matching.first;
+      if (offer.branchIds.length == 1) return offer.branchIds.first;
+    } else if (candidates.isNotEmpty) {
+      return candidates.first;
+    }
 
     return null;
   }
@@ -268,6 +331,13 @@ class OfferRedemption extends _$OfferRedemption {
       clearError: true,
       clearRedeemedOffer: true,
       clearUsageStatus: true,
+      clearPaymentPreview: true,
+      qrCode: null,
     );
+  }
+
+  void cancelConfirmation() {
+    if (!ref.mounted) return;
+    resetScan();
   }
 }

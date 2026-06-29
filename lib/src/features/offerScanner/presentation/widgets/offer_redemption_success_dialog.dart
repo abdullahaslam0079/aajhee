@@ -1,5 +1,7 @@
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_payment_summary_card.dart';
 import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
@@ -9,17 +11,20 @@ class OfferRedemptionSuccessDialog extends StatefulWidget {
     super.key,
     required this.offer,
     required this.usageStatus,
-    this.autoCloseAfter = const Duration(seconds: 3),
+    this.paymentPreview,
+    this.autoCloseAfter = const Duration(seconds: 5),
   });
 
   final OfferModel offer;
   final OfferUsageStatus usageStatus;
+  final OfferPaymentPreview? paymentPreview;
   final Duration autoCloseAfter;
 
   static Future<void> show(
     BuildContext context, {
     required OfferModel offer,
     required OfferUsageStatus usageStatus,
+    OfferPaymentPreview? paymentPreview,
   }) {
     return showDialog<void>(
       context: context,
@@ -27,6 +32,7 @@ class OfferRedemptionSuccessDialog extends StatefulWidget {
       builder: (_) => OfferRedemptionSuccessDialog(
         offer: offer,
         usageStatus: usageStatus,
+        paymentPreview: paymentPreview,
       ),
     );
   }
@@ -80,7 +86,7 @@ class _OfferRedemptionSuccessDialogState
             ),
             SizedBox(height: AppSpacing.md.h),
             Text(
-              'Offer redeemed!',
+              'Offer availed!',
               style: tt.headlineSmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.3,
@@ -89,13 +95,19 @@ class _OfferRedemptionSuccessDialogState
             ),
             SizedBox(height: AppSpacing.xs.h),
             Text(
-              'You successfully availed this deal',
+              'Show this screen to the cashier',
               style: tt.bodyMedium?.copyWith(
                 color: muted,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
             ),
+            if (widget.paymentPreview != null) ...[
+              SizedBox(height: AppSpacing.lg.h),
+              OfferPaymentSummaryCard(
+                payment: widget.paymentPreview!,
+              ),
+            ],
             SizedBox(height: AppSpacing.lg.h),
             OfferUsageStatusBanner(status: widget.usageStatus),
             SizedBox(height: AppSpacing.lg.h),

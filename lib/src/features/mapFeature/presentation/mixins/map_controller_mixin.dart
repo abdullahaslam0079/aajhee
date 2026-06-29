@@ -29,4 +29,7 @@ mixin MapControllerMixin<T extends StatefulWidget> on State<T> {
 
   Future<void> focusMapOnLocation(LatLng position) =>
       withMapController((controller) => MapCameraActions.focusLocation(controller, position));
+
+  Future<void> focusMapOnAddress(LatLng position) =>
+      withMapController((controller) => MapCameraActions.focusAddress(controller, position));
 }

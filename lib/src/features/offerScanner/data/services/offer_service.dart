@@ -2,10 +2,30 @@ import 'package:dio/dio.dart';
 import 'package:goluto/src/config/app_config.dart';
 import 'package:goluto/src/features/availedOffers/data/models/availed_offer_model.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_by_qr_result.dart';
+import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_qr_codec.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_result.dart';
-import 'package:goluto/src/utils/location_query_params.dart';
 import 'package:goluto/src/utils/utils.dart';
+
+class OfferAvailResult {
+  const OfferAvailResult({
+    required this.usage,
+    required this.payment,
+  });
+
+  final OfferUsageResult usage;
+  final OfferPaymentPreview payment;
+
+  factory OfferAvailResult.fromJson(Map<String, dynamic> json) {
+    return OfferAvailResult(
+      usage: OfferUsageResult.fromJson(json),
+      payment: OfferPaymentPreview.fromJson(
+        json['payment'] as Map<String, dynamic>? ?? const {},
+      ),
+    );
+  }
+}
 
 class OfferService {
   OfferService._();
@@ -13,10 +33,65 @@ class OfferService {
 
   Dio get _dio => AppConfig.dio;
 
+  FutureEither<OfferByQrResult> fetchOfferByQr({
+    required String qrCode,
+    required int branchId,
+    double? billAmount,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/offers/by-qr/$qrCode',
+        queryParameters: {
+          'branch_id': branchId,
+          if (billAmount != null) 'bill_amount': billAmount.toStringAsFixed(2),
+        },
+      );
+      return OfferByQrResult.fromJson(response.data ?? const {});
+    }, requiresNetwork: true);
+  }
+
+  FutureEither<OfferPaymentPreview> fetchPaymentPreview({
+    required int offerId,
+    double? billAmount,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/offers/$offerId/payment-preview',
+        data: {
+          if (billAmount != null) 'bill_amount': billAmount.toStringAsFixed(2),
+        },
+      );
+      final data = response.data ?? const {};
+      return OfferPaymentPreview.fromJson(
+        data['payment'] as Map<String, dynamic>? ?? const {},
+      );
+    }, requiresNetwork: true);
+  }
+
+  FutureEither<OfferAvailResult> availOffer({
+    required int offerId,
+    required int branchId,
+    required String qrCode,
+    double? billAmount,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/offers/$offerId/avail',
+        data: {
+          'branch_id': branchId,
+          'qr_code': qrCode,
+          if (billAmount != null) 'bill_amount': billAmount.toStringAsFixed(2),
+        },
+      );
+      return OfferAvailResult.fromJson(response.data ?? const {});
+    }, requiresNetwork: true);
+  }
+
   FutureEither<void> scanOffer({
     required int offerId,
     required int branchId,
     required String qrCode,
+    double? billAmount,
   }) async {
     return runTask(() async {
       await _dio.post<void>(
@@ -24,6 +99,7 @@ class OfferService {
         data: {
           'branch_id': branchId,
           'qr_code': qrCode,
+          if (billAmount != null) 'bill_amount': billAmount.toStringAsFixed(2),
         },
       );
     }, requiresNetwork: true);
@@ -40,21 +116,18 @@ class OfferService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<OfferUsageResult> redeemOffer({
+  FutureEither<OfferAvailResult> redeemOffer({
     required int offerId,
     required int branchId,
     required String qrCode,
+    double? billAmount,
   }) async {
-    return runTask(() async {
-      final response = await _dio.post<Map<String, dynamic>>(
-        '/api/offers/$offerId/redeem',
-        data: {
-          'branch_id': branchId,
-          'qr_code': qrCode,
-        },
-      );
-      return OfferUsageResult.fromJson(response.data ?? const {});
-    }, requiresNetwork: true);
+    return availOffer(
+      offerId: offerId,
+      branchId: branchId,
+      qrCode: qrCode,
+      billAmount: billAmount,
+    );
   }
 
   FutureEither<List<AvailedOfferModel>> fetchAvailedOffers() async {
@@ -75,16 +148,24 @@ class OfferService {
   FutureEither<OfferModel?> findOfferByScannedCode(
     String code, {
     String? addressId,
+    int? branchId,
   }) async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
-        '/api/offers',
-        queryParameters: LocationQueryParams.fromAddressId(addressId),
+      final qrCode = extractQrCode(code);
+      if (qrCode == null) return null;
+
+      final payload = ScannedOfferPayload.parse(code);
+      final resolvedBranchId = branchId ?? payload?.branchId;
+      if (resolvedBranchId == null) return null;
+
+      final result = await fetchOfferByQr(
+        qrCode: qrCode,
+        branchId: resolvedBranchId,
       );
-      final offers = (response.data ?? const [])
-          .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
-          .toList();
-      return matchOfferFromCode(code, offers);
+      return result.fold(
+        (_) => null,
+        (value) => value.offer,
+      );
     }, requiresNetwork: true);
   }
 

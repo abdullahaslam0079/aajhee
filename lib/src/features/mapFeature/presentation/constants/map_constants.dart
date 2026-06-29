@@ -29,6 +29,12 @@ abstract final class MapConstants {
     zoom: 12.4746,
   );
 
+  static CameraPosition cameraPositionFor(
+    LatLng target, {
+    double zoom = selectedAddressZoom,
+  }) =>
+      CameraPosition(target: target, zoom: zoom);
+
   static const double storeCardWidth = 305;
   static const double storeCardHeight = 194;
   static const double storeCardOuterInset = 4;
@@ -37,6 +43,7 @@ abstract final class MapConstants {
   static const double carouselHeight = 232;
   static const double mapControlsGap = 10;
   static const double selectedStoreZoom = 15.2;
+  static const double selectedAddressZoom = 12.4746;
   static const double currentLocationZoom = 16;
 
   static const double bottomNavInset =

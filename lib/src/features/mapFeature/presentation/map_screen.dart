@@ -1,6 +1,8 @@
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
+import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
 import 'package:goluto/src/features/mapFeature/presentation/mixins/map_location_mixin.dart';
 import 'package:goluto/src/features/mapFeature/presentation/mixins/map_marker_mixin.dart';
@@ -29,11 +31,48 @@ class _MapScreenState extends ConsumerState<MapScreen>
   List<MapBranchModel> get mapBranches =>
       ref.watch(homeFeedProvider).branches;
 
+  String? _focusedAddressId;
+
+  void _onMapCreated(GoogleMapController controller) {
+    onMapCreated(controller);
+    _focusSelectedAddress(ref.read(savedAddressesProvider).selectedAddress);
+  }
+
+  void _focusSelectedAddress(SavedAddress? address) {
+    if (address == null || _focusedAddressId == address.id) return;
+    _focusedAddressId = address.id;
+    focusMapOnAddress(LatLng(address.latitude, address.longitude));
+  }
+
+  void _focusDeliveryAddress() {
+    final address = ref.read(savedAddressesProvider).selectedAddress;
+    if (address != null) {
+      _focusedAddressId = null;
+      _focusSelectedAddress(address);
+      return;
+    }
+    focusCurrentLocation();
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen(savedAddressesProvider, (previous, next) {
+      if (next.isLoading) return;
+
+      final address = next.selectedAddress;
+      if (address == null) return;
+
+      final addressChanged = previous?.selectedAddress?.id != address.id;
+      final addressesLoaded = previous?.isLoading ?? false;
+      if (!addressChanged && !addressesLoaded) return;
+
+      _focusSelectedAddress(address);
+    });
+
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final feedState = ref.watch(homeFeedProvider);
+    final selectedAddress = ref.watch(savedAddressesProvider).selectedAddress;
     final carouselBottomOffset = MapConstants.carouselBottomOffset(context);
     final branches = feedState.branches;
     final isLoading = feedState.isLoading && branches.isEmpty;
@@ -41,6 +80,11 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final selectedIndex = branches.isEmpty
         ? 0
         : selectedStoreIndex.clamp(0, branches.length - 1);
+    final initialCameraPosition = selectedAddress != null
+        ? MapConstants.cameraPositionFor(
+            LatLng(selectedAddress.latitude, selectedAddress.longitude),
+          )
+        : MapConstants.initialCameraPosition;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -48,7 +92,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         children: [
           GoogleMap(
             mapType: MapType.normal,
-            initialCameraPosition: MapConstants.initialCameraPosition,
+            initialCameraPosition: initialCameraPosition,
             zoomControlsEnabled: true,
             zoomGesturesEnabled: true,
             myLocationButtonEnabled: false,
@@ -57,9 +101,9 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 ? const {}
                 : buildMapMarkers(
                     selectedIndex: selectedIndex,
-                    onMarkerTap: (index) => selectStore(index),
+                    onMarkerTap: selectStore,
                   ),
-            onMapCreated: onMapCreated,
+            onMapCreated: _onMapCreated,
           ),
           Positioned(
             right: AppSpacing.ms.w,
@@ -81,7 +125,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
                 MapActionButton(
                   heroTag: 'location',
                   icon: Icons.my_location,
-                  onPressed: focusCurrentLocation,
+                  onPressed: _focusDeliveryAddress,
                 ),
               ],
             ),

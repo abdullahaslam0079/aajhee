@@ -7,6 +7,7 @@ import 'package:goluto/src/features/settings/presentation/providers/saved_addres
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
+import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_counter_confirmation_sheet.dart';
 import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_redemption_success_dialog.dart';
 import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -33,6 +34,7 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
     with WidgetsBindingObserver {
   late final MobileScannerController _scannerController;
   bool _hasHandledScan = false;
+  bool _confirmationSheetOpen = false;
 
   @override
   void initState() {
@@ -79,7 +81,9 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
       ref.read(offerRedemptionProvider(_session).notifier);
 
   void _onDetect(BarcodeCapture capture) {
-    if (_hasHandledScan || _redemptionState.isBusy) return;
+    if (_hasHandledScan || _redemptionState.isBusy || _confirmationSheetOpen) {
+      return;
+    }
     final code = capture.barcodes.first.rawValue;
     if (code == null || code.isEmpty) return;
 
@@ -97,15 +101,73 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
     }
 
     setState(() => _hasHandledScan = true);
-    _redeemCode(code);
+    _resolveCode(code);
   }
 
-  Future<void> _redeemCode(String code) async {
-    await _redemptionNotifier.redeemScannedCode(code);
-
+  Future<void> _resolveCode(String code) async {
+    await _redemptionNotifier.resolveScannedCode(code);
     if (!mounted) return;
 
     final state = ref.read(offerRedemptionProvider(_session));
+    if (state.needsBillAmount || state.needsConfirmation) {
+      await _scannerController.stop();
+      await _showConfirmationSheet(state);
+      return;
+    }
+
+    await _handleTerminalState(state);
+  }
+
+  Future<void> _showConfirmationSheet(OfferRedemptionState state) async {
+    final offer = state.selectedOffer;
+    final payment = state.paymentPreview;
+    if (offer == null || payment == null) return;
+
+    setState(() => _confirmationSheetOpen = true);
+
+    await OfferCounterConfirmationSheet.show(
+      context,
+      offer: offer,
+      branchName: state.branchName ?? 'Branch',
+      branchAddress: state.branchAddress ?? '',
+      payment: payment,
+      needsBillAmount: state.needsBillAmount,
+      isProcessing: state.isBusy,
+      errorMessage: state.errorMessage,
+      onBillAmountSubmit: (amount) async {
+        await _redemptionNotifier.submitBillAmount(amount);
+        if (!mounted) return;
+        final updated = ref.read(offerRedemptionProvider(_session));
+        if (updated.needsConfirmation && updated.paymentPreview != null) {
+          Navigator.of(context).pop();
+          setState(() => _confirmationSheetOpen = false);
+          await _showConfirmationSheet(updated);
+        }
+      },
+      onConfirm: () async {
+        await _redemptionNotifier.confirmAvail();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        setState(() => _confirmationSheetOpen = false);
+        final updated = ref.read(offerRedemptionProvider(_session));
+        await _handleTerminalState(updated);
+      },
+    );
+
+    if (mounted) {
+      setState(() => _confirmationSheetOpen = false);
+      final current = ref.read(offerRedemptionProvider(_session));
+      if (current.status == OfferRedemptionStatus.idle ||
+          current.status == OfferRedemptionStatus.error) {
+        setState(() => _hasHandledScan = false);
+        if (!_scannerController.value.isRunning) {
+          await _scannerController.start();
+        }
+      }
+    }
+  }
+
+  Future<void> _handleTerminalState(OfferRedemptionState state) async {
     if (state.status == OfferRedemptionStatus.redeemed &&
         state.redeemedOffer != null) {
       await _scannerController.stop();
@@ -119,6 +181,7 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
         context,
         offer: redeemedOffer,
         usageStatus: usageStatus,
+        paymentPreview: state.paymentPreview,
       );
 
       if (!mounted) return;
@@ -254,9 +317,9 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
   }) {
     if (isProcessing) return 'Processing your offer...';
     if (selectedOffer != null) {
-      return 'Scan the in-store QR for "${selectedOffer.title}"';
+      return 'Scan the poster QR for "${selectedOffer.title}"';
     }
-    return 'Point your camera at the store QR code';
+    return 'Point your camera at the store poster QR';
   }
 
   String _statusSubline({
@@ -264,8 +327,10 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
     required bool hasSelectedOffer,
   }) {
     if (isProcessing) return 'Please wait';
-    if (hasSelectedOffer) return 'Show this screen at checkout';
-    return 'Offer will be redeemed automatically';
+    if (hasSelectedOffer) {
+      return 'You will see what to pay before availing';
+    }
+    return 'Payment amount appears on your phone';
   }
 
   Widget _header(ColorScheme cs, TextTheme tt) {
@@ -368,7 +433,7 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            selectedOffer?.title ?? 'Scan Offer Code',
+            selectedOffer?.title ?? 'Scan Poster QR',
             style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
             textAlign: TextAlign.center,
           ),
@@ -425,7 +490,7 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
                         const CircularProgressIndicator(color: Colors.white),
                         SizedBox(height: AppSpacing.sm.h),
                         Text(
-                          'Redeeming offer...',
+                          'Loading offer...',
                           style: tt.titleMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -480,10 +545,10 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.security_rounded, size: 16, color: cs.primary),
+                Icon(Icons.payments_outlined, size: 16, color: cs.primary),
                 SizedBox(width: AppSpacing.xxs.w),
                 Text(
-                  'Secure checkout scan',
+                  'Amount to pay shown before availing',
                   style: tt.labelLarge?.copyWith(
                     color: muted,
                     fontWeight: FontWeight.w700,

@@ -149,6 +149,34 @@ class OfferModel {
     );
   }
 
+  factory OfferModel.fromQrSummary(Map<String, dynamic> json) {
+    return OfferModel(
+      id: parseApiInt(json['id']),
+      businessId: 0,
+      businessName: parseApiString(json['business_name']) ?? '',
+      categoryId: 0,
+      categoryName: '',
+      category: const CategoryModel(id: 0, name: ''),
+      branchIds: const [],
+      offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
+      title: parseApiString(json['title']) ?? '',
+      description: parseApiString(json['description']) ?? '',
+      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
+      discountPercent: parseApiDouble(json['discount_percent']),
+      itemName: parseApiString(json['item_name']) ?? '',
+      originalPrice: parseApiNullableDouble(json['original_price']),
+      discountedPrice: parseApiNullableDouble(json['discounted_price']),
+      usageLimitType: '',
+      usageLimitCount: 1,
+      isEnabled: json['is_enabled'] as bool? ?? true,
+      isTimeLimited: false,
+      startsAt: null,
+      endsAt: null,
+      qrCode: '',
+      isActive: json['is_active'] as bool? ?? true,
+    );
+  }
+
   static int? _parseNullableInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;

@@ -29,6 +29,18 @@ abstract final class MapCameraActions {
     );
   }
 
+  static Future<void> focusAddress(
+    GoogleMapController controller,
+    LatLng position,
+  ) {
+    return controller.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        position,
+        MapConstants.selectedAddressZoom,
+      ),
+    );
+  }
+
   static Future<void> zoomIn(GoogleMapController controller) {
     return controller.animateCamera(CameraUpdate.zoomIn());
   }

@@ -99,7 +99,7 @@ final class OfferRedemptionProvider
   }
 }
 
-String _$offerRedemptionHash() => r'b9384e99abcea2f9381e7769a0abe166964f61f9';
+String _$offerRedemptionHash() => r'7f759849bfa0a3a73475e1bea89c1feddc1abf77';
 
 final class OfferRedemptionFamily extends $Family
     with
