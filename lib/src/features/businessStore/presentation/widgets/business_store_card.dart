@@ -29,6 +29,9 @@ class BusinessStoreCard extends ConsumerWidget {
       favoriteStoresProvider.select((state) => state.isFavorite(branchId)),
     );
     final distanceKm = _distanceKm(ref);
+    final topOffer = branch.highestDiscountOffer;
+    final offerTitle = topOffer?.title.trim() ?? '';
+    final offerDescription = topOffer?.description.trim() ?? '';
 
     return Material(
       color: Colors.transparent,
@@ -197,6 +200,29 @@ class BusinessStoreCard extends ConsumerWidget {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
+                                      if (offerTitle.isNotEmpty) ...[
+                                        SizedBox(height: 4.h),
+                                        Text(
+                                          offerTitle,
+                                          style: tt.labelLarge?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                      if (offerDescription.isNotEmpty) ...[
+                                        SizedBox(height: 2.h),
+                                        Text(
+                                          offerDescription,
+                                          style: tt.bodySmall?.copyWith(
+                                            color: muted,
+                                            height: 1.3,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),

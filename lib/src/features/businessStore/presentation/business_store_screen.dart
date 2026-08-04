@@ -1,8 +1,10 @@
 import 'dart:ui';
 
+import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
+import 'package:goluto/src/features/offers/offer_feature_flags.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
 import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
 import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
@@ -71,7 +73,16 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     }
   }
 
-  void _availAndScanOffer(OfferModel offer) {
+  void _handleOfferTap(OfferModel offer) {
+    if (offer.isViewOnlyOffer || !kOfferScannerEnabled) {
+      showOfferDetailSheet(
+        context,
+        offer: offer,
+        storeName: branch.displayName,
+      );
+      return;
+    }
+
     final usageStatus = ref.read(offerUsageStatusProvider(offer));
     if (!usageStatus.isAvailable) {
       showToast(
@@ -542,7 +553,14 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     final imageUrl = (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
         ? offer.imageUrl
         : null;
-    final statusLabel = _shortStatusLabel(usageStatus);
+    final isViewOnly = offer.isViewOnlyOffer;
+    final statusLabel = isViewOnly
+        ? 'View offer'
+        : _shortStatusLabel(usageStatus);
+    final statusShowsAvailable = isViewOnly || usageStatus.isAvailable;
+    final isTappable = isViewOnly
+        ? offer.isActive
+        : usageStatus.isAvailable;
     final dealTypeLabel = offer.offerType == OfferType.item
         ? 'Item deal'
         : 'Flat off';
@@ -554,11 +572,9 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
       borderRadius: AppBorders.lg,
       child: InkWell(
         borderRadius: AppBorders.lg,
-        onTap: usageStatus.isAvailable
-            ? () => _availAndScanOffer(offer)
-            : null,
+        onTap: isTappable ? () => _handleOfferTap(offer) : null,
         child: Opacity(
-          opacity: usageStatus.isAvailable ? 1 : 0.72,
+          opacity: isTappable ? 1 : 0.72,
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: cs.surfaceContainerLowest,
@@ -623,7 +639,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                                 SizedBox(height: AppSpacing.sm.h),
                               _OfferStatusPill(
                                 label: statusLabel,
-                                isAvailable: usageStatus.isAvailable,
+                                isAvailable: statusShowsAvailable,
                               ),
                               SizedBox(height: AppSpacing.sm.h),
                               Wrap(
@@ -672,28 +688,29 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              right: -4.w,
-                              bottom: -4.h,
-                              child: Container(
-                                width: 28.w,
-                                height: 28.w,
-                                decoration: BoxDecoration(
-                                  color: cs.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: cs.surfaceContainerLowest,
-                                    width: 2,
+                            if (!isViewOnly)
+                              Positioned(
+                                right: -4.w,
+                                bottom: -4.h,
+                                child: Container(
+                                  width: 28.w,
+                                  height: 28.w,
+                                  decoration: BoxDecoration(
+                                    color: cs.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: cs.surfaceContainerLowest,
+                                      width: 2,
+                                    ),
+                                    boxShadow: AppShadows.subtle,
                                   ),
-                                  boxShadow: AppShadows.subtle,
-                                ),
-                                child: Icon(
-                                  Icons.qr_code_2_rounded,
-                                  size: 15,
-                                  color: cs.onPrimary,
+                                  child: Icon(
+                                    Icons.qr_code_2_rounded,
+                                    size: 15,
+                                    color: cs.onPrimary,
+                                  ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ],

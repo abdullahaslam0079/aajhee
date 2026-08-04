@@ -18,6 +18,22 @@ enum OfferType {
   }
 }
 
+enum OfferRedemptionMode {
+  scannable('scannable'),
+  viewOnly('view_only');
+
+  const OfferRedemptionMode(this.apiValue);
+
+  final String apiValue;
+
+  static OfferRedemptionMode fromApi(String? value) {
+    if (value == viewOnly.apiValue) return viewOnly;
+    return scannable;
+  }
+
+  bool get isViewOnly => this == viewOnly;
+}
+
 class OfferModel {
   const OfferModel({
     required this.id,
@@ -28,8 +44,12 @@ class OfferModel {
     required this.category,
     required this.branchIds,
     required this.offerType,
+    required this.redemptionMode,
     required this.title,
     required this.description,
+    required this.detailedDescription,
+    required this.externalUrl,
+    required this.externalUrlLabel,
     required this.imageUrl,
     required this.discountPercent,
     required this.itemName,
@@ -48,6 +68,15 @@ class OfferModel {
     this.isAvailableForUser,
     this.lastRedeemedAt,
     this.periodResetsAt,
+    this.viewCount = 0,
+    this.likeCount = 0,
+    this.isLiked = false,
+    this.businessViewCount = 0,
+    this.businessLikeCount = 0,
+    this.isBusinessLiked = false,
+    this.businessLogoUrl,
+    this.featuredBranchId,
+    this.featuredBranchName,
   });
 
   final int id;
@@ -58,8 +87,12 @@ class OfferModel {
   final CategoryModel category;
   final List<int> branchIds;
   final OfferType offerType;
+  final OfferRedemptionMode redemptionMode;
   final String title;
   final String description;
+  final String detailedDescription;
+  final String? externalUrl;
+  final String? externalUrlLabel;
   final String? imageUrl;
   final double discountPercent;
   final String itemName;
@@ -78,6 +111,15 @@ class OfferModel {
   final bool? isAvailableForUser;
   final DateTime? lastRedeemedAt;
   final DateTime? periodResetsAt;
+  final int viewCount;
+  final int likeCount;
+  final bool isLiked;
+  final int businessViewCount;
+  final int businessLikeCount;
+  final bool isBusinessLiked;
+  final String? businessLogoUrl;
+  final int? featuredBranchId;
+  final String? featuredBranchName;
 
   String get subtitle {
     if (description.trim().isNotEmpty) return description.trim();
@@ -98,6 +140,34 @@ class OfferModel {
     return '';
   }
 
+  bool get isViewOnlyOffer => redemptionMode.isViewOnly;
+
+  String? get resolvedExternalUrl {
+    final url = externalUrl?.trim();
+    if (url == null || url.isEmpty) return null;
+    return url;
+  }
+
+  String externalLinkButtonLabel(String storeName) {
+    final custom = externalUrlLabel?.trim();
+    if (custom != null && custom.isNotEmpty) return custom;
+    final brand = storeName.trim();
+    if (brand.isNotEmpty) return 'Visit $brand';
+    return 'Visit official site';
+  }
+
+  String get summaryText {
+    final short = description.trim();
+    if (short.isNotEmpty) return short;
+    return subtitle;
+  }
+
+  String get fullDetailsText {
+    final detailed = detailedDescription.trim();
+    if (detailed.isNotEmpty) return detailed;
+    return summaryText;
+  }
+
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -116,8 +186,14 @@ class OfferModel {
           .map((id) => parseApiInt(id))
           .toList(),
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
+      redemptionMode: OfferRedemptionMode.fromApi(
+        parseApiString(json['redemption_mode']),
+      ),
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
+      detailedDescription: parseApiString(json['detailed_description']) ?? '',
+      externalUrl: parseApiString(json['external_url']),
+      externalUrlLabel: parseApiString(json['external_url_label']),
       imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
@@ -146,6 +222,77 @@ class OfferModel {
           json['can_redeem'] as bool?,
       lastRedeemedAt: _parseNullableDate(json['last_redeemed_at']),
       periodResetsAt: _parseNullableDate(json['period_resets_at']),
+      viewCount: parseApiInt(json['view_count']),
+      likeCount: parseApiInt(json['like_count']),
+      isLiked: json['is_liked'] as bool? ?? false,
+      businessViewCount: parseApiInt(json['business_view_count']),
+      businessLikeCount: parseApiInt(json['business_like_count']),
+      isBusinessLiked: json['is_business_liked'] as bool? ?? false,
+      businessLogoUrl: resolveMediaUrl(parseApiString(json['business_logo_url'])),
+      featuredBranchId: _parseFeaturedBranchId(json['featured_branch']),
+      featuredBranchName: _parseFeaturedBranchName(json['featured_branch']),
+    );
+  }
+
+  static int? _parseFeaturedBranchId(dynamic branchJson) {
+    if (branchJson is! Map<String, dynamic>) return null;
+    return parseApiInt(branchJson['id']);
+  }
+
+  static String? _parseFeaturedBranchName(dynamic branchJson) {
+    if (branchJson is! Map<String, dynamic>) return null;
+    return parseApiString(branchJson['name']);
+  }
+
+  OfferModel copyWithEngagement({
+    int? viewCount,
+    int? likeCount,
+    bool? isLiked,
+    int? businessLikeCount,
+    bool? isBusinessLiked,
+  }) {
+    return OfferModel(
+      id: id,
+      businessId: businessId,
+      businessName: businessName,
+      categoryId: categoryId,
+      categoryName: categoryName,
+      category: category,
+      branchIds: branchIds,
+      offerType: offerType,
+      redemptionMode: redemptionMode,
+      title: title,
+      description: description,
+      detailedDescription: detailedDescription,
+      externalUrl: externalUrl,
+      externalUrlLabel: externalUrlLabel,
+      imageUrl: imageUrl,
+      discountPercent: discountPercent,
+      itemName: itemName,
+      originalPrice: originalPrice,
+      discountedPrice: discountedPrice,
+      usageLimitType: usageLimitType,
+      usageLimitCount: usageLimitCount,
+      isEnabled: isEnabled,
+      isTimeLimited: isTimeLimited,
+      startsAt: startsAt,
+      endsAt: endsAt,
+      qrCode: qrCode,
+      isActive: isActive,
+      userRedemptionCount: userRedemptionCount,
+      userRemainingUses: userRemainingUses,
+      isAvailableForUser: isAvailableForUser,
+      lastRedeemedAt: lastRedeemedAt,
+      periodResetsAt: periodResetsAt,
+      viewCount: viewCount ?? this.viewCount,
+      likeCount: likeCount ?? this.likeCount,
+      isLiked: isLiked ?? this.isLiked,
+      businessViewCount: businessViewCount,
+      businessLikeCount: businessLikeCount ?? this.businessLikeCount,
+      isBusinessLiked: isBusinessLiked ?? this.isBusinessLiked,
+      businessLogoUrl: businessLogoUrl,
+      featuredBranchId: featuredBranchId,
+      featuredBranchName: featuredBranchName,
     );
   }
 
@@ -159,8 +306,14 @@ class OfferModel {
       category: const CategoryModel(id: 0, name: ''),
       branchIds: const [],
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
+      redemptionMode: OfferRedemptionMode.fromApi(
+        parseApiString(json['redemption_mode']),
+      ),
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
+      detailedDescription: parseApiString(json['detailed_description']) ?? '',
+      externalUrl: parseApiString(json['external_url']),
+      externalUrlLabel: parseApiString(json['external_url_label']),
       imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',

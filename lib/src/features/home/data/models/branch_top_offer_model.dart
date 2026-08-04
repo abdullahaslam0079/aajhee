@@ -8,6 +8,7 @@ class BranchTopOfferModel {
     required this.title,
     required this.description,
     required this.offerType,
+    required this.redemptionMode,
     required this.discountPercent,
     required this.itemName,
     required this.originalPrice,
@@ -20,6 +21,7 @@ class BranchTopOfferModel {
   final String title;
   final String description;
   final OfferType offerType;
+  final OfferRedemptionMode redemptionMode;
   final double discountPercent;
   final String itemName;
   final double? originalPrice;
@@ -33,6 +35,9 @@ class BranchTopOfferModel {
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
+      redemptionMode: OfferRedemptionMode.fromApi(
+        parseApiString(json['redemption_mode']),
+      ),
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
       originalPrice: parseApiNullableDouble(json['original_price']),

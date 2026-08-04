@@ -3,7 +3,7 @@ import 'package:goluto/src/features/auth/presentation/providers/session_provider
 import 'package:goluto/src/features/availedOffers/presentation/providers/availed_offers_provider.dart';
 import 'package:goluto/src/features/availedOffers/presentation/widgets/availed_offer_card.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:goluto/src/features/offers/offer_feature_flags.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -60,12 +60,6 @@ class _AvailedOffersTabScreenState
               )
             : availedState.offers.isEmpty
             ? _EmptyState(
-                onScan: () => context.push(
-                  AppRoutes.offerScanner,
-                  extra: const OfferScannerSession(
-                    navigateToBranchOnSuccess: true,
-                  ),
-                ),
                 onBrowse: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
                     .setSelectedIndex(0),
@@ -151,11 +145,9 @@ class _UnauthenticatedState extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   const _EmptyState({
-    required this.onScan,
     required this.onBrowse,
   });
 
-  final VoidCallback onScan;
   final VoidCallback onBrowse;
 
   @override
@@ -183,7 +175,9 @@ class _EmptyState extends StatelessWidget {
             ),
             SizedBox(height: AppSpacing.sm.h),
             Text(
-              'Scan a QR code at a store to avail your first offer.',
+              kOfferScannerEnabled
+                  ? 'Scan a QR code at a store to avail your first offer.'
+                  : 'Browse stores on Home to explore current offers.',
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
@@ -191,13 +185,10 @@ class _EmptyState extends StatelessWidget {
             ),
             SizedBox(height: AppSpacing.lg.h),
             FilledButton(
-              onPressed: onScan,
-              child: const Text('Scan offer'),
-            ),
-            SizedBox(height: AppSpacing.sm.h),
-            TextButton(
               onPressed: onBrowse,
-              child: const Text('Browse stores'),
+              child: Text(
+                kOfferScannerEnabled ? 'Browse stores' : 'Browse offers',
+              ),
             ),
           ],
         ),
