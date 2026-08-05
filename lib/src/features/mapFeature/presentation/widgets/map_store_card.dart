@@ -20,12 +20,11 @@ class MapStoreCard extends ConsumerWidget {
   final VoidCallback onTap;
   final VoidCallback onViewDetails;
 
-  static const Color _discountColor = Color(0xFFFF9500);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
+    final appColors = context.appColors;
     final muted = colorScheme.onSurface.withValues(alpha: 0.55);
     final discountPercent = branch.highestDiscountPercent.round();
     final distanceKm = _distanceKm(ref);
@@ -110,8 +109,8 @@ class MapStoreCard extends ConsumerWidget {
                               if (discountPercent > 0)
                                 _Badge(
                                   label: '$discountPercent% off',
-                                  background: _discountColor,
-                                  foreground: Colors.white,
+                                  background: appColors.warning,
+                                  foreground: appColors.onWarning,
                                   icon: Icons.local_offer_rounded,
                                 ),
                             ],

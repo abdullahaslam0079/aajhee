@@ -30,6 +30,17 @@ class BranchTopOfferModel {
   final bool isActive;
 
   factory BranchTopOfferModel.fromJson(Map<String, dynamic> json) {
+    final imageUrls = <String>[];
+    final rawUrls = json['image_urls'];
+    if (rawUrls is List) {
+      for (final item in rawUrls) {
+        final resolved = resolveMediaUrl(parseApiString(item));
+        if (resolved != null && resolved.isNotEmpty) {
+          imageUrls.add(resolved);
+        }
+      }
+    }
+
     return BranchTopOfferModel(
       id: parseApiInt(json['id']),
       title: parseApiString(json['title']) ?? '',
@@ -42,7 +53,8 @@ class BranchTopOfferModel {
       itemName: parseApiString(json['item_name']) ?? '',
       originalPrice: parseApiNullableDouble(json['original_price']),
       discountedPrice: parseApiNullableDouble(json['discounted_price']),
-      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
+      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])) ??
+          (imageUrls.isNotEmpty ? imageUrls.first : null),
       isActive: json['is_active'] as bool? ?? true,
     );
   }

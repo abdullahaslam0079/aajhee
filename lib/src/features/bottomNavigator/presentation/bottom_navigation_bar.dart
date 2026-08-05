@@ -1,5 +1,5 @@
-import 'package:goluto/src/features/offers/offer_feature_flags.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
+// import 'package:goluto/src/features/offers/offer_feature_flags.dart';
+// import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:goluto/src/features/settings/presentation/settings.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -11,12 +11,12 @@ import 'package:goluto/src/features/mapFeature/presentation/map_screen.dart';
 class BottomNavigationBarScreen extends ConsumerWidget {
   const BottomNavigationBarScreen({super.key});
 
-  static const double _fabSize = 62;
+  // static const double _fabSize = 62;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(bottomNavBarControllerProvider);
-    final colorScheme = context.theme.colorScheme;
+    // final colorScheme = context.theme.colorScheme;
 
     return Scaffold(
       backgroundColor: kHomeCanvasColor,
@@ -36,44 +36,43 @@ class BottomNavigationBarScreen extends ConsumerWidget {
               : const SettingsScreen(),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: SizedBox(
-        height: _fabSize,
-        width: _fabSize,
-        child: FloatingActionButton(
-          onPressed: () {
-            if (!kOfferScannerEnabled) {
-              showToast(
-                context,
-                message: 'Offer scanning is coming soon.',
-                status: 'info',
-              );
-              return;
-            }
-            context.push(
-              AppRoutes.offerScanner,
-              extra: const OfferScannerSession(
-                navigateToBranchOnSuccess: true,
-              ),
-            );
-          },
-          backgroundColor: colorScheme.primary,
-          foregroundColor: Colors.white,
-          elevation: 8,
-          highlightElevation: 10,
-          focusElevation: 10,
-          hoverElevation: 10,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.qr_code_scanner_rounded, size: 28),
-        ),
-      ),
+      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      // floatingActionButton: SizedBox(
+      //   height: _fabSize,
+      //   width: _fabSize,
+      //   child: FloatingActionButton(
+      //     onPressed: () {
+      //       if (!kOfferScannerEnabled) {
+      //         showToast(
+      //           context,
+      //           message: 'Offer scanning is coming soon.',
+      //           status: 'info',
+      //         );
+      //         return;
+      //       }
+      //       context.push(
+      //         AppRoutes.offerScanner,
+      //         extra: const OfferScannerSession(
+      //           navigateToBranchOnSuccess: true,
+      //         ),
+      //       );
+      //     },
+      //     backgroundColor: colorScheme.primary,
+      //     foregroundColor: Colors.white,
+      //     elevation: 8,
+      //     highlightElevation: 10,
+      //     focusElevation: 10,
+      //     hoverElevation: 10,
+      //     shape: const CircleBorder(),
+      //     child: const Icon(Icons.qr_code_scanner_rounded, size: 28),
+      //   ),
+      // ),
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         elevation: 16,
         shadowColor: Colors.black.withValues(alpha: 0.14),
         height: kBottomNavBarHeight,
         padding: EdgeInsets.zero,
-        notchMargin: 10,
         clipBehavior: Clip.antiAlias,
         shape: const AutomaticNotchedShape(
           RoundedRectangleBorder(
@@ -81,7 +80,6 @@ class BottomNavigationBarScreen extends ConsumerWidget {
               top: Radius.circular(kBottomNavBarBorderRadius),
             ),
           ),
-          CircleBorder(),
         ),
         child: Row(
           children: [
@@ -109,7 +107,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                     .setSelectedIndex(1),
               ),
             ),
-            const SizedBox(width: 72),
+            // const SizedBox(width: 72), // Spacer for scanner FAB notch
             Expanded(
               child: _BottomItem(
                 icon: selectedIndex == 2

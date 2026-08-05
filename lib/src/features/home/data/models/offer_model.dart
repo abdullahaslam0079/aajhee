@@ -51,6 +51,7 @@ class OfferModel {
     required this.externalUrl,
     required this.externalUrlLabel,
     required this.imageUrl,
+    this.imageUrls = const [],
     required this.discountPercent,
     required this.itemName,
     required this.originalPrice,
@@ -94,6 +95,7 @@ class OfferModel {
   final String? externalUrl;
   final String? externalUrlLabel;
   final String? imageUrl;
+  final List<String> imageUrls;
   final double discountPercent;
   final String itemName;
   final double? originalPrice;
@@ -168,6 +170,19 @@ class OfferModel {
     return summaryText;
   }
 
+  List<String> get displayImageUrls {
+    if (imageUrls.isNotEmpty) return imageUrls;
+    final primary = imageUrl?.trim();
+    if (primary != null && primary.isNotEmpty) return [primary];
+    return const [];
+  }
+
+  String? get favoriteBranchKey {
+    if (featuredBranchId != null) return featuredBranchId.toString();
+    if (branchIds.isNotEmpty) return branchIds.first.toString();
+    return null;
+  }
+
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -175,6 +190,7 @@ class OfferModel {
   }
 
   factory OfferModel.fromJson(Map<String, dynamic> json) {
+    final imageUrls = _parseImageUrls(json['image_urls']);
     return OfferModel(
       id: parseApiInt(json['id']),
       businessId: parseApiInt(json['business_id']),
@@ -194,7 +210,9 @@ class OfferModel {
       detailedDescription: parseApiString(json['detailed_description']) ?? '',
       externalUrl: parseApiString(json['external_url']),
       externalUrlLabel: parseApiString(json['external_url_label']),
-      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
+      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])) ??
+          (imageUrls.isNotEmpty ? imageUrls.first : null),
+      imageUrls: imageUrls,
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
       originalPrice: parseApiNullableDouble(json['original_price']),
@@ -244,6 +262,18 @@ class OfferModel {
     return parseApiString(branchJson['name']);
   }
 
+  static List<String> _parseImageUrls(dynamic value) {
+    if (value is! List<dynamic>) return const [];
+    final urls = <String>[];
+    for (final item in value) {
+      final resolved = resolveMediaUrl(parseApiString(item));
+      if (resolved != null && resolved.isNotEmpty) {
+        urls.add(resolved);
+      }
+    }
+    return urls;
+  }
+
   OfferModel copyWithEngagement({
     int? viewCount,
     int? likeCount,
@@ -267,6 +297,7 @@ class OfferModel {
       externalUrl: externalUrl,
       externalUrlLabel: externalUrlLabel,
       imageUrl: imageUrl,
+      imageUrls: imageUrls,
       discountPercent: discountPercent,
       itemName: itemName,
       originalPrice: originalPrice,
@@ -297,6 +328,7 @@ class OfferModel {
   }
 
   factory OfferModel.fromQrSummary(Map<String, dynamic> json) {
+    final imageUrls = _parseImageUrls(json['image_urls']);
     return OfferModel(
       id: parseApiInt(json['id']),
       businessId: 0,
@@ -314,7 +346,9 @@ class OfferModel {
       detailedDescription: parseApiString(json['detailed_description']) ?? '',
       externalUrl: parseApiString(json['external_url']),
       externalUrlLabel: parseApiString(json['external_url_label']),
-      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
+      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])) ??
+          (imageUrls.isNotEmpty ? imageUrls.first : null),
+      imageUrls: imageUrls,
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
       originalPrice: parseApiNullableDouble(json['original_price']),

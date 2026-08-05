@@ -17,12 +17,11 @@ class BusinessStoreCard extends ConsumerWidget {
   final MapBranchModel branch;
   final VoidCallback? onTap;
 
-  static const Color _discountColor = Color(0xFFFF9500);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
+    final appColors = context.appColors;
     final muted = cs.onSurface.withValues(alpha: 0.55);
     final branchId = branch.id.toString();
     final isFavorite = ref.watch(
@@ -41,7 +40,6 @@ class BusinessStoreCard extends ConsumerWidget {
         child: DecoratedBox(
           decoration: const BoxDecoration(
             borderRadius: AppBorders.xl,
-            boxShadow: AppShadows.elevated,
           ),
           child: ClipRRect(
             borderRadius: AppBorders.xl,
@@ -54,7 +52,7 @@ class BusinessStoreCard extends ConsumerWidget {
                   NetworkImageWithFallback(
                     primaryUrl: branch.coverImageUrl,
                     debugLabel: 'cover ${branch.displayName}',
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                     errorWidget: ColoredBox(
                       color: cs.surfaceContainerHighest,
                       child: Icon(
@@ -66,12 +64,17 @@ class BusinessStoreCard extends ConsumerWidget {
                   ),
                   DecoratedBox(
                     decoration: BoxDecoration(
+                      borderRadius: AppBorders.xl,
+                      border: Border.all(
+                        color: cs.scrim.withValues(alpha: 0.15),
+                        width: 1.5,
+                      ),
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.02),
-                          Colors.black.withValues(alpha: 0.55),
+                          cs.surfaceContainerLowest.withValues(alpha: 0),
+                          cs.scrim.withValues(alpha: 0.25),
                         ],
                         stops: const [0.45, 1.0],
                       ),
@@ -82,30 +85,30 @@ class BusinessStoreCard extends ConsumerWidget {
                       left: AppSpacing.ms.w,
                       top: AppSpacing.ms.h,
                       child: DecoratedBox(
-                        decoration: const BoxDecoration(
-                          color: _discountColor,
+                        decoration: BoxDecoration(
+                          color: appColors.warning,
                           borderRadius: AppBorders.full,
                           boxShadow: AppShadows.subtle,
                         ),
                         child: Padding(
                           padding: EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm.w,
-                            vertical: 7.h,
+                            horizontal: AppSpacing.sm,
+                            vertical: 5.h,
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.local_offer_rounded,
                                 size: 14,
-                                color: Colors.white,
+                                color: appColors.onWarning,
                               ),
                               SizedBox(width: AppSpacing.xxs.w),
                               Text(
                                 'Flat ${branch.highestDiscountPercent.toStringAsFixed(0)}% Off',
-                                style: tt.labelLarge?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                                style: tt.labelMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: appColors.onWarning,
                                 ),
                               ),
                             ],
@@ -113,6 +116,8 @@ class BusinessStoreCard extends ConsumerWidget {
                         ),
                       ),
                     ),
+
+                    // Favorite button
                   Positioned(
                     right: AppSpacing.ms.w,
                     top: AppSpacing.ms.h,
@@ -129,9 +134,11 @@ class BusinessStoreCard extends ConsumerWidget {
                             height: 40.w,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.22),
+                              color: cs.surfaceContainerLowest
+                                  .withValues(alpha: 0.22),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: cs.surfaceContainerLowest
+                                    .withValues(alpha: 0.55),
                                 width: 1.2,
                               ),
                             ),
@@ -139,8 +146,9 @@ class BusinessStoreCard extends ConsumerWidget {
                               isFavorite
                                   ? Icons.favorite_rounded
                                   : Icons.favorite_border_rounded,
-                              color:
-                                  isFavorite ? Colors.redAccent : Colors.white,
+                              color: isFavorite
+                                  ? cs.error
+                                  : cs.surfaceContainerLowest,
                               size: 21,
                             ),
                           ),
@@ -148,6 +156,8 @@ class BusinessStoreCard extends ConsumerWidget {
                       ),
                     ),
                   ),
+
+                  // Business store card content
                   Positioned(
                     left: AppSpacing.ms.w,
                     right: AppSpacing.ms.w,
@@ -158,10 +168,12 @@ class BusinessStoreCard extends ConsumerWidget {
                         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.78),
+                            color: cs.surfaceContainerLowest
+                                .withValues(alpha: 0.78),
                             borderRadius: AppBorders.lg,
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.85),
+                              color: cs.surfaceContainerLowest
+                                  .withValues(alpha: 0.85),
                             ),
                             boxShadow: AppShadows.card,
                           ),
@@ -183,8 +195,8 @@ class BusinessStoreCard extends ConsumerWidget {
                                     children: [
                                       Text(
                                         branch.displayName,
-                                        style: tt.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.w800,
+                                        style: tt.titleSmall?.copyWith(
+                                          fontWeight: FontWeight.w500,
                                           letterSpacing: -0.3,
                                         ),
                                         maxLines: 1,
@@ -205,24 +217,13 @@ class BusinessStoreCard extends ConsumerWidget {
                                         Text(
                                           offerTitle,
                                           style: tt.labelLarge?.copyWith(
-                                            fontWeight: FontWeight.w700,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ],
-                                      if (offerDescription.isNotEmpty) ...[
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          offerDescription,
-                                          style: tt.bodySmall?.copyWith(
-                                            color: muted,
-                                            height: 1.3,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
+                                      
                                     ],
                                   ),
                                 ),

@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
 import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
@@ -25,6 +24,8 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
   Widget build(BuildContext context) {
     final selectedIndex = ref.watch(bottomNavBarControllerProvider);
     final discountsState = ref.watch(discountsFeedProvider);
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
     final bottomInset = kHomeFeedBottomInset + MediaQuery.paddingOf(context).bottom;
 
     if (_lastSeenTabIndex != selectedIndex) {
@@ -36,87 +37,102 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
 
     return Scaffold(
       backgroundColor: kHomeCanvasColor,
-      appBar: AppBar(
-        title: const Text('Discounts'),
-        centerTitle: false,
-        scrolledUnderElevation: 0,
-        backgroundColor: kHomeCanvasColor,
-      ),
       body: SafeArea(
         bottom: false,
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(discountsFeedProvider.notifier).load(),
-          child: discountsState.isLoading && discountsState.offers.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    SizedBox(height: 180.h),
-                    const Center(child: CircularProgressIndicator()),
-                  ],
-                )
-              : discountsState.errorMessage != null &&
-                    discountsState.offers.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-                  children: [
-                    SizedBox(height: 120.h),
-                    _ErrorState(
-                      message: discountsState.errorMessage!,
-                      onRetry: () =>
-                          ref.read(discountsFeedProvider.notifier).load(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.ms.w,
+                AppSpacing.sm.h,
+                AppSpacing.ms.w,
+                AppSpacing.sm.h,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Discounts',
+                    style: tt.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
                     ),
-                  ],
-                )
-              : discountsState.offers.isEmpty
-              ? ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-                  children: [
-                    SizedBox(height: 120.h),
-                    _EmptyState(
-                      onBrowse: () => ref
-                          .read(bottomNavBarControllerProvider.notifier)
-                          .setSelectedIndex(0),
-                    ),
-                  ],
-                )
-              : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(
-                    parent: BouncingScrollPhysics(),
                   ),
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.sm.w,
-                    AppSpacing.sm.h,
-                    AppSpacing.sm.w,
-                    bottomInset,
-                  ),
-                  itemCount: discountsState.offers.length,
-                  separatorBuilder: (_, __) => SizedBox(height: AppSpacing.md.h),
-                  itemBuilder: (context, index) {
-                    final offer = discountsState.offers[index];
-                    return DiscountOfferCard(
-                      offer: offer,
-                      onTap: () => _openOffer(context, ref, offer),
-                      onToggleOfferLike: () => _toggleOfferLike(ref, offer),
-                      onToggleBusinessLike: () => _toggleBusinessLike(ref, offer),
-                    );
-                  },
-                ),
+                  SizedBox(height: AppSpacing.sm.h),
+                  _DealsHighlightBanner(colorScheme: cs, textTheme: tt),
+                ],
+              ),
+            ),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(discountsFeedProvider.notifier).load(),
+                child: discountsState.isLoading && discountsState.offers.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [
+                          SizedBox(height: 160.h),
+                          const Center(child: CircularProgressIndicator()),
+                        ],
+                      )
+                    : discountsState.errorMessage != null &&
+                          discountsState.offers.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+                        children: [
+                          SizedBox(height: 120.h),
+                          _ErrorState(
+                            message: discountsState.errorMessage!,
+                            onRetry: () =>
+                                ref.read(discountsFeedProvider.notifier).load(),
+                          ),
+                        ],
+                      )
+                    : discountsState.offers.isEmpty
+                    ? ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+                        children: [
+                          SizedBox(height: 120.h),
+                          _EmptyState(
+                            onBrowse: () => ref
+                                .read(bottomNavBarControllerProvider.notifier)
+                                .setSelectedIndex(0),
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.ms.w,
+                          0,
+                          AppSpacing.ms.w,
+                          bottomInset,
+                        ),
+                        itemCount: discountsState.offers.length,
+                        separatorBuilder: (_, __) =>
+                            SizedBox(height: AppSpacing.ms.h),
+                        itemBuilder: (context, index) {
+                          final offer = discountsState.offers[index];
+                          return DiscountOfferCard(
+                            offer: offer,
+                            onTap: () => _openOffer(context, offer),
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Future<void> _openOffer(
-    BuildContext context,
-    WidgetRef ref,
-    OfferModel offer,
-  ) async {
+  Future<void> _openOffer(BuildContext context, OfferModel offer) async {
     unawaited(EngagementService.instance.recordOfferView(offer.id));
-    ref.read(discountsFeedProvider.notifier).updateOffer(
-          offer.copyWithEngagement(viewCount: offer.viewCount + 1),
-        );
 
     await showOfferDetailSheet(
       context,
@@ -124,65 +140,79 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
       storeName: offer.businessName,
     );
   }
+}
 
-  Future<void> _toggleOfferLike(WidgetRef ref, OfferModel offer) async {
-    if (!_ensureSignedIn(ref)) return;
+class _DealsHighlightBanner extends StatelessWidget {
+  const _DealsHighlightBanner({
+    required this.colorScheme,
+    required this.textTheme,
+  });
 
-    final result = await EngagementService.instance.toggleOfferLike(offer.id);
-    if (!mounted) return;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
 
-    result.fold(
-      (failure) => showToast(
-        context,
-        message: failure.message,
-        status: 'error',
+  @override
+  Widget build(BuildContext context) {
+    final appColors = context.appColors;
+    final onBanner = colorScheme.onPrimary;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.ms.w,
+        vertical: AppSpacing.sm.h,
       ),
-      (engagement) {
-        ref.read(discountsFeedProvider.notifier).updateOffer(
-              offer.copyWithEngagement(
-                likeCount: engagement.likeCount,
-                isLiked: engagement.isLiked,
-              ),
-            );
-      },
-    );
-  }
-
-  Future<void> _toggleBusinessLike(WidgetRef ref, OfferModel offer) async {
-    if (!_ensureSignedIn(ref)) return;
-
-    final result =
-        await EngagementService.instance.toggleBusinessLike(offer.businessId);
-    if (!mounted) return;
-
-    result.fold(
-      (failure) => showToast(
-        context,
-        message: failure.message,
-        status: 'error',
+      decoration: BoxDecoration(
+        borderRadius: AppBorders.lg,
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [
+            colorScheme.primary,
+            colorScheme.primary.withValues(alpha: 0.88),
+            appColors.warning.withValues(alpha: 0.85),
+          ],
+        ),
+        boxShadow: AppShadows.subtle,
       ),
-      (engagement) {
-        ref.read(discountsFeedProvider.notifier).updateOffer(
-              offer.copyWithEngagement(
-                businessLikeCount: engagement.likeCount,
-                isBusinessLiked: engagement.isLiked,
-              ),
-            );
-      },
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.r),
+            decoration: BoxDecoration(
+              color: onBanner.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.local_fire_department_rounded,
+              color: onBanner,
+              size: 22,
+            ),
+          ),
+          SizedBox(width: AppSpacing.sm.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Top picks for you',
+                  style: textTheme.titleSmall?.copyWith(
+                    color: onBanner,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  'Best deals from stores nearby',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: onBanner.withValues(alpha: 0.88),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
-  }
-
-  bool _ensureSignedIn(WidgetRef ref) {
-    final session = ref.read(sessionProvider);
-    if (session.status == SessionStatus.authenticated) return true;
-
-    showToast(
-      context,
-      message: 'Sign in to like offers and stores.',
-      status: 'info',
-    );
-    context.push(AppRoutes.login);
-    return false;
   }
 }
 
@@ -210,7 +240,7 @@ class _EmptyState extends StatelessWidget {
         ),
         SizedBox(height: AppSpacing.sm.h),
         Text(
-          'Top offers from nearby stores will show up here.',
+          'Check back soon for standout offers from nearby stores.',
           textAlign: TextAlign.center,
           style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
         ),

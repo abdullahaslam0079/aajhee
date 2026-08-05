@@ -1,4 +1,5 @@
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/offers/presentation/widgets/offer_image_carousel.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -20,8 +21,6 @@ class _OfferDetailSheet extends StatelessWidget {
 
   final OfferModel offer;
   final String storeName;
-
-  static const Color _discountAccent = Color(0xFFFF9500);
 
   Future<void> _openExternalLink(BuildContext context) async {
     final url = offer.resolvedExternalUrl;
@@ -45,8 +44,7 @@ class _OfferDetailSheet extends StatelessWidget {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.62);
-    final imageUrl =
-        offer.imageUrl != null && offer.imageUrl!.isNotEmpty ? offer.imageUrl : null;
+    final galleryUrls = offer.displayImageUrls;
     final dealTypeLabel =
         offer.offerType == OfferType.item ? 'Item deal' : 'Flat off';
     final shortDescription = offer.description.trim();
@@ -98,24 +96,12 @@ class _OfferDetailSheet extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            if (imageUrl != null) ...[
+            if (galleryUrls.isNotEmpty) ...[
               SizedBox(height: AppSpacing.md.h),
-              ClipRRect(
-                borderRadius: AppBorders.lg,
-                child: NetworkImageWithFallback(
-                  primaryUrl: imageUrl,
-                  debugLabel: 'offer detail ${offer.title}',
-                  height: 180.h,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorWidget: ColoredBox(
-                    color: cs.surfaceContainerHighest,
-                    child: SizedBox(
-                      height: 180.h,
-                      child: Icon(Icons.fastfood_outlined, color: muted),
-                    ),
-                  ),
-                ),
+              OfferImageCarousel(
+                imageUrls: galleryUrls,
+                height: 200.h,
+                debugLabel: 'offer detail ${offer.title}',
               ),
             ],
             if (showShortBlurb) ...[
@@ -215,11 +201,13 @@ class _DetailChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
+    final appColors = context.appColors;
     final backgroundColor = accent
-        ? _OfferDetailSheet._discountAccent.withValues(alpha: 0.12)
+        ? appColors.warning.withValues(alpha: 0.12)
         : cs.surfaceContainerHigh;
-    final foregroundColor =
-        accent ? const Color(0xFF9A5200) : cs.onSurfaceVariant;
+    final foregroundColor = accent
+        ? (appColors.onWarningContainer ?? appColors.warning)
+        : cs.onSurfaceVariant;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -236,7 +224,7 @@ class _DetailChip extends StatelessWidget {
           Icon(
             icon,
             size: 12,
-            color: accent ? _OfferDetailSheet._discountAccent : cs.onSurfaceVariant,
+            color: accent ? appColors.warning : cs.onSurfaceVariant,
           ),
           SizedBox(width: 4.w),
           Text(

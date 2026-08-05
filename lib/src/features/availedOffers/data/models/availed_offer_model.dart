@@ -83,6 +83,17 @@ class AvailedOfferSummaryModel {
   }
 
   factory AvailedOfferSummaryModel.fromJson(Map<String, dynamic> json) {
+    final imageUrls = <String>[];
+    final rawUrls = json['image_urls'];
+    if (rawUrls is List) {
+      for (final item in rawUrls) {
+        final resolved = resolveMediaUrl(parseApiString(item));
+        if (resolved != null && resolved.isNotEmpty) {
+          imageUrls.add(resolved);
+        }
+      }
+    }
+
     return AvailedOfferSummaryModel(
       id: parseApiInt(json['id']),
       businessId: parseApiInt(json['business_id']),
@@ -92,7 +103,8 @@ class AvailedOfferSummaryModel {
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
-      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])),
+      imageUrl: resolveMediaUrl(parseApiString(json['image_url'])) ??
+          (imageUrls.isNotEmpty ? imageUrls.first : null),
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
       originalPrice: parseApiNullableDouble(json['original_price']),

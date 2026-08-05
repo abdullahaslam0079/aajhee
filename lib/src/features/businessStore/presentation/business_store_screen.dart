@@ -40,9 +40,9 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     }
 
     for (final offer in offers) {
-      final imageUrl = offer.imageUrl;
-      if (imageUrl != null && imageUrl.isNotEmpty) {
-        return imageUrl;
+      final urls = offer.displayImageUrls;
+      if (urls.isNotEmpty) {
+        return urls.first;
       }
     }
 
@@ -550,9 +550,8 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     required OfferModel offer,
   }) {
     final usageStatus = ref.watch(offerUsageStatusProvider(offer));
-    final imageUrl = (offer.imageUrl != null && offer.imageUrl!.isNotEmpty)
-        ? offer.imageUrl
-        : null;
+    final imageUrls = offer.displayImageUrls;
+    final imageUrl = imageUrls.isNotEmpty ? imageUrls.first : null;
     final isViewOnly = offer.isViewOnlyOffer;
     final statusLabel = isViewOnly
         ? 'View offer'
@@ -795,18 +794,18 @@ class _OfferTagChip extends StatelessWidget {
   final IconData icon;
   final bool accent;
 
-  static const Color _discountAccent = Color(0xFFFF9500);
-
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
+    final appColors = context.appColors;
     final backgroundColor = accent
-        ? _discountAccent.withValues(alpha: 0.12)
+        ? appColors.warning.withValues(alpha: 0.12)
         : cs.surfaceContainerHigh;
-    final foregroundColor =
-        accent ? const Color(0xFF9A5200) : cs.onSurfaceVariant;
-    final iconColor = accent ? _discountAccent : cs.onSurfaceVariant;
+    final foregroundColor = accent
+        ? (appColors.onWarningContainer ?? appColors.warning)
+        : cs.onSurfaceVariant;
+    final iconColor = accent ? appColors.warning : cs.onSurfaceVariant;
 
     return Container(
       padding: EdgeInsets.symmetric(
