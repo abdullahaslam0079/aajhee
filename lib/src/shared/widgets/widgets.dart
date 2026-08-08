@@ -8,6 +8,7 @@ export 'app_divider.dart';
 export 'app_top_bar.dart';
 export 'common_image.dart';
 export 'network_image_with_fallback.dart';
+export 'full_screen_image_gallery.dart';
 export 'store_logo_badge.dart';
 export 'toast/imports.dart';
 export 'app_cached_image.dart';

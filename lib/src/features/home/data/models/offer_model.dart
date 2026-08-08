@@ -78,6 +78,7 @@ class OfferModel {
     this.businessLogoUrl,
     this.featuredBranchId,
     this.featuredBranchName,
+    this.nearestDistanceKm,
   });
 
   final int id;
@@ -122,6 +123,7 @@ class OfferModel {
   final String? businessLogoUrl;
   final int? featuredBranchId;
   final String? featuredBranchName;
+  final double? nearestDistanceKm;
 
   String get subtitle {
     if (description.trim().isNotEmpty) return description.trim();
@@ -249,6 +251,7 @@ class OfferModel {
       businessLogoUrl: resolveMediaUrl(parseApiString(json['business_logo_url'])),
       featuredBranchId: _parseFeaturedBranchId(json['featured_branch']),
       featuredBranchName: _parseFeaturedBranchName(json['featured_branch']),
+      nearestDistanceKm: parseApiNullableDouble(json['nearest_distance_km']),
     );
   }
 
@@ -324,6 +327,7 @@ class OfferModel {
       businessLogoUrl: businessLogoUrl,
       featuredBranchId: featuredBranchId,
       featuredBranchName: featuredBranchName,
+      nearestDistanceKm: nearestDistanceKm,
     );
   }
 

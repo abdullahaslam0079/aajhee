@@ -86,7 +86,10 @@ class DiscountOfferCard extends ConsumerWidget {
                                 isFavorite: isFavorite,
                                 onTap: () => ref
                                     .read(favoriteStoresProvider.notifier)
-                                    .toggle(favoriteKey),
+                                    .toggle(
+                                      favoriteKey,
+                                      businessId: offer.businessId,
+                                    ),
                               ),
                           ],
                         ),
@@ -101,10 +104,11 @@ class DiscountOfferCard extends ConsumerWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (category.isNotEmpty) ...[
+                        if (category.isNotEmpty ||
+                            offer.nearestDistanceKm != null) ...[
                           SizedBox(height: 4.h),
                           Text(
-                            category,
+                            _metaLine(category, offer.nearestDistanceKm),
                             style: tt.labelSmall?.copyWith(
                               color: muted,
                               fontWeight: FontWeight.w500,
@@ -139,6 +143,15 @@ class DiscountOfferCard extends ConsumerWidget {
       ),
     );
   }
+}
+
+String _metaLine(String category, double? nearestDistanceKm) {
+  final parts = <String>[];
+  if (category.isNotEmpty) parts.add(category);
+  if (nearestDistanceKm != null) {
+    parts.add(GeoDistanceUtils.formatDistanceLabel(nearestDistanceKm));
+  }
+  return parts.join(' · ');
 }
 
 class _OfferThumbnail extends StatelessWidget {

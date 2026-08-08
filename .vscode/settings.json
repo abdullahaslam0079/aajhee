@@ -1,0 +1,21 @@
+{
+  "dart.analysisExcludedFolders": [
+    "build",
+    ".dart_tool",
+    "ios/Pods",
+    "android/.gradle"
+  ],
+  "files.exclude": {
+    "**/build/**": true,
+    "**/.dart_tool/**": true
+  },
+  "files.watcherExclude": {
+    "**/build/**": true,
+    "**/.dart_tool/**": true,
+    "**/ios/Pods/**": true
+  },
+  "search.exclude": {
+    "**/build/**": true,
+    "**/.dart_tool/**": true
+  }
+}

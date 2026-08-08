@@ -81,4 +81,21 @@ class EngagementService {
       );
     }, requiresNetwork: true);
   }
+
+  FutureEither<BusinessEngagementResult> setBusinessLike(
+    int businessId, {
+    required bool liked,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/businesses/$businessId/like',
+        data: {'liked': liked},
+      );
+      final payload = response.data ?? const {};
+      return BusinessEngagementResult(
+        likeCount: parseApiInt(payload['like_count']),
+        isLiked: payload['is_liked'] as bool? ?? liked,
+      );
+    }, requiresNetwork: true);
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:goluto/src/features/notifications/presentation/providers/notification_preferences_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -12,7 +13,6 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _pushNotifications = true;
   bool _emailUpdates = false;
 
   @override
@@ -21,6 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final profile = profileState.profile;
     final defaultAddress =
         ref.watch(savedAddressesProvider).selectedAddress?.shortLabel;
+    final pushPrefs = ref.watch(notificationPreferencesProvider);
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
@@ -116,9 +117,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: 'Push notifications',
                       subtitle: 'Orders & offers',
                       trailing: Switch.adaptive(
-                        value: _pushNotifications,
-                        onChanged: (v) =>
-                            setState(() => _pushNotifications = v),
+                        value: pushPrefs.pushEnabled,
+                        onChanged: pushPrefs.isSaving
+                            ? null
+                            : (v) => ref
+                                .read(
+                                  notificationPreferencesProvider.notifier,
+                                )
+                                .setPushEnabled(v),
                       ),
                     ),
                     _divider(context),

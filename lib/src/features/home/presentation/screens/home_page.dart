@@ -6,6 +6,7 @@ import 'package:goluto/src/features/location/presentation/providers/location_pro
 import 'package:goluto/src/features/home/presentation/widgets/category_widget.dart';
 import 'package:goluto/src/features/home/presentation/widgets/home_header.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
@@ -21,6 +22,9 @@ class HomePage extends ConsumerWidget {
     final locationState = ref.watch(locationProvider);
     final savedAddressesState = ref.watch(savedAddressesProvider);
     final homeFeedState = ref.watch(homeFeedProvider);
+    final unreadCount = ref.watch(
+      notificationsProvider.select((state) => state.unreadCount),
+    );
     final selectedAddress = savedAddressesState.selectedAddress;
     final locationText = selectedAddress?.shortLabel ??
         locationState.address ??
@@ -38,7 +42,12 @@ class HomePage extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
-          onRefresh: () => ref.read(homeFeedProvider.notifier).load(),
+          onRefresh: () async {
+            await Future.wait([
+              ref.read(homeFeedProvider.notifier).load(),
+              ref.read(notificationsProvider.notifier).refreshUnreadCount(),
+            ]);
+          },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
@@ -51,6 +60,20 @@ class HomePage extends ConsumerWidget {
                   onFavoritesTap: () => context.push(AppRoutes.favorites),
                   onNotificationsTap: () =>
                       context.push(AppRoutes.notifications),
+                  notificationUnreadCount: unreadCount,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.ms.w,
+                    10.h,
+                    AppSpacing.ms.w,
+                    4.h,
+                  ),
+                  child: _HomeSearchBar(
+                    onTap: () => context.push(AppRoutes.searchOffers),
+                  ),
                 ),
               ),
               if (homeFeedState.isLoading && homeFeedState.branches.isEmpty)
@@ -83,23 +106,35 @@ class HomePage extends ConsumerWidget {
                 if (branches.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(
+                    child: _EmptyCategoryState(
+                      onClearFilter: homeFeedState.selectedCategoryIndex == 0
+                          ? null
+                          : () => ref
+                              .read(homeFeedProvider.notifier)
+                              .selectCategory(0),
+                    ),
+                  )
+                else ...[
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        AppSpacing.ms.w,
+                        2.h,
+                        AppSpacing.ms.w,
+                        10.h,
+                      ),
                       child: Text(
-                        'No branches found in this category.',
-                        style: textTheme.bodyLarge?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
+                        'Nearby stores',
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.15,
+                          color: colorScheme.onSurface.withValues(alpha: 0.9),
                         ),
                       ),
                     ),
-                  )
-                else
+                  ),
                   SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.sm.w,
-                      AppSpacing.lg.h,
-                      AppSpacing.sm.w,
-                      0,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
                     sliver: SliverList.separated(
                       itemCount: branches.length,
                       itemBuilder: (context, index) {
@@ -115,9 +150,10 @@ class HomePage extends ConsumerWidget {
                         );
                       },
                       separatorBuilder: (_, __) =>
-                          SizedBox(height: AppSpacing.md.h),
+                          SizedBox(height: AppSpacing.ms.h),
                     ),
                   ),
+                ],
               ],
               SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
             ],
@@ -168,6 +204,101 @@ class _HomeFeedError extends StatelessWidget {
   }
 }
 
+class _EmptyCategoryState extends StatelessWidget {
+  const _EmptyCategoryState({this.onClearFilter});
+
+  final VoidCallback? onClearFilter;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.storefront_outlined,
+            size: 40,
+            color: cs.onSurface.withValues(alpha: 0.35),
+          ),
+          SizedBox(height: AppSpacing.md.h),
+          Text(
+            'No stores here yet',
+            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          SizedBox(height: AppSpacing.xs.h),
+          Text(
+            'Try another category or check back soon.',
+            textAlign: TextAlign.center,
+            style: tt.bodyMedium?.copyWith(
+              color: cs.onSurface.withValues(alpha: 0.5),
+              height: 1.35,
+            ),
+          ),
+          if (onClearFilter != null) ...[
+            SizedBox(height: AppSpacing.lg.h),
+            TextButton(
+              onPressed: onClearFilter,
+              child: const Text('Show all stores'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeSearchBar extends StatelessWidget {
+  const _HomeSearchBar({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.theme.colorScheme;
+    final textTheme = context.theme.textTheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppBorders.lg,
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colorScheme.onSurface.withValues(alpha: 0.05),
+            borderRadius: AppBorders.lg,
+          ),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+                SizedBox(width: 10.w),
+                Expanded(
+                  child: Text(
+                    'Search brands or items',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.42),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
   _HomeCategoriesHeaderDelegate({
     required this.selectedCategoryIndex,
@@ -183,10 +314,13 @@ class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
   final TextTheme textTheme;
   final Color backgroundColor;
 
-  static const double _chipRowHeight = 44;
+  static const double _chipRowHeight = 36;
+  static const double _verticalPad = 8;
 
-  double get _extent =>
-      AppSpacing.sm.h + 24.h + AppSpacing.sm.h + _chipRowHeight.h;
+  double get _pad => _verticalPad.h.ceilToDouble();
+  double get _chipHeight => _chipRowHeight.h.ceilToDouble();
+
+  double get _extent => (_pad + _chipHeight + _pad).ceilToDouble();
 
   @override
   double get minExtent => _extent;
@@ -200,47 +334,44 @@ class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return ColoredBox(
-      color: backgroundColor,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.sm.w,
-          AppSpacing.sm.h,
-          AppSpacing.sm.w,
-          0,
+    return SizedBox(
+      height: _extent,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          border: overlapsContent
+              ? Border(
+                  bottom: BorderSide(
+                    color: Colors.black.withValues(alpha: 0.06),
+                  ),
+                )
+              : null,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Categories',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.ms.w,
+            vertical: _pad,
+          ),
+          child: SizedBox(
+            height: _chipHeight,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              itemCount: categoryLabels.length,
+              itemBuilder: (context, index) {
+                final label = categoryLabels[index];
+                return CategoryWidget(
+                  label: label,
+                  icon: index == 0
+                      ? Icons.apps_rounded
+                      : categoryIconForName(label),
+                  onTap: () => onCategoryTap(index),
+                  selectedCategoryIndex: selectedCategoryIndex,
+                  index: index,
+                );
+              },
             ),
-            SizedBox(height: AppSpacing.sm.h),
-            SizedBox(
-              height: _chipRowHeight.h,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                itemCount: categoryLabels.length,
-                separatorBuilder: (_, __) => const SizedBox.shrink(),
-                itemBuilder: (context, index) {
-                  final label = categoryLabels[index];
-                  return CategoryWidget(
-                    label: label,
-                    icon: index == 0
-                        ? Icons.apps_rounded
-                        : categoryIconForName(label),
-                    onTap: () => onCategoryTap(index),
-                    selectedCategoryIndex: selectedCategoryIndex,
-                    index: index,
-                  );
-                },
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

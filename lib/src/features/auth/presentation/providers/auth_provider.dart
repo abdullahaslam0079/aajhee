@@ -43,6 +43,8 @@ class AuthController extends _$AuthController {
             .read(userProfileProvider.notifier)
             .syncFromAuthUser(session.user);
 
+        await PushNotificationService.instance.syncForAuthenticatedUser();
+
         if (!context.mounted) return;
 
         navigateAfterAuthentication(
@@ -84,6 +86,8 @@ class AuthController extends _$AuthController {
 
   Future<void> logout({required BuildContext context}) async {
     state = true;
+
+    await PushNotificationService.instance.unregisterCurrentDevice();
 
     final result = await ref.read(authRepositoryProvider).logout();
 

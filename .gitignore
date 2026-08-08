@@ -43,4 +43,33 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# --- Secrets / local env (never commit) ---
 .env
+.env.local
+.env.*.local
+!.env.example
+
+# Firebase / Google client configs
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+
+# Native Maps / API key injection (local only)
+ios/Flutter/Secrets.xcconfig
+android/secrets.properties
+
+# Signing / certificates / private keys
+**/key.properties
+**/*.keystore
+**/*.jks
+*.pem
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+*.cert
+credentials.json
+**/service-account*.json
+**/Secrets.plist
+**/secrets.json

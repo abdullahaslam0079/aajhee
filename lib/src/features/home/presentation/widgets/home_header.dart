@@ -8,12 +8,14 @@ class HomeHeader extends StatelessWidget {
     required this.onLocationTap,
     required this.onFavoritesTap,
     required this.onNotificationsTap,
+    this.notificationUnreadCount = 0,
   });
 
   final String locationText;
   final VoidCallback onLocationTap;
   final VoidCallback onFavoritesTap;
   final VoidCallback onNotificationsTap;
+  final int notificationUnreadCount;
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +24,10 @@ class HomeHeader extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.sm.w,
-        AppSpacing.xs.h,
-        AppSpacing.sm.w,
+        AppSpacing.ms.w,
         AppSpacing.sm.h,
+        AppSpacing.ms.w,
+        0,
       ),
       child: Row(
         children: [
@@ -42,10 +44,11 @@ class HomeHeader extends StatelessWidget {
             icon: Icons.favorite_border_rounded,
             onPressed: onFavoritesTap,
           ),
-          SizedBox(width: AppSpacing.sm.w),
+          SizedBox(width: 6.w),
           _HeaderIconButton(
-            icon: Icons.notifications_outlined,
+            icon: Icons.notifications_none_rounded,
             onPressed: onNotificationsTap,
+            badgeCount: notificationUnreadCount,
           ),
         ],
       ),
@@ -69,53 +72,52 @@ class _LocationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
-      elevation: 0,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      borderRadius: AppBorders.lg,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.lg,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: AppBorders.lg,
-            border: Border.all(
-              color: colorScheme.onSurface.withValues(alpha: 0.12),
-            ),
-            boxShadow: AppShadows.card,
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.ms.w,
-              vertical: AppSpacing.sm.h,
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  color: colorScheme.primary,
-                  size: 20,
+        borderRadius: AppBorders.md,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 2.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Deliver to',
+                style: textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.48),
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.2,
                 ),
-                SizedBox(width: AppSpacing.xs.w),
-                Expanded(
-                  child: Text(
-                    locationText,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+              ),
+              SizedBox(height: 2.h),
+              Row(
+                children: [
+                  Icon(
+                    Icons.location_on_rounded,
+                    color: colorScheme.primary,
+                    size: 15,
+                  ),
+                  SizedBox(width: 4.w),
+                  Flexible(
+                    child: Text(
+                      locationText,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.2,
+                        height: 1.2,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: AppSpacing.xxs.w),
-                Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: colorScheme.onSurfaceVariant,
-                  size: 20,
-                ),
-              ],
-            ),
+                  Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: colorScheme.onSurface.withValues(alpha: 0.4),
+                    size: 18,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -127,39 +129,65 @@ class _HeaderIconButton extends StatelessWidget {
   const _HeaderIconButton({
     required this.icon,
     required this.onPressed,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final VoidCallback onPressed;
+  final int badgeCount;
 
-  static const double _size = 44;
+  static const double _size = 40;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
+    final showBadge = badgeCount > 0;
+    final label = badgeCount > 99 ? '99+' : '$badgeCount';
 
     return Material(
-      color: Colors.white,
+      color: cs.onSurface.withValues(alpha: 0.05),
       shape: const CircleBorder(),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
         customBorder: const CircleBorder(),
-        child: Container(
+        child: SizedBox(
           width: _size.w,
           height: _size.w,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            border: Border.all(
-              color: cs.onSurface.withValues(alpha: 0.14),
-            ),
-            boxShadow: AppShadows.subtle,
-          ),
-          child: Icon(
-            icon,
-            size: 21,
-            color: cs.onSurface,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: cs.onSurface.withValues(alpha: 0.78),
+              ),
+              if (showBadge)
+                Positioned(
+                  top: 6,
+                  right: 6,
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: cs.error,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: cs.surface, width: 1.5),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: cs.onError,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),

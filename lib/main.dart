@@ -12,6 +12,7 @@ Future<void> main() async {
   
   await AppConfig.init();
   await StorageService.instance.init();
+  await PushNotificationService.instance.init();
 
   runApp(
     const LocalizationWrapper(

@@ -1,0 +1,7 @@
+# Generated / dependency caches — do not open or analyze as Dart packages
+build/
+.dart_tool/
+ios/Pods/
+android/.gradle/
+android/app/build/
+**/SourcePackages/

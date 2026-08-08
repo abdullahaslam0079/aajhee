@@ -1,9 +1,5 @@
 import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/routing/app_routes.dart';
-import 'package:goluto/src/routing/global_navigator.dart';
-import 'package:goluto/src/services/auth_service.dart';
-import 'package:goluto/src/shared/helpers/show_toast.dart';
-
+import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -27,11 +23,24 @@ class SessionListenerWrapper extends ConsumerWidget {
         FlutterNativeSplash.remove();
       }
 
+      if (next.status == SessionStatus.authenticated &&
+          prev?.status != SessionStatus.authenticated) {
+        PushNotificationService.instance.syncForAuthenticatedUser();
+        PushNotificationService.instance.onForegroundMessage = () {
+          ref.read(notificationsProvider.notifier).refreshUnreadCount();
+        };
+        PushNotificationService.instance.onNotificationOpened = (_) {
+          ref.read(notificationsProvider.notifier).refreshUnreadCount();
+        };
+      }
+
       final becameUnauthenticated =
           next.status == SessionStatus.unauthenticated &&
           prev?.status == SessionStatus.authenticated;
 
       if (becameUnauthenticated) {
+        PushNotificationService.instance.onForegroundMessage = null;
+        PushNotificationService.instance.onNotificationOpened = null;
         final isExplicitLogout = AuthService.instance.consumeExplicitLogout();
         _redirectToLogin(showExpiredMessage: !isExplicitLogout);
       }

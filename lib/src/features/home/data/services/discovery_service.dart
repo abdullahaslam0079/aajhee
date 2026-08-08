@@ -3,6 +3,7 @@ import 'package:goluto/src/config/app_config.dart';
 import 'package:goluto/src/features/home/data/models/category_model.dart';
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/searchOffers/data/models/offer_search_page.dart';
 import 'package:goluto/src/utils/location_query_params.dart';
 import 'package:goluto/src/utils/utils.dart';
 
@@ -54,6 +55,25 @@ class DiscoveryService {
     }, requiresNetwork: true);
   }
 
+  FutureEither<MapBranchModel?> findBranchByBusinessId(
+    int businessId, {
+    String? addressId,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.get<List<dynamic>>(
+        '/api/map/branches',
+        queryParameters: LocationQueryParams.fromAddressId(addressId),
+      );
+      final data = response.data ?? const [];
+      for (final item in data) {
+        final branch =
+            MapBranchModel.fromJson(item as Map<String, dynamic>);
+        if (branch.businessId == businessId) return branch;
+      }
+      return null;
+    }, requiresNetwork: true);
+  }
+
   FutureEither<List<OfferModel>> getOffers({String? addressId}) async {
     return runTask(() async {
       final response = await _dio.get<List<dynamic>>(
@@ -64,6 +84,30 @@ class DiscoveryService {
       return data
           .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
           .toList();
+    }, requiresNetwork: true);
+  }
+
+  FutureEither<OfferSearchPage> searchOffers({
+    required String query,
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return runTask(() async {
+      final params = <String, dynamic>{
+        'q': query.trim(),
+        'page': page,
+        'page_size': pageSize,
+        ...?LocationQueryParams.fromAddressId(addressId),
+      };
+
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/offers/search',
+        queryParameters: params,
+      );
+      final data = response.data;
+      if (data == null) return OfferSearchPage.empty;
+      return OfferSearchPage.fromJson(data);
     }, requiresNetwork: true);
   }
 

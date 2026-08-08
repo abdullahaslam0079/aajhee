@@ -19,75 +19,58 @@ class CategoryWidget extends StatelessWidget {
 
   bool get _selected => selectedCategoryIndex == index;
 
-  static const Duration _animationDuration = Duration(milliseconds: 220);
+  static const Duration _animationDuration = Duration(milliseconds: 180);
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
 
+    final bg = _selected
+        ? colorScheme.primary
+        : colorScheme.onSurface.withValues(alpha: 0.05);
+    final fg = _selected
+        ? colorScheme.onPrimary
+        : colorScheme.onSurface.withValues(alpha: 0.68);
+
     return Padding(
-      padding: EdgeInsets.only(right: AppSpacing.sm.w),
+      padding: EdgeInsets.only(right: 8.w),
       child: AnimatedContainer(
         duration: _animationDuration,
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
           borderRadius: AppBorders.full,
-          color: _selected
-              ? colorScheme.primary
-              : colorScheme.surfaceContainerLowest,
-          border: Border.all(
-            color: _selected
-                ? colorScheme.primary
-                : colorScheme.outline.withValues(alpha: 0.35),
-            width: 1,
-          ),
-          boxShadow: _selected
-              ? [
-                  BoxShadow(
-                    color: colorScheme.primary.withValues(alpha: 0.22),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : AppShadows.subtle,
+          color: bg,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
             borderRadius: AppBorders.full,
-            splashColor: colorScheme.primary.withValues(alpha: 0.12),
-            highlightColor: colorScheme.primary.withValues(alpha: 0.06),
+            splashColor: colorScheme.primary.withValues(alpha: 0.1),
+            highlightColor: colorScheme.primary.withValues(alpha: 0.05),
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.md.w,
-                vertical: AppSpacing.sm.h,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    icon,
-                    size: 16,
-                    color: _selected
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                  SizedBox(width: AppSpacing.xs.w),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelLarge?.copyWith(
-                      fontWeight: _selected ? FontWeight.w600 : FontWeight.w500,
-                      letterSpacing: 0.15,
-                      color: _selected
-                          ? colorScheme.onPrimary
-                          : colorScheme.onSurfaceVariant,
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 14.sp, color: fg),
+                    SizedBox(width: 5.w),
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.labelMedium?.copyWith(
+                        fontWeight:
+                            _selected ? FontWeight.w600 : FontWeight.w500,
+                        letterSpacing: 0,
+                        height: 1.1,
+                        color: fg,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

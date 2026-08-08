@@ -550,6 +550,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     required OfferModel offer,
   }) {
     final usageStatus = ref.watch(offerUsageStatusProvider(offer));
+    final appColors = context.appColors;
     final imageUrls = offer.displayImageUrls;
     final imageUrl = imageUrls.isNotEmpty ? imageUrls.first : null;
     final isViewOnly = offer.isViewOnlyOffer;
@@ -563,8 +564,14 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     final dealTypeLabel = offer.offerType == OfferType.item
         ? 'Item deal'
         : 'Flat off';
-    final hasDescription = offer.subtitle.isNotEmpty ||
-        offer.detailText.isNotEmpty;
+    final description = offer.subtitle;
+    final hasPrices =
+        offer.originalPrice != null && offer.discountedPrice != null;
+    final validityText = !hasPrices &&
+            offer.isTimeLimited &&
+            offer.endsAt != null
+        ? offer.detailText
+        : '';
 
     return Material(
       color: Colors.transparent,
@@ -579,143 +586,90 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
               color: cs.surfaceContainerLowest,
               borderRadius: AppBorders.lg,
               border: Border.all(
-                color: cs.outline.withValues(alpha: 0.28),
+                color: cs.onSurface.withValues(alpha: 0.08),
               ),
-              boxShadow: AppShadows.card,
+              boxShadow: AppShadows.subtle,
             ),
-            child: ClipRRect(
-              borderRadius: AppBorders.lg,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.ms.w,
-                      vertical: AppSpacing.sm.h,
+            child: Padding(
+              padding: EdgeInsets.all(10.r),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _OfferThumbnail(
+                      imageUrl: imageUrl,
+                      discountPercent: offer.discountPercent,
+                      debugLabel: 'offer ${offer.title}',
+                      showQrBadge: !isViewOnly,
+                      dealColor: appColors.warning,
+                      onDealColor: appColors.onWarning,
                     ),
-                    color: cs.inverseSurface,
-                    child: Text(
-                      offer.title,
-                      style: tt.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: cs.onInverseSurface,
-                        letterSpacing: -0.2,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.all(AppSpacing.ms.r),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            offer.title,
+                            style: tt.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              height: 1.2,
+                              letterSpacing: -0.25,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (description.isNotEmpty) ...[
+                            SizedBox(height: 4.h),
+                            Text(
+                              description,
+                              style: tt.labelSmall?.copyWith(
+                                color: muted.withValues(alpha: 0.9),
+                                fontWeight: FontWeight.w400,
+                                height: 1.35,
+                                fontSize: 11,
+                              ),
+                              maxLines: 5,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const Spacer(),
+                          SizedBox(height: 6.h),
+                          _OfferPriceRow(offer: offer),
+                          if (validityText.isNotEmpty) ...[
+                            SizedBox(height: 2.h),
+                            Text(
+                              validityText,
+                              style: tt.labelSmall?.copyWith(
+                                color: muted,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 10,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          SizedBox(height: 6.h),
+                          Wrap(
+                            spacing: 6.w,
+                            runSpacing: 4.h,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
-                              if (offer.subtitle.isNotEmpty)
-                                Text(
-                                  offer.subtitle,
-                                  style: tt.titleSmall?.copyWith(
-                                    color: cs.onSurface,
-                                    height: 1.3,
-                                  ),
-                                ),
-                              if (offer.detailText.isNotEmpty) ...[
-                                SizedBox(height: AppSpacing.xxs.h),
-                                Text(
-                                  offer.detailText,
-                                  style: tt.bodyMedium?.copyWith(
-                                    color: muted,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ],
-                              if (hasDescription)
-                                SizedBox(height: AppSpacing.sm.h),
                               _OfferStatusPill(
                                 label: statusLabel,
                                 isAvailable: statusShowsAvailable,
                               ),
-                              SizedBox(height: AppSpacing.sm.h),
-                              Wrap(
-                                spacing: AppSpacing.xs.w,
-                                runSpacing: AppSpacing.xxs.h,
-                                children: [
-                                  if (offer.discountPercent > 0)
-                                    _OfferTagChip(
-                                      label:
-                                          '${offer.discountPercent.toStringAsFixed(0)}% off',
-                                      icon: Icons.local_offer_outlined,
-                                      accent: true,
-                                    ),
-                                  _OfferTagChip(
-                                    label: dealTypeLabel,
-                                    icon: Icons.storefront_outlined,
-                                  ),
-                                ],
+                              _OfferTagChip(
+                                label: dealTypeLabel,
+                                icon: Icons.storefront_outlined,
                               ),
                             ],
                           ),
-                        ),
-                        SizedBox(width: AppSpacing.sm.w),
-                        Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            ClipRRect(
-                              borderRadius: AppBorders.md,
-                              child: NetworkImageWithFallback(
-                                primaryUrl: imageUrl,
-                                debugLabel: 'offer ${offer.title}',
-                                width: 104,
-                                height: 96,
-                                fit: BoxFit.cover,
-                                borderRadius: AppBorders.md,
-                                errorWidget: Container(
-                                  width: 104.w,
-                                  height: 96.h,
-                                  color: cs.surfaceContainerHighest,
-                                  alignment: Alignment.center,
-                                  child: Icon(
-                                    Icons.fastfood_outlined,
-                                    color: muted,
-                                    size: 26,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            if (!isViewOnly)
-                              Positioned(
-                                right: -4.w,
-                                bottom: -4.h,
-                                child: Container(
-                                  width: 28.w,
-                                  height: 28.w,
-                                  decoration: BoxDecoration(
-                                    color: cs.primary,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: cs.surfaceContainerLowest,
-                                      width: 2,
-                                    ),
-                                    boxShadow: AppShadows.subtle,
-                                  ),
-                                  child: Icon(
-                                    Icons.qr_code_2_rounded,
-                                    size: 15,
-                                    color: cs.onPrimary,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -731,6 +685,192 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
       return '${status.remainingUses} uses left';
     }
     return 'Limit reached';
+  }
+}
+
+class _OfferThumbnail extends StatelessWidget {
+  const _OfferThumbnail({
+    required this.imageUrl,
+    required this.discountPercent,
+    required this.debugLabel,
+    required this.showQrBadge,
+    required this.dealColor,
+    required this.onDealColor,
+  });
+
+  final String? imageUrl;
+  final double discountPercent;
+  final String debugLabel;
+  final bool showQrBadge;
+  final Color dealColor;
+  final Color onDealColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
+    final muted = cs.onSurface.withValues(alpha: 0.45);
+    final size = 112.r;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ClipRRect(
+            borderRadius: AppBorders.md,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                NetworkImageWithFallback(
+                  primaryUrl: imageUrl,
+                  debugLabel: debugLabel,
+                  width: size,
+                  height: size,
+                  fit: BoxFit.cover,
+                  borderRadius: AppBorders.md,
+                  errorWidget: Container(
+                    width: size,
+                    height: size,
+                    color: cs.surfaceContainerHighest,
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.local_offer_outlined,
+                      color: muted,
+                      size: 26,
+                    ),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: AppBorders.md,
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        cs.scrim.withValues(alpha: 0.06),
+                        Colors.transparent,
+                        cs.scrim.withValues(alpha: 0.12),
+                      ],
+                      stops: const [0, 0.45, 1],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (discountPercent > 0)
+            Positioned(
+              left: 5.w,
+              top: 5.h,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: 6.w,
+                  vertical: 3.5.h,
+                ),
+                decoration: BoxDecoration(
+                  color: dealColor,
+                  borderRadius: AppBorders.full,
+                  boxShadow: AppShadows.subtle,
+                ),
+                child: Text(
+                  '${discountPercent.toStringAsFixed(0)}% OFF',
+                  style: tt.labelSmall?.copyWith(
+                    color: onDealColor,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 9.5,
+                    height: 1,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
+            ),
+          if (showQrBadge)
+            Positioned(
+              right: -3.w,
+              bottom: -3.h,
+              child: Container(
+                width: 26.w,
+                height: 26.w,
+                decoration: BoxDecoration(
+                  color: cs.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: cs.surfaceContainerLowest,
+                    width: 2,
+                  ),
+                  boxShadow: AppShadows.subtle,
+                ),
+                child: Icon(
+                  Icons.qr_code_2_rounded,
+                  size: 13,
+                  color: cs.onPrimary,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfferPriceRow extends StatelessWidget {
+  const _OfferPriceRow({required this.offer});
+
+  final OfferModel offer;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = context.theme.textTheme;
+    final cs = context.theme.colorScheme;
+    final appColors = context.appColors;
+    final muted = cs.onSurface.withValues(alpha: 0.38);
+    final original = offer.originalPrice;
+    final discounted = offer.discountedPrice;
+
+    if (original != null && discounted != null) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            '€${discounted.toStringAsFixed(0)}',
+            style: tt.titleMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              color: appColors.warning,
+              letterSpacing: -0.4,
+              height: 1,
+            ),
+          ),
+          SizedBox(width: 6.w),
+          Padding(
+            padding: EdgeInsets.only(bottom: 1.h),
+            child: Text(
+              '€${original.toStringAsFixed(0)}',
+              style: tt.labelMedium?.copyWith(
+                color: muted,
+                fontWeight: FontWeight.w500,
+                decoration: TextDecoration.lineThrough,
+                decorationColor: muted,
+                height: 1,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (offer.discountPercent > 0) {
+      return Text(
+        'Save ${offer.discountPercent.toStringAsFixed(0)}%',
+        style: tt.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: appColors.warning,
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
   }
 }
 
@@ -758,8 +898,8 @@ class _OfferStatusPill extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs.w,
-        vertical: AppSpacing.xxs.h,
+        horizontal: 7.w,
+        vertical: 3.h,
       ),
       decoration: BoxDecoration(
         color: backgroundColor,
@@ -768,13 +908,15 @@ class _OfferStatusPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: foregroundColor),
-          SizedBox(width: AppSpacing.xxs.w),
+          Icon(icon, size: 12, color: foregroundColor),
+          SizedBox(width: 3.w),
           Text(
             label,
-            style: tt.labelMedium?.copyWith(
+            style: tt.labelSmall?.copyWith(
               color: foregroundColor,
               fontWeight: FontWeight.w700,
+              fontSize: 10.5,
+              height: 1.1,
             ),
           ),
         ],
@@ -787,45 +929,37 @@ class _OfferTagChip extends StatelessWidget {
   const _OfferTagChip({
     required this.label,
     required this.icon,
-    this.accent = false,
   });
 
   final String label;
   final IconData icon;
-  final bool accent;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
-    final appColors = context.appColors;
-    final backgroundColor = accent
-        ? appColors.warning.withValues(alpha: 0.12)
-        : cs.surfaceContainerHigh;
-    final foregroundColor = accent
-        ? (appColors.onWarningContainer ?? appColors.warning)
-        : cs.onSurfaceVariant;
-    final iconColor = accent ? appColors.warning : cs.onSurfaceVariant;
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs.w,
-        vertical: AppSpacing.xxs.h,
+        horizontal: 7.w,
+        vertical: 3.h,
       ),
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: cs.surfaceContainerHigh.withValues(alpha: 0.7),
         borderRadius: AppBorders.full,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: iconColor),
-          SizedBox(width: 4.w),
+          Icon(icon, size: 11, color: cs.onSurfaceVariant),
+          SizedBox(width: 3.w),
           Text(
             label,
             style: tt.labelSmall?.copyWith(
-              color: foregroundColor,
-              fontWeight: FontWeight.w700,
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+              fontSize: 10.5,
+              height: 1.1,
             ),
           ),
         ],

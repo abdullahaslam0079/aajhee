@@ -20,8 +20,8 @@ import 'package:goluto/src/features/auth/presentation/screens/forgot_password_sc
 
 import 'package:goluto/src/features/home/presentation/screens/home_page.dart';
 import 'package:goluto/src/features/onboarding/presentation/screens/onboarding_page.dart';
+import 'package:goluto/src/features/searchOffers/presentation/screens/search_offers_screen.dart';
 import 'package:goluto/src/features/splash/presentation/splash_screen.dart';
-
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -102,6 +102,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.favorites,
       name: 'favorites',
       builder: (context, state) => const FavoritesScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.searchOffers,
+      name: 'searchOffers',
+      builder: (context, state) => const SearchOffersScreen(),
     ),
     GoRoute(
       path: AppRoutes.addresses,

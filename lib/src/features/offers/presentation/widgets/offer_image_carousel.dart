@@ -9,6 +9,7 @@ class OfferImageCarousel extends StatefulWidget {
     this.borderRadius = AppBorders.lg,
     this.debugLabel = 'offer',
     this.onPageChanged,
+    this.onImageTap,
   });
 
   final List<String> imageUrls;
@@ -16,6 +17,7 @@ class OfferImageCarousel extends StatefulWidget {
   final BorderRadius borderRadius;
   final String debugLabel;
   final ValueChanged<int>? onPageChanged;
+  final ValueChanged<int>? onImageTap;
 
   @override
   State<OfferImageCarousel> createState() => _OfferImageCarouselState();
@@ -35,6 +37,35 @@ class _OfferImageCarouselState extends State<OfferImageCarousel> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Widget _image({
+    required String url,
+    required String debugLabel,
+    required ColorScheme cs,
+    required Color muted,
+  }) {
+    return NetworkImageWithFallback(
+      primaryUrl: url,
+      debugLabel: debugLabel,
+      fit: BoxFit.cover,
+      errorWidget: ColoredBox(
+        color: cs.surfaceContainerHighest,
+        child: Icon(Icons.broken_image_outlined, color: muted),
+      ),
+    );
+  }
+
+  Widget _tappable({
+    required int index,
+    required Widget child,
+  }) {
+    if (widget.onImageTap == null) return child;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => widget.onImageTap!(index),
+      child: child,
+    );
   }
 
   @override
@@ -63,13 +94,13 @@ class _OfferImageCarouselState extends State<OfferImageCarousel> {
         child: SizedBox(
           height: widget.height,
           width: double.infinity,
-          child: NetworkImageWithFallback(
-            primaryUrl: urls.first,
-            debugLabel: widget.debugLabel,
-            fit: BoxFit.cover,
-            errorWidget: ColoredBox(
-              color: cs.surfaceContainerHighest,
-              child: Icon(Icons.broken_image_outlined, color: muted),
+          child: _tappable(
+            index: 0,
+            child: _image(
+              url: urls.first,
+              debugLabel: widget.debugLabel,
+              cs: cs,
+              muted: muted,
             ),
           ),
         ),
@@ -92,13 +123,13 @@ class _OfferImageCarouselState extends State<OfferImageCarousel> {
                 widget.onPageChanged?.call(index);
               },
               itemBuilder: (context, index) {
-                return NetworkImageWithFallback(
-                  primaryUrl: urls[index],
-                  debugLabel: '${widget.debugLabel} $index',
-                  fit: BoxFit.cover,
-                  errorWidget: ColoredBox(
-                    color: cs.surfaceContainerHighest,
-                    child: Icon(Icons.broken_image_outlined, color: muted),
+                return _tappable(
+                  index: index,
+                  child: _image(
+                    url: urls[index],
+                    debugLabel: '${widget.debugLabel} $index',
+                    cs: cs,
+                    muted: muted,
                   ),
                 );
               },
@@ -107,23 +138,25 @@ class _OfferImageCarouselState extends State<OfferImageCarousel> {
               left: 0,
               right: 0,
               bottom: AppSpacing.sm.h,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(urls.length, (index) {
-                  final active = index == _index;
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 220),
-                    margin: EdgeInsets.symmetric(horizontal: 3.w),
-                    width: active ? 18.w : 6.w,
-                    height: 6.h,
-                    decoration: BoxDecoration(
-                      color: active
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.45),
-                      borderRadius: AppBorders.full,
-                    ),
-                  );
-                }),
+              child: IgnorePointer(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(urls.length, (index) {
+                    final active = index == _index;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      margin: EdgeInsets.symmetric(horizontal: 3.w),
+                      width: active ? 18.w : 6.w,
+                      height: 6.h,
+                      decoration: BoxDecoration(
+                        color: active
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.45),
+                        borderRadius: AppBorders.full,
+                      ),
+                    );
+                  }),
+                ),
               ),
             ),
           ],

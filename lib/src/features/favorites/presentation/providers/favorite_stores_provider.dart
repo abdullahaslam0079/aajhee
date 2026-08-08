@@ -1,4 +1,9 @@
+import 'dart:async';
+
+import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:goluto/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'favorite_stores_provider.g.dart';
@@ -61,13 +66,34 @@ class FavoriteStores extends _$FavoriteStores {
     state = FavoriteStoresState(favoriteIds: favoriteIds);
   }
 
-  Future<void> toggle(String storeId) async {
+  Future<void> toggle(String storeId, {int? businessId}) async {
     final updated = Set<String>.from(state.favoriteIds);
-    if (updated.contains(storeId)) {
-      updated.remove(storeId);
-    } else {
+    final nowFavorite = !updated.contains(storeId);
+    if (nowFavorite) {
       updated.add(storeId);
+    } else {
+      updated.remove(storeId);
     }
     await _persist(updated);
+
+    if (businessId != null) {
+      unawaited(_syncBusinessLike(businessId, liked: nowFavorite));
+    }
+  }
+
+  Future<void> _syncBusinessLike(int businessId, {required bool liked}) async {
+    final session = ref.read(sessionProvider);
+    if (session.status != SessionStatus.authenticated) return;
+
+    final result = await EngagementService.instance.setBusinessLike(
+      businessId,
+      liked: liked,
+    );
+    result.fold(
+      (failure) => AppLogger.warning(
+        'Failed to sync business favorite: ${failure.message}',
+      ),
+      (_) {},
+    );
   }
 }
