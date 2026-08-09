@@ -17,7 +17,30 @@ class AvailedOffersTabScreen extends ConsumerStatefulWidget {
 
 class _AvailedOffersTabScreenState
     extends ConsumerState<AvailedOffersTabScreen> {
+  final _scrollController = ScrollController();
   int? _lastSeenTabIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
+      ref.read(availedOffersProvider.notifier).loadMore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +91,7 @@ class _AvailedOffersTabScreenState
                 onRefresh: () =>
                     ref.read(availedOffersProvider.notifier).load(),
                 child: ListView.separated(
+                  controller: _scrollController,
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.fromLTRB(
                     AppSpacing.sm.w,
@@ -75,10 +99,17 @@ class _AvailedOffersTabScreenState
                     AppSpacing.sm.w,
                     MapConstants.bottomNavInset.h + AppSpacing.lg.h,
                   ),
-                  itemCount: availedState.offers.length,
+                  itemCount: availedState.offers.length +
+                      (availedState.isLoadingMore ? 1 : 0),
                   separatorBuilder: (_, __) =>
                       SizedBox(height: AppSpacing.md.h),
                   itemBuilder: (context, index) {
+                    if (index >= availedState.offers.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
                     final availedOffer = availedState.offers[index];
                     return AvailedOfferCard(
                       availedOffer: availedOffer,

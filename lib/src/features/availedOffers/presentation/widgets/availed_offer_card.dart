@@ -23,9 +23,9 @@ class AvailedOfferCard extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: AppBorders.lg,
+      borderRadius: AppBorders.card,
       child: InkWell(
-        borderRadius: AppBorders.lg,
+        borderRadius: AppBorders.card,
         onTap: onTap,
         child: Container(
           padding: EdgeInsets.all(AppSpacing.sm.r),
@@ -109,6 +109,16 @@ class AvailedOfferCard extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
+                        if (offer.isOnline) ...[
+                          SizedBox(height: AppSpacing.xxs.h),
+                          Text(
+                            'Online',
+                            style: tt.labelSmall?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                         if (offer.subtitle.isNotEmpty) ...[
                           SizedBox(height: AppSpacing.xxs.h),
                           Text(

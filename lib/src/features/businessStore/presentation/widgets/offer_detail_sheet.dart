@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/offers/presentation/widgets/offer_image_carousel.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -7,9 +10,17 @@ Future<void> showOfferDetailSheet(
   BuildContext context, {
   required OfferModel offer,
   required String storeName,
+  String? storeLogoUrl,
 }) {
+  // Count a view whenever the detail sheet opens (any entry point).
+  unawaited(EngagementService.instance.recordOfferView(offer.id));
+
   return showAppSheet(
-    child: _OfferDetailSheet(offer: offer, storeName: storeName),
+    child: _OfferDetailSheet(
+      offer: offer,
+      storeName: storeName,
+      storeLogoUrl: storeLogoUrl ?? offer.businessLogoUrl,
+    ),
   );
 }
 
@@ -17,10 +28,12 @@ class _OfferDetailSheet extends StatelessWidget {
   const _OfferDetailSheet({
     required this.offer,
     required this.storeName,
+    this.storeLogoUrl,
   });
 
   final OfferModel offer;
   final String storeName;
+  final String? storeLogoUrl;
 
   Future<void> _openExternalLink(BuildContext context) async {
     final url = offer.resolvedExternalUrl;
@@ -58,6 +71,8 @@ class _OfferDetailSheet extends StatelessWidget {
         shortDescription.isNotEmpty && shortDescription != detailsBody;
     final externalUrl = offer.resolvedExternalUrl;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.88;
+    final hasPrices =
+        offer.originalPrice != null && offer.discountedPrice != null;
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -109,13 +124,27 @@ class _OfferDetailSheet extends StatelessWidget {
                           letterSpacing: -0.3,
                         ),
                       ),
-                      SizedBox(height: AppSpacing.xxs.h),
-                      Text(
-                        storeName,
-                        style: tt.bodyMedium?.copyWith(
-                          color: muted,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      SizedBox(height: AppSpacing.xs.h),
+                      Row(
+                        children: [
+                          StoreLogoBadge(
+                            name: storeName,
+                            imageUrl: storeLogoUrl,
+                            size: 28,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: Text(
+                              storeName,
+                              style: tt.bodyMedium?.copyWith(
+                                color: muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
                       if (galleryUrls.isNotEmpty) ...[
                         SizedBox(height: AppSpacing.md.h),
@@ -127,6 +156,69 @@ class _OfferDetailSheet extends StatelessWidget {
                             context,
                             imageUrls: galleryUrls,
                             initialIndex: index,
+                          ),
+                        ),
+                      ],
+                      if (hasPrices) ...[
+                        SizedBox(height: AppSpacing.md.h),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: AppSpacing.sm.w,
+                          runSpacing: AppSpacing.xs.h,
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  offer.discountedPrice!.asEuro,
+                                  style: tt.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                    color: context.appColors.deal,
+                                    letterSpacing: -0.4,
+                                    height: 1,
+                                  ),
+                                ),
+                                SizedBox(width: 8.w),
+                                Text(
+                                  offer.originalPrice!.asEuro,
+                                  style: tt.titleMedium?.copyWith(
+                                    color: muted,
+                                    fontWeight: FontWeight.w500,
+                                    decoration: TextDecoration.lineThrough,
+                                    decorationColor: muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (offer.discountPercent > 0)
+                              _DetailChip(
+                                label:
+                                    '${offer.discountPercent.toStringAsFixed(0)}% off',
+                                icon: Icons.local_offer_outlined,
+                                accent: true,
+                              ),
+                          ],
+                        ),
+                      ] else if (offer.detailText.isNotEmpty) ...[
+                        SizedBox(height: AppSpacing.sm.h),
+                        Text(
+                          offer.detailText,
+                          style: tt.bodyMedium?.copyWith(
+                            color: muted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ] else if (offer.discountPercent > 0) ...[
+                        SizedBox(height: AppSpacing.sm.h),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _DetailChip(
+                            label:
+                                '${offer.discountPercent.toStringAsFixed(0)}% off',
+                            icon: Icons.local_offer_outlined,
+                            accent: true,
                           ),
                         ),
                       ],
@@ -153,61 +245,22 @@ class _OfferDetailSheet extends StatelessWidget {
                           style: tt.bodyLarge?.copyWith(height: 1.5),
                         ),
                       ],
-                      if (offer.originalPrice != null &&
-                          offer.discountedPrice != null) ...[
-                        SizedBox(height: AppSpacing.md.h),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
-                          children: [
-                            Text(
-                              '€${offer.discountedPrice!.toStringAsFixed(0)}',
-                              style: tt.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w900,
-                                color: context.appColors.warning,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            SizedBox(width: 8.w),
-                            Text(
-                              '€${offer.originalPrice!.toStringAsFixed(0)}',
-                              style: tt.titleMedium?.copyWith(
-                                color: muted,
-                                fontWeight: FontWeight.w500,
-                                decoration: TextDecoration.lineThrough,
-                                decorationColor: muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ] else if (offer.detailText.isNotEmpty) ...[
-                        SizedBox(height: AppSpacing.sm.h),
-                        Text(
-                          offer.detailText,
-                          style: tt.bodyMedium?.copyWith(
-                            color: muted,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
                       SizedBox(height: AppSpacing.md.h),
                       Wrap(
                         spacing: AppSpacing.xs.w,
                         runSpacing: AppSpacing.xxs.h,
                         children: [
-                          if (offer.discountPercent > 0)
-                            _DetailChip(
-                              label:
-                                  '${offer.discountPercent.toStringAsFixed(0)}% off',
-                              icon: Icons.local_offer_outlined,
-                              accent: true,
-                            ),
                           _DetailChip(
                             label: dealTypeLabel,
                             icon: Icons.storefront_outlined,
                           ),
+                          if (offer.isOnline)
+                            const _DetailChip(
+                              label: 'Online',
+                              icon: Icons.language_rounded,
+                            ),
                           if (offer.isViewOnlyOffer)
-                            _DetailChip(
+                            const _DetailChip(
                               label: 'View only',
                               icon: Icons.visibility_outlined,
                             ),
@@ -255,10 +308,10 @@ class _DetailChip extends StatelessWidget {
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
     final backgroundColor = accent
-        ? appColors.warning.withValues(alpha: 0.12)
+        ? appColors.deal.withValues(alpha: 0.12)
         : cs.surfaceContainerHigh;
     final foregroundColor = accent
-        ? (appColors.onWarningContainer ?? appColors.warning)
+        ? (appColors.onDealContainer ?? appColors.deal)
         : cs.onSurfaceVariant;
 
     return Container(
@@ -276,7 +329,7 @@ class _DetailChip extends StatelessWidget {
           Icon(
             icon,
             size: 12,
-            color: accent ? appColors.warning : cs.onSurfaceVariant,
+            color: accent ? appColors.deal : cs.onSurfaceVariant,
           ),
           SizedBox(width: 4.w),
           Text(

@@ -1,6 +1,7 @@
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
 import 'package:goluto/src/features/notifications/presentation/providers/notification_preferences_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:goluto/src/features/settings/presentation/providers/theme_preferences_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
@@ -22,6 +23,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final defaultAddress =
         ref.watch(savedAddressesProvider).selectedAddress?.shortLabel;
     final pushPrefs = ref.watch(notificationPreferencesProvider);
+    final themePrefs = ref.watch(themePreferencesProvider);
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
@@ -140,6 +142,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     _divider(context),
                     _SettingsTile(
+                      icon: Icons.brightness_6_outlined,
+                      iconColor: colorScheme.primary,
+                      title: 'Appearance',
+                      subtitle: themePrefs.preference.label,
+                      onTap: () => _showAppearanceSheet(context, themePrefs),
+                    ),
+                    _divider(context),
+                    _SettingsTile(
                       icon: Icons.language_rounded,
                       iconColor: colorScheme.secondary,
                       title: 'Language',
@@ -224,6 +234,80 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showAppearanceSheet(
+    BuildContext context,
+    ThemePreferencesState themePrefs,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final cs = sheetContext.theme.colorScheme;
+        final tt = sheetContext.theme.textTheme;
+
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.ms.w,
+              0,
+              AppSpacing.ms.w,
+              AppSpacing.md.h,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Appearance',
+                  style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                SizedBox(height: AppSpacing.xs.h),
+                Text(
+                  'Uses your phone setting by default.',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+                ),
+                SizedBox(height: AppSpacing.sm.h),
+                ...AppThemePreference.values.map((option) {
+                  final selected = themePrefs.preference == option;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      switch (option) {
+                        AppThemePreference.system =>
+                          Icons.brightness_auto_rounded,
+                        AppThemePreference.light => Icons.light_mode_rounded,
+                        AppThemePreference.dark => Icons.dark_mode_rounded,
+                      },
+                      color: selected ? cs.primary : cs.onSurfaceVariant,
+                    ),
+                    title: Text(
+                      option.label,
+                      style: tt.bodyLarge?.copyWith(
+                        fontWeight:
+                            selected ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                    trailing: selected
+                        ? Icon(Icons.check_rounded, color: cs.primary)
+                        : null,
+                    onTap: themePrefs.isSaving
+                        ? null
+                        : () async {
+                            Navigator.pop(sheetContext);
+                            await ref
+                                .read(themePreferencesProvider.notifier)
+                                .setPreference(option);
+                          },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

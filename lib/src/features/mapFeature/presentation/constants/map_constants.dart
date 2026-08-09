@@ -11,7 +11,7 @@ const double kBottomNavBarHorizontalMargin = 16;
 const double kBottomNavBarBottomMargin = 16;
 
 /// Corner radius of the floating bottom navigation bar.
-const double kBottomNavBarBorderRadius = 28;
+const double kBottomNavBarBorderRadius = 20;
 
 /// Half of the docked FAB size in [BottomNavigationBarScreen].
 const double kHomeFabSize = 62;

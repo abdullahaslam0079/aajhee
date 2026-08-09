@@ -44,7 +44,7 @@ class OfferPaymentSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '€${payment.amountToPay!.toStringAsFixed(2)}',
+                  payment.amountToPay!.asEuro,
                   style: tt.headlineMedium?.copyWith(
                     fontWeight: FontWeight.w900,
                     color: cs.onSurface,
@@ -69,14 +69,14 @@ class OfferPaymentSummaryCard extends StatelessWidget {
             SizedBox(height: AppSpacing.sm.h),
             _Line(
               label: 'Bill total',
-              value: '€${payment.originalAmount!.toStringAsFixed(2)}',
+              value: payment.originalAmount!.asEuro,
               muted: muted,
               tt: tt,
             ),
             SizedBox(height: AppSpacing.xxs.h),
             _Line(
               label: 'You save',
-              value: '-€${payment.discountAmount!.toStringAsFixed(2)}',
+              value: '-${payment.discountAmount!.asEuro}',
               muted: cs.primary,
               tt: tt,
             ),

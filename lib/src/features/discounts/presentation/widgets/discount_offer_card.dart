@@ -20,10 +20,11 @@ class DiscountOfferCard extends ConsumerWidget {
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
     final muted = cs.onSurface.withValues(alpha: 0.52);
-    final favoriteKey = offer.favoriteBranchKey;
-    final isFavorite = favoriteKey != null &&
+    final isFavorite = offer.businessId > 0 &&
         ref.watch(
-          favoriteStoresProvider.select((s) => s.isFavorite(favoriteKey)),
+          favoriteStoresProvider.select(
+            (s) => s.isFavorite(offer.businessId),
+          ),
         );
     final imageUrls = offer.displayImageUrls;
     final hasGallery = imageUrls.length > 1;
@@ -33,11 +34,11 @@ class DiscountOfferCard extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.lg,
+        borderRadius: AppBorders.card,
         child: Ink(
           decoration: BoxDecoration(
-            color: kHomeCanvasColor,
-            borderRadius: AppBorders.lg,
+            color: homeCanvasOf(context),
+            borderRadius: AppBorders.card,
             border: Border.all(
               color: cs.onSurface.withValues(alpha: 0.14),
             ),
@@ -54,8 +55,8 @@ class DiscountOfferCard extends ConsumerWidget {
                     discountPercent: offer.discountPercent,
                     galleryCount: hasGallery ? imageUrls.length : null,
                     debugLabel: offer.title,
-                    dealColor: appColors.warning,
-                    onDealColor: appColors.onWarning,
+                    dealColor: appColors.deal,
+                    onDealColor: appColors.onDeal,
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
@@ -81,15 +82,12 @@ class DiscountOfferCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (favoriteKey != null)
+                            if (offer.businessId > 0)
                               _FavoriteButton(
                                 isFavorite: isFavorite,
                                 onTap: () => ref
                                     .read(favoriteStoresProvider.notifier)
-                                    .toggle(
-                                      favoriteKey,
-                                      businessId: offer.businessId,
-                                    ),
+                                    .toggle(offer.businessId),
                               ),
                           ],
                         ),
@@ -105,10 +103,15 @@ class DiscountOfferCard extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         if (category.isNotEmpty ||
-                            offer.nearestDistanceKm != null) ...[
+                            offer.nearestDistanceKm != null ||
+                            offer.isOnline) ...[
                           SizedBox(height: 4.h),
                           Text(
-                            _metaLine(category, offer.nearestDistanceKm),
+                            _metaLine(
+                              category,
+                              offer.nearestDistanceKm,
+                              isOnline: offer.isOnline,
+                            ),
                             style: tt.labelSmall?.copyWith(
                               color: muted,
                               fontWeight: FontWeight.w500,
@@ -145,8 +148,13 @@ class DiscountOfferCard extends ConsumerWidget {
   }
 }
 
-String _metaLine(String category, double? nearestDistanceKm) {
+String _metaLine(
+  String category,
+  double? nearestDistanceKm, {
+  bool isOnline = false,
+}) {
   final parts = <String>[];
+  if (isOnline) parts.add('Online');
   if (category.isNotEmpty) parts.add(category);
   if (nearestDistanceKm != null) {
     parts.add(GeoDistanceUtils.formatDistanceLabel(nearestDistanceKm));
@@ -328,11 +336,12 @@ class _FavoriteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
+    final appColors = context.appColors;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        customBorder: const CircleBorder(),
+        borderRadius: AppBorders.iconButton,
         onTap: onTap,
         child: Padding(
           padding: EdgeInsets.all(4.r),
@@ -340,7 +349,7 @@ class _FavoriteButton extends StatelessWidget {
             isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
             size: 20,
             color: isFavorite
-                ? cs.error
+                ? appColors.favorite
                 : cs.onSurface.withValues(alpha: 0.4),
           ),
         ),
@@ -369,15 +378,15 @@ class _PriceRow extends StatelessWidget {
         textBaseline: TextBaseline.alphabetic,
         children: [
           Text(
-            '€${discounted.toStringAsFixed(0)}',
+            discounted.asEuro,
             style: tt.titleSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: appColors.warning,
+              color: appColors.deal,
             ),
           ),
           SizedBox(width: 6.w),
           Text(
-            '€${original.toStringAsFixed(0)}',
+            original.asEuro,
             style: tt.labelSmall?.copyWith(
               color: muted,
               decoration: TextDecoration.lineThrough,
@@ -393,7 +402,7 @@ class _PriceRow extends StatelessWidget {
         'Save ${offer.discountPercent.toStringAsFixed(0)}%',
         style: tt.labelMedium?.copyWith(
           fontWeight: FontWeight.w800,
-          color: appColors.onWarningContainer ?? appColors.warning,
+          color: appColors.onDealContainer ?? appColors.deal,
         ),
       );
     }

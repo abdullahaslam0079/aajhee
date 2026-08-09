@@ -25,13 +25,18 @@ class CategoryWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     final bg = _selected
         ? colorScheme.primary
-        : colorScheme.onSurface.withValues(alpha: 0.05);
+        : isDark
+            ? colorScheme.surfaceContainerHigh
+            : colorScheme.onSurface.withValues(alpha: 0.05);
     final fg = _selected
         ? colorScheme.onPrimary
-        : colorScheme.onSurface.withValues(alpha: 0.68);
+        : isDark
+            ? colorScheme.onSurfaceVariant
+            : colorScheme.onSurface.withValues(alpha: 0.68);
 
     return Padding(
       padding: EdgeInsets.only(right: 8.w),
@@ -39,14 +44,19 @@ class CategoryWidget extends StatelessWidget {
         duration: _animationDuration,
         curve: Curves.easeOutCubic,
         decoration: BoxDecoration(
-          borderRadius: AppBorders.full,
+          borderRadius: AppBorders.md,
           color: bg,
+          border: !_selected && isDark
+              ? Border.all(
+                  color: colorScheme.outline.withValues(alpha: 0.32),
+                )
+              : null,
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: AppBorders.full,
+            borderRadius: AppBorders.md,
             splashColor: colorScheme.primary.withValues(alpha: 0.1),
             highlightColor: colorScheme.primary.withValues(alpha: 0.05),
             child: Padding(

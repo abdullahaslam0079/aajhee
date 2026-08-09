@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
-import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
 import 'package:goluto/src/features/discounts/presentation/widgets/discount_offer_card.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/searchOffers/presentation/providers/search_offers_provider.dart';
@@ -74,9 +73,9 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
     final tt = context.theme.textTheme;
 
     return Scaffold(
-      backgroundColor: kHomeCanvasColor,
+      backgroundColor: homeCanvasOf(context),
       appBar: AppBar(
-        backgroundColor: kHomeCanvasColor,
+        backgroundColor: homeCanvasOf(context),
         surfaceTintColor: Colors.transparent,
         title: Text(
           'Search offers',
@@ -263,8 +262,6 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
   }
 
   Future<void> _openOffer(BuildContext context, OfferModel offer) async {
-    unawaited(EngagementService.instance.recordOfferView(offer.id));
-
     await showOfferDetailSheet(
       context,
       offer: offer,

@@ -71,6 +71,13 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     if (shouldShowHeader != _showCompactHeader) {
       setState(() => _showCompactHeader = shouldShowHeader);
     }
+
+    if (_scrollController.hasClients) {
+      final position = _scrollController.position;
+      if (position.pixels >= position.maxScrollExtent - 240) {
+        ref.read(branchOffersProvider(branch.id).notifier).loadMore();
+      }
+    }
   }
 
   void _handleOfferTap(OfferModel offer) {
@@ -79,6 +86,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
         context,
         offer: offer,
         storeName: branch.displayName,
+        storeLogoUrl: branch.logoUrl,
       );
       return;
     }
@@ -209,19 +217,28 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                     AppSpacing.xl.h,
                   ),
                   sliver: SliverList.list(
-                    children: offers
-                        .map(
-                          (offer) => Padding(
-                            padding: EdgeInsets.only(bottom: AppSpacing.ms.h),
-                            child: _offerCard(
-                              cs: cs,
-                              tt: tt,
-                              muted: muted,
-                              offer: offer,
-                            ),
+                    children: [
+                      ...offers.map(
+                        (offer) => Padding(
+                          padding: EdgeInsets.only(bottom: AppSpacing.ms.h),
+                          child: _offerCard(
+                            cs: cs,
+                            tt: tt,
+                            muted: muted,
+                            offer: offer,
                           ),
-                        )
-                        .toList(),
+                        ),
+                      ),
+                      if (offersState.isLoadingMore)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.md.h,
+                          ),
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 
@@ -601,8 +618,8 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                       discountPercent: offer.discountPercent,
                       debugLabel: 'offer ${offer.title}',
                       showQrBadge: !isViewOnly,
-                      dealColor: appColors.warning,
-                      onDealColor: appColors.onWarning,
+                      dealColor: appColors.deal,
+                      onDealColor: appColors.onDeal,
                     ),
                     SizedBox(width: 12.w),
                     Expanded(
@@ -663,6 +680,11 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                                 label: dealTypeLabel,
                                 icon: Icons.storefront_outlined,
                               ),
+                              if (offer.isOnline)
+                                const _OfferTagChip(
+                                  label: 'Online',
+                                  icon: Icons.language_rounded,
+                                ),
                             ],
                           ),
                         ],
@@ -834,10 +856,10 @@ class _OfferPriceRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            '€${discounted.toStringAsFixed(0)}',
+            discounted.asEuro,
             style: tt.titleMedium?.copyWith(
               fontWeight: FontWeight.w900,
-              color: appColors.warning,
+              color: appColors.deal,
               letterSpacing: -0.4,
               height: 1,
             ),
@@ -846,7 +868,7 @@ class _OfferPriceRow extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(bottom: 1.h),
             child: Text(
-              '€${original.toStringAsFixed(0)}',
+              original.asEuro,
               style: tt.labelMedium?.copyWith(
                 color: muted,
                 fontWeight: FontWeight.w500,
@@ -865,7 +887,7 @@ class _OfferPriceRow extends StatelessWidget {
         'Save ${offer.discountPercent.toStringAsFixed(0)}%',
         style: tt.labelLarge?.copyWith(
           fontWeight: FontWeight.w800,
-          color: appColors.warning,
+          color: appColors.deal,
         ),
       );
     }
@@ -1025,7 +1047,7 @@ class _StoreLogoBadge extends StatelessWidget {
       name: name,
       imageUrl: imageUrl,
       size: size,
-      borderRadius: AppBorders.full,
+      borderRadius: AppBorders.md,
     );
   }
 }
@@ -1041,13 +1063,15 @@ class _HeroIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
+    return ClipRRect(
+      borderRadius: AppBorders.iconButton,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Material(
           color: Colors.white.withValues(alpha: 0.22),
           child: InkWell(
             onTap: onPressed,
+            borderRadius: AppBorders.iconButton,
             child: SizedBox(
               width: 44.w,
               height: 44.w,

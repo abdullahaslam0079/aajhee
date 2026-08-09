@@ -22,10 +22,20 @@ class BusinessStoreCard extends ConsumerWidget {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
-    final muted = cs.onSurface.withValues(alpha: 0.55);
-    final branchId = branch.id.toString();
+    final isDark = context.theme.brightness == Brightness.dark;
+    final muted = isDark
+        ? cs.onSurfaceVariant
+        : cs.onSurface.withValues(alpha: 0.55);
+    final infoPanelColor = isDark
+        ? cs.surfaceContainerHighest.withValues(alpha: 0.96)
+        : cs.surfaceContainerLowest.withValues(alpha: 0.92);
+    final infoBorderColor = isDark
+        ? cs.outline.withValues(alpha: 0.45)
+        : cs.surfaceContainerLowest;
     final isFavorite = ref.watch(
-      favoriteStoresProvider.select((state) => state.isFavorite(branchId)),
+      favoriteStoresProvider.select(
+        (state) => state.isFavorite(branch.businessId),
+      ),
     );
     final distanceKm = branch.distanceKm ?? _distanceKm(ref);
     final distanceLabel = '${distanceKm.toStringAsFixed(1)} km';
@@ -39,15 +49,15 @@ class BusinessStoreCard extends ConsumerWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.xl,
+        borderRadius: AppBorders.card,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            borderRadius: AppBorders.xl,
-            color: cs.surfaceContainerHighest,
+            borderRadius: AppBorders.card,
+            color: isDark ? cs.surfaceContainer : cs.surfaceContainerHighest,
             boxShadow: AppShadows.subtle,
           ),
           child: ClipRRect(
-            borderRadius: AppBorders.xl,
+            borderRadius: AppBorders.card,
             child: SizedBox(
               height: 204.h,
               width: double.infinity,
@@ -87,7 +97,7 @@ class BusinessStoreCard extends ConsumerWidget {
                       top: 12.h,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          color: appColors.warning,
+                          color: appColors.deal,
                           borderRadius: AppBorders.full,
                           boxShadow: AppShadows.subtle,
                         ),
@@ -102,14 +112,14 @@ class BusinessStoreCard extends ConsumerWidget {
                               Icon(
                                 Icons.local_offer_rounded,
                                 size: 13,
-                                color: appColors.onWarning,
+                                color: appColors.onDeal,
                               ),
                               SizedBox(width: 4.w),
                               Text(
                                 '${branch.highestDiscountPercent.toStringAsFixed(0)}% Off',
                                 style: tt.labelSmall?.copyWith(
                                   fontWeight: FontWeight.w800,
-                                  color: appColors.onWarning,
+                                  color: appColors.onDeal,
                                   height: 1,
                                   letterSpacing: 0.1,
                                 ),
@@ -125,20 +135,23 @@ class BusinessStoreCard extends ConsumerWidget {
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        customBorder: const CircleBorder(),
+                        borderRadius: AppBorders.iconButton,
                         onTap: () => ref
                             .read(favoriteStoresProvider.notifier)
                             .toggle(
-                              branchId,
-                              businessId: branch.businessId,
+                              branch.businessId,
+                              branch: branch,
                             ),
                         child: Ink(
                           width: 38.w,
                           height: 38.w,
                           decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: cs.surfaceContainerLowest
-                                .withValues(alpha: 0.95),
+                            borderRadius: AppBorders.iconButton,
+                            color: isDark
+                                ? cs.surfaceContainerHighest
+                                    .withValues(alpha: 0.95)
+                                : cs.surfaceContainerLowest
+                                    .withValues(alpha: 0.95),
                             boxShadow: AppShadows.subtle,
                           ),
                           child: Icon(
@@ -146,7 +159,7 @@ class BusinessStoreCard extends ConsumerWidget {
                                 ? Icons.favorite_rounded
                                 : Icons.favorite_border_rounded,
                             color: isFavorite
-                                ? cs.error
+                                ? appColors.favorite
                                 : cs.onSurface.withValues(alpha: 0.72),
                             size: 20,
                           ),
@@ -159,17 +172,14 @@ class BusinessStoreCard extends ConsumerWidget {
                     right: 10.w,
                     bottom: 10.h,
                     child: ClipRRect(
-                      borderRadius: AppBorders.lg,
+                      borderRadius: AppBorders.md,
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: cs.surfaceContainerLowest
-                                .withValues(alpha: 0.92),
-                            borderRadius: AppBorders.lg,
-                            border: Border.all(
-                              color: cs.surfaceContainerLowest,
-                            ),
+                            color: infoPanelColor,
+                            borderRadius: AppBorders.md,
+                            border: Border.all(color: infoBorderColor),
                           ),
                           child: Padding(
                             padding: EdgeInsets.fromLTRB(
@@ -221,9 +231,14 @@ class BusinessStoreCard extends ConsumerWidget {
                                           _MetaChip(
                                             icon: Icons.near_me_rounded,
                                             label: distanceLabel,
-                                            foreground: cs.primary,
-                                            background: cs.primary
-                                                .withValues(alpha: 0.1),
+                                            foreground: isDark
+                                                ? cs.primary
+                                                : cs.primary,
+                                            background: isDark
+                                                ? cs.primary
+                                                    .withValues(alpha: 0.18)
+                                                : cs.primary
+                                                    .withValues(alpha: 0.1),
                                           ),
                                           if (category.isNotEmpty) ...[
                                             SizedBox(width: 6.w),

@@ -145,12 +145,14 @@ class _HeaderIconButton extends StatelessWidget {
     final label = badgeCount > 99 ? '99+' : '$badgeCount';
 
     return Material(
-      color: cs.onSurface.withValues(alpha: 0.05),
-      shape: const CircleBorder(),
+      color: cs.brightness == Brightness.dark
+          ? cs.surfaceContainerHigh
+          : cs.onSurface.withValues(alpha: 0.05),
+      shape: AppBorders.shapeIconButton,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,
-        customBorder: const CircleBorder(),
+        borderRadius: AppBorders.iconButton,
         child: SizedBox(
           width: _size.w,
           height: _size.w,
@@ -172,7 +174,7 @@ class _HeaderIconButton extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: cs.error,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: AppBorders.full,
                       border: Border.all(color: cs.surface, width: 1.5),
                     ),
                     alignment: Alignment.center,

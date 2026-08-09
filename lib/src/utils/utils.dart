@@ -7,6 +7,7 @@ export 'failure.dart';
 export 'input_formatters.dart';
 export 'logger.dart';
 export 'media_url_utils.dart';
+export 'paginated_page.dart';
 export 'platform_info.dart';
 export 'task_runner.dart';
 export 'typedefs.dart';

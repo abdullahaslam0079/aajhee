@@ -25,12 +25,21 @@ class MapStoreCard extends ConsumerWidget {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final appColors = context.appColors;
-    final muted = colorScheme.onSurface.withValues(alpha: 0.55);
+    final isDark = context.theme.brightness == Brightness.dark;
+    final muted = isDark
+        ? colorScheme.onSurfaceVariant
+        : colorScheme.onSurface.withValues(alpha: 0.55);
     final discountPercent = branch.highestDiscountPercent.round();
     final distanceKm = _distanceKm(ref);
     final metaLabel = branch.categoryName.isNotEmpty
         ? '${branch.categoryName} • ${distanceKm.toStringAsFixed(1)} km'
         : '${distanceKm.toStringAsFixed(1)} km away';
+
+    final cardColor =
+        isDark ? colorScheme.surfaceContainerHigh : colorScheme.surface;
+    final footerColor = isDark
+        ? colorScheme.surfaceContainerHighest
+        : colorScheme.surfaceContainerLow;
 
     return AnimatedScale(
       scale: isSelected ? 1 : 0.97,
@@ -42,18 +51,29 @@ class MapStoreCard extends ConsumerWidget {
         height: MapConstants.storeCardHeight,
         width: MapConstants.storeCardWidth,
         decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: AppBorders.xl,
+          color: cardColor,
+          borderRadius: AppBorders.card,
           border: Border.all(
             color: isSelected
                 ? colorScheme.primary
-                : colorScheme.outlineVariant.withValues(alpha: 0.7),
+                : colorScheme.outline.withValues(alpha: isDark ? 0.45 : 0.28),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: isSelected ? AppShadows.elevated : AppShadows.card,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.16),
+              blurRadius: isDark ? 24 : 16,
+              offset: const Offset(0, 10),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: ClipRRect(
-          borderRadius: AppBorders.xl,
+          borderRadius: AppBorders.card,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -72,7 +92,7 @@ class MapStoreCard extends ConsumerWidget {
                           errorWidget: ColoredBox(
                             color: colorScheme.surfaceContainerHighest,
                             child: Icon(
-                              Icons.fastfood_outlined,
+                              Icons.storefront_outlined,
                               color: colorScheme.onSurfaceVariant,
                               size: 32,
                             ),
@@ -84,9 +104,9 @@ class MapStoreCard extends ConsumerWidget {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.black.withValues(alpha: 0.12),
+                                Colors.black.withValues(alpha: 0.18),
                                 Colors.black.withValues(alpha: 0.02),
-                                Colors.black.withValues(alpha: 0.28),
+                                Colors.black.withValues(alpha: 0.34),
                               ],
                               stops: const [0, 0.45, 1],
                             ),
@@ -99,52 +119,37 @@ class MapStoreCard extends ConsumerWidget {
                           child: Row(
                             children: [
                               if (branch.categoryName.isNotEmpty)
-                                _Badge(
-                                  label: branch.categoryName,
-                                  background:
-                                      Colors.black.withValues(alpha: 0.72),
-                                  foreground: Colors.white,
+                                Flexible(
+                                  child: _Badge(
+                                    label: branch.categoryName,
+                                    background: Colors.black.withValues(
+                                      alpha: 0.62,
+                                    ),
+                                    foreground: Colors.white,
+                                  ),
                                 ),
-                              const Spacer(),
+                              if (branch.categoryName.isNotEmpty &&
+                                  discountPercent > 0)
+                                const SizedBox(width: 6),
                               if (discountPercent > 0)
                                 _Badge(
                                   label: '$discountPercent% off',
-                                  background: appColors.warning,
-                                  foreground: appColors.onWarning,
+                                  background: appColors.deal,
+                                  foreground: appColors.onDeal,
                                   icon: Icons.local_offer_rounded,
                                 ),
                             ],
                           ),
                         ),
-                        if (isSelected)
-                          Positioned(
-                            right: 10,
-                            bottom: 10,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary,
-                                shape: BoxShape.circle,
-                                boxShadow: AppShadows.subtle,
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.all(6),
-                                child: Icon(
-                                  Icons.near_me_rounded,
-                                  size: 15,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
                 ),
               ),
               Material(
-                color: colorScheme.surfaceContainerLow,
+                color: footerColor,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 9, 10, 10),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -165,7 +170,7 @@ class MapStoreCard extends ConsumerWidget {
                                   letterSpacing: -0.2,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Text(
                                 metaLabel,
                                 maxLines: 1,
@@ -181,7 +186,8 @@ class MapStoreCard extends ConsumerWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
+                                  color: colorScheme.onSurfaceVariant
+                                      .withValues(alpha: 0.9),
                                   height: 1.2,
                                 ),
                               ),
@@ -194,20 +200,16 @@ class MapStoreCard extends ConsumerWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: onViewDetails,
-                          borderRadius: AppBorders.full,
+                          borderRadius: AppBorders.button,
                           child: Ink(
                             decoration: BoxDecoration(
-                              color: colorScheme.primaryContainer,
-                              borderRadius: AppBorders.full,
-                              border: Border.all(
-                                color:
-                                    colorScheme.primary.withValues(alpha: 0.2),
-                              ),
+                              color: colorScheme.primary,
+                              borderRadius: AppBorders.button,
                             ),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 11,
-                                vertical: 7,
+                                horizontal: 12,
+                                vertical: 8,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -215,7 +217,7 @@ class MapStoreCard extends ConsumerWidget {
                                   Text(
                                     'Details',
                                     style: textTheme.labelMedium?.copyWith(
-                                      color: colorScheme.onPrimaryContainer,
+                                      color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -223,7 +225,7 @@ class MapStoreCard extends ConsumerWidget {
                                   Icon(
                                     Icons.arrow_forward_rounded,
                                     size: 14,
-                                    color: colorScheme.onPrimaryContainer,
+                                    color: colorScheme.onPrimary,
                                   ),
                                 ],
                               ),
@@ -290,7 +292,7 @@ class _Badge extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: background,
-        borderRadius: AppBorders.full,
+        borderRadius: AppBorders.md,
         boxShadow: AppShadows.subtle,
       ),
       child: Padding(
@@ -302,11 +304,15 @@ class _Badge extends StatelessWidget {
               Icon(icon, size: 13, color: foreground),
               const SizedBox(width: 4),
             ],
-            Text(
-              label,
-              style: textTheme.labelSmall?.copyWith(
-                color: foreground,
-                fontWeight: FontWeight.w800,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: textTheme.labelSmall?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

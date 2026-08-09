@@ -45,6 +45,7 @@ class OfferModel {
     required this.branchIds,
     required this.offerType,
     required this.redemptionMode,
+    this.isOnline = false,
     required this.title,
     required this.description,
     required this.detailedDescription,
@@ -90,6 +91,7 @@ class OfferModel {
   final List<int> branchIds;
   final OfferType offerType;
   final OfferRedemptionMode redemptionMode;
+  final bool isOnline;
   final String title;
   final String description;
   final String detailedDescription;
@@ -136,7 +138,7 @@ class OfferModel {
 
   String get detailText {
     if (originalPrice != null && discountedPrice != null) {
-      return 'Instead of ${originalPrice!.toStringAsFixed(0)}';
+      return 'Instead of €${originalPrice!.toStringAsFixed(2)}';
     }
     if (isTimeLimited && endsAt != null) {
       return 'Valid until ${_formatDate(endsAt!)}';
@@ -145,6 +147,8 @@ class OfferModel {
   }
 
   bool get isViewOnlyOffer => redemptionMode.isViewOnly;
+
+  bool get isOnlineOnly => isOnline && branchIds.isEmpty;
 
   String? get resolvedExternalUrl {
     final url = externalUrl?.trim();
@@ -179,12 +183,6 @@ class OfferModel {
     return const [];
   }
 
-  String? get favoriteBranchKey {
-    if (featuredBranchId != null) return featuredBranchId.toString();
-    if (branchIds.isNotEmpty) return branchIds.first.toString();
-    return null;
-  }
-
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
@@ -207,6 +205,7 @@ class OfferModel {
       redemptionMode: OfferRedemptionMode.fromApi(
         parseApiString(json['redemption_mode']),
       ),
+      isOnline: json['is_online'] as bool? ?? false,
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
       detailedDescription: parseApiString(json['detailed_description']) ?? '',
@@ -294,6 +293,7 @@ class OfferModel {
       branchIds: branchIds,
       offerType: offerType,
       redemptionMode: redemptionMode,
+      isOnline: isOnline,
       title: title,
       description: description,
       detailedDescription: detailedDescription,
@@ -345,6 +345,7 @@ class OfferModel {
       redemptionMode: OfferRedemptionMode.fromApi(
         parseApiString(json['redemption_mode']),
       ),
+      isOnline: json['is_online'] as bool? ?? false,
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
       detailedDescription: parseApiString(json['detailed_description']) ?? '',

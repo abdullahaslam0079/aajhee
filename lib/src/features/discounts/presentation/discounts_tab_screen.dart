@@ -1,8 +1,5 @@
-import 'dart:async';
-
 import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
 import 'package:goluto/src/features/discounts/presentation/providers/discounts_provider.dart';
 import 'package:goluto/src/features/discounts/presentation/widgets/discount_offer_card.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
@@ -18,7 +15,30 @@ class DiscountsTabScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
+  final _scrollController = ScrollController();
   int? _lastSeenTabIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 240) {
+      ref.read(discountsFeedProvider.notifier).loadMore();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +56,7 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
     }
 
     return Scaffold(
-      backgroundColor: kHomeCanvasColor,
+      backgroundColor: homeCanvasOf(context),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -103,6 +123,7 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
                         ],
                       )
                     : ListView.separated(
+                        controller: _scrollController,
                         physics: const AlwaysScrollableScrollPhysics(
                           parent: BouncingScrollPhysics(),
                         ),
@@ -112,10 +133,19 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
                           AppSpacing.ms.w,
                           bottomInset,
                         ),
-                        itemCount: discountsState.offers.length,
+                        itemCount: discountsState.offers.length +
+                            (discountsState.isLoadingMore ? 1 : 0),
                         separatorBuilder: (_, __) =>
                             SizedBox(height: AppSpacing.ms.h),
                         itemBuilder: (context, index) {
+                          if (index >= discountsState.offers.length) {
+                            return const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
                           final offer = discountsState.offers[index];
                           return DiscountOfferCard(
                             offer: offer,
@@ -132,8 +162,6 @@ class _DiscountsTabScreenState extends ConsumerState<DiscountsTabScreen> {
   }
 
   Future<void> _openOffer(BuildContext context, OfferModel offer) async {
-    unawaited(EngagementService.instance.recordOfferView(offer.id));
-
     await showOfferDetailSheet(
       context,
       offer: offer,
@@ -170,7 +198,7 @@ class _DealsHighlightBanner extends StatelessWidget {
           colors: [
             colorScheme.primary,
             colorScheme.primary.withValues(alpha: 0.88),
-            appColors.warning.withValues(alpha: 0.85),
+            appColors.deal.withValues(alpha: 0.85),
           ],
         ),
         boxShadow: AppShadows.subtle,
@@ -181,7 +209,7 @@ class _DealsHighlightBanner extends StatelessWidget {
             padding: EdgeInsets.all(8.r),
             decoration: BoxDecoration(
               color: onBanner.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+              borderRadius: AppBorders.iconButton,
             ),
             child: Icon(
               Icons.local_fire_department_rounded,

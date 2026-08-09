@@ -90,4 +90,23 @@ class NotificationService {
       return response.data?['notifications_enabled'] as bool? ?? enabled;
     }, requiresNetwork: true);
   }
+
+  FutureEither<String> fetchThemePreference() async {
+    return runTask(() async {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/user/preferences',
+      );
+      return response.data?['theme_preference'] as String? ?? 'system';
+    }, requiresNetwork: true);
+  }
+
+  FutureEither<String> setThemePreference(String preference) async {
+    return runTask(() async {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        '/api/user/preferences',
+        data: {'theme_preference': preference},
+      );
+      return response.data?['theme_preference'] as String? ?? preference;
+    }, requiresNetwork: true);
+  }
 }

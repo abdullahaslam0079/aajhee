@@ -38,7 +38,7 @@ class HomePage extends ConsumerWidget {
     final branches = homeFeedState.filteredBranches;
 
     return Scaffold(
-      backgroundColor: kHomeCanvasColor,
+      backgroundColor: homeCanvasOf(context),
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
@@ -48,11 +48,19 @@ class HomePage extends ConsumerWidget {
               ref.read(notificationsProvider.notifier).refreshUnreadCount(),
             ]);
           },
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
-            ),
-            slivers: [
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              if (notification.metrics.pixels >=
+                  notification.metrics.maxScrollExtent - 240) {
+                ref.read(homeFeedProvider.notifier).loadMore();
+              }
+              return false;
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              slivers: [
               SliverToBoxAdapter(
                 child: HomeHeader(
                   locationText: locationText,
@@ -100,7 +108,7 @@ class HomePage extends ConsumerWidget {
                         .read(homeFeedProvider.notifier)
                         .selectCategory(index),
                     textTheme: textTheme,
-                    backgroundColor: kHomeCanvasColor,
+                    backgroundColor: homeCanvasOf(context),
                   ),
                 ),
                 if (branches.isEmpty)
@@ -136,8 +144,19 @@ class HomePage extends ConsumerWidget {
                   SliverPadding(
                     padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
                     sliver: SliverList.separated(
-                      itemCount: branches.length,
+                      itemCount: branches.length +
+                          (homeFeedState.isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
+                        if (index >= branches.length) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: AppSpacing.md.h,
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
                         final branch = branches[index];
                         return BusinessStoreCard(
                           branch: branch,
@@ -157,6 +176,7 @@ class HomePage extends ConsumerWidget {
               ],
               SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
             ],
+          ),
           ),
         ),
       ),
@@ -260,16 +280,24 @@ class _HomeSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
+    final isDark = colorScheme.brightness == Brightness.dark;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.lg,
+        borderRadius: AppBorders.input,
         child: Ink(
           decoration: BoxDecoration(
-            color: colorScheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: AppBorders.lg,
+            color: isDark
+                ? colorScheme.surfaceContainerHigh
+                : colorScheme.onSurface.withValues(alpha: 0.05),
+            borderRadius: AppBorders.input,
+            border: isDark
+                ? Border.all(
+                    color: colorScheme.outline.withValues(alpha: 0.32),
+                  )
+                : null,
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
@@ -278,14 +306,14 @@ class _HomeSearchBar extends StatelessWidget {
                 Icon(
                   Icons.search_rounded,
                   size: 20,
-                  color: colorScheme.onSurface.withValues(alpha: 0.45),
+                  color: colorScheme.onSurfaceVariant,
                 ),
                 SizedBox(width: 10.w),
                 Expanded(
                   child: Text(
                     'Search brands or items',
                     style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withValues(alpha: 0.42),
+                      color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -348,28 +376,50 @@ class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
               : null,
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: AppSpacing.ms.w,
-            vertical: _pad,
-          ),
+          padding: EdgeInsets.symmetric(vertical: _pad),
           child: SizedBox(
             height: _chipHeight,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: categoryLabels.length,
-              itemBuilder: (context, index) {
-                final label = categoryLabels[index];
-                return CategoryWidget(
-                  label: label,
-                  icon: index == 0
-                      ? Icons.apps_rounded
-                      : categoryIconForName(label),
-                  onTap: () => onCategoryTap(index),
-                  selectedCategoryIndex: selectedCategoryIndex,
-                  index: index,
-                );
-              },
+            child: Stack(
+              children: [
+                ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
+                  itemCount: categoryLabels.length,
+                  itemBuilder: (context, index) {
+                    final label = categoryLabels[index];
+                    return CategoryWidget(
+                      label: label,
+                      icon: index == 0
+                          ? Icons.apps_rounded
+                          : categoryIconForName(label),
+                      onTap: () => onCategoryTap(index),
+                      selectedCategoryIndex: selectedCategoryIndex,
+                      index: index,
+                    );
+                  },
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  width: AppSpacing.ms.w + 12,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            backgroundColor.withValues(alpha: 0),
+                            backgroundColor,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -27,7 +27,7 @@ class ToastCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
         color: color ?? context.theme.dialogTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppBorders.lg,
         border: Border.all(
           color: context.theme.indicatorColor,
         ),

@@ -13,7 +13,7 @@ extension ContextExtension on BuildContext {
   ColorScheme get colors => theme.colorScheme;
   bool get isDarkMode => theme.brightness == Brightness.dark;
 
-  /// Semantic/custom colors (success, warning, info).
+  /// Semantic/custom colors (deal, success, warning, info).
   AppColorsExtension get appColors =>
       theme.extension<AppColorsExtension>() ?? (isDarkMode ? AppPalettes.dark : AppPalettes.light);
 

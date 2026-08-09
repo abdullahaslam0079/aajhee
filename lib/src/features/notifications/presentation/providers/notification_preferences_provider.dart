@@ -31,12 +31,10 @@ class NotificationPreferencesState {
 
 @Riverpod(keepAlive: true)
 class NotificationPreferences extends _$NotificationPreferences {
-  late final NotificationService _service;
+  NotificationService get _service => ref.read(notificationServiceProvider);
 
   @override
   NotificationPreferencesState build() {
-    _service = ref.watch(notificationServiceProvider);
-
     ref.listen(sessionProvider, (previous, next) {
       if (next.status == SessionStatus.authenticated) {
         Future.microtask(load);

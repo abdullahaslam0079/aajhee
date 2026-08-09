@@ -130,18 +130,23 @@ class OfferService {
     );
   }
 
-  FutureEither<List<AvailedOfferModel>> fetchAvailedOffers() async {
+  FutureEither<PaginatedPage<AvailedOfferModel>> fetchAvailedOffers({
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     return runTask(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/user/offers/availed',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+        },
       );
-      final data = response.data ?? const {};
-      final results = data['results'] as List<dynamic>? ?? const [];
-      return results
-          .map(
-            (item) => AvailedOfferModel.fromJson(item as Map<String, dynamic>),
-          )
-          .toList();
+      final data = response.data;
+      if (data == null) {
+        return PaginatedPage.empty<AvailedOfferModel>(pageSize: pageSize);
+      }
+      return PaginatedPage.fromJson(data, AvailedOfferModel.fromJson);
     }, requiresNetwork: true);
   }
 

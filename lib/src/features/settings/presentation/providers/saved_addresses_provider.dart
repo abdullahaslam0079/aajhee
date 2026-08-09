@@ -50,15 +50,17 @@ UserAddressService userAddressService(Ref ref) {
 class SavedAddresses extends _$SavedAddresses {
   static const _storageKey = 'saved_addresses';
 
-  late final AddressGeocodingService _geocodingService;
-  late final UserAddressService _addressService;
   SharedPreferences? _prefs;
-  late final Future<void> _initialLoad;
+  Future<void> _initialLoad = Future.value();
+
+  AddressGeocodingService get _geocodingService =>
+      ref.read(addressGeocodingServiceProvider);
+
+  UserAddressService get _addressService =>
+      ref.read(userAddressServiceProvider);
 
   @override
   SavedAddressesState build() {
-    _geocodingService = ref.read(addressGeocodingServiceProvider);
-    _addressService = ref.read(userAddressServiceProvider);
     _initialLoad = _load();
     return const SavedAddressesState(isLoading: true);
   }

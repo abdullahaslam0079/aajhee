@@ -47,6 +47,7 @@ class AvailedOfferSummaryModel {
     required this.categoryId,
     required this.categoryName,
     required this.offerType,
+    this.isOnline = false,
     required this.title,
     required this.description,
     required this.imageUrl,
@@ -62,6 +63,7 @@ class AvailedOfferSummaryModel {
   final int categoryId;
   final String categoryName;
   final OfferType offerType;
+  final bool isOnline;
   final String title;
   final String description;
   final String? imageUrl;
@@ -101,6 +103,7 @@ class AvailedOfferSummaryModel {
       categoryId: parseApiInt(json['category_id']),
       categoryName: parseApiString(json['category_name']) ?? '',
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
+      isOnline: json['is_online'] as bool? ?? false,
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
       imageUrl: resolveMediaUrl(parseApiString(json['image_url'])) ??

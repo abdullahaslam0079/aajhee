@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 
 import 'text_theme.dart';
 import 'color_schemes.dart';
+import 'app_borders.dart';
 import 'app_fonts.dart';
 
 Color _colorFromHex(String hex) {
@@ -10,8 +11,16 @@ Color _colorFromHex(String hex) {
   return Color(int.parse('ff$cleaned', radix: 16));
 }
 
-/// Warm off-white canvas for the home feed and shell background.
+/// Soft canvas for home feed and shell backgrounds.
+/// Light: warm off-white. Dark: soft charcoal with clear elevation room.
 const Color kHomeCanvasColor = Color(0xFFF7F7F8);
+const Color kHomeCanvasColorDark = Color(0xFF12131A);
+
+Color homeCanvasOf(BuildContext context) {
+  return Theme.of(context).brightness == Brightness.dark
+      ? kHomeCanvasColorDark
+      : kHomeCanvasColor;
+}
 
 /// Custom theme extension for spacing and other design tokens
 class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
@@ -37,9 +46,9 @@ class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
     paddingSmall: 8,
     paddingMedium: 16,
     paddingLarge: 24,
-    borderRadiusSmall: 4,
+    borderRadiusSmall: 8,
     borderRadiusMedium: 12,
-    borderRadiusLarge: 24,
+    borderRadiusLarge: 16,
     cardElevation: 0,
   );
 
@@ -138,7 +147,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 48),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: const RoundedRectangleBorder(borderRadius: AppBorders.button),
         elevation: 0,
       ).copyWith(
         elevation: WidgetStateProperty.resolveWith((states) {
@@ -153,7 +162,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 48),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: const RoundedRectangleBorder(borderRadius: AppBorders.button),
       ),
     ),
 
@@ -162,7 +171,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 48),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: const RoundedRectangleBorder(borderRadius: AppBorders.button),
         side: BorderSide(color: colorScheme.outline, width: 1.5),
       ),
     ),
@@ -171,7 +180,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       style: TextButton.styleFrom(
         textStyle: textTheme.labelLarge,
         minimumSize: const Size(88, 40),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: const RoundedRectangleBorder(borderRadius: AppBorders.sm),
       ),
     ),
 
@@ -182,7 +191,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         side: BorderSide(color: colorScheme.outlineVariant, width: 1),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: AppBorders.card,
       ),
       color: colorScheme.surfaceContainerLow,
     ),
@@ -192,19 +201,19 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       filled: true,
       fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppBorders.input,
         borderSide: BorderSide(color: colorScheme.outline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppBorders.input,
         borderSide: BorderSide(color: colorScheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppBorders.input,
         borderSide: BorderSide(color: colorScheme.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppBorders.input,
         borderSide: BorderSide(color: colorScheme.error),
       ),
       floatingLabelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
@@ -251,12 +260,12 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       backgroundColor: colorScheme.primary,
       foregroundColor: colorScheme.onPrimaryContainer,
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: const RoundedRectangleBorder(borderRadius: AppBorders.lg),
     ),
 
     // Chip Theme
     chipTheme: ChipThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: const RoundedRectangleBorder(borderRadius: AppBorders.md),
       side: BorderSide(color: colorScheme.outlineVariant),
       backgroundColor: colorScheme.surfaceContainerLow,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -266,7 +275,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     // List Tile Theme
     listTileTheme: ListTileThemeData(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: const RoundedRectangleBorder(borderRadius: AppBorders.md),
       visualDensity: VisualDensity.comfortable,
       titleTextStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
       subtitleTextStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
@@ -274,7 +283,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
 
     // Checkbox Theme
     checkboxTheme: CheckboxThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+      shape: const RoundedRectangleBorder(borderRadius: AppBorders.xs),
     ),
 
     // Switch Theme
@@ -292,7 +301,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     // SnackBar Theme
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: const RoundedRectangleBorder(borderRadius: AppBorders.md),
       elevation: 4,
       backgroundColor: colorScheme.inverseSurface,
       contentTextStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onInverseSurface),
@@ -300,7 +309,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
 
     // Dialog Theme
     dialogTheme: DialogThemeData(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: const RoundedRectangleBorder(borderRadius: AppBorders.dialog),
       elevation: 0,
       backgroundColor: colorScheme.surface,
       titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -312,9 +321,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       showDragHandle: true,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
-        ),
+        borderRadius: AppBorders.bottomSheet,
       ),
     ),
 
@@ -322,7 +329,9 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     searchBarTheme: SearchBarThemeData(
       elevation: WidgetStateProperty.all(0),
       backgroundColor: WidgetStateProperty.all(colorScheme.surfaceContainerLow),
-      shape: WidgetStateProperty.all(RoundedRectangleBorder(borderRadius: BorderRadius.circular(28))),
+      shape: WidgetStateProperty.all(
+        const RoundedRectangleBorder(borderRadius: AppBorders.input),
+      ),
       padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 16)),
       hintStyle: WidgetStateProperty.all(textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
     ),
@@ -347,7 +356,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
         color: colorScheme.inverseSurface.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: AppBorders.sm,
       ),
       textStyle: textTheme.labelSmall?.copyWith(color: colorScheme.onInverseSurface),
     ),
@@ -400,26 +409,25 @@ ThemeData buildDarkTheme({required String primaryColorHex}) {
     brightness: Brightness.dark,
   ).copyWith(
     primary: accent,
-    onPrimary: const Color(0xFF111114),
-    primaryContainer: const Color(0xFF2B2B30),
-    onPrimaryContainer: const Color(0xFFE8E8EA),
-    secondary: const Color(0xFFE5E5E8),
-    onSecondary: const Color(0xFF111827),
-    secondaryContainer: const Color(0xFF2A2D34),
+    onPrimary: const Color(0xFF12131A),
+    primaryContainer: const Color(0xFF2E2F38),
+    onPrimaryContainer: const Color(0xFFE8E8ED),
+    secondary: const Color(0xFFD5D6DE),
+    onSecondary: const Color(0xFF12131A),
+    secondaryContainer: const Color(0xFF2A2B34),
     onSecondaryContainer: const Color(0xFFE5E7EB),
-    // surface: const Color(0xFF0A0A0A),
-    surface: const Color(0xFF0A0A0A),
-    onSurface: const Color(0xFFF5F5F5),
-    surfaceContainerLowest: const Color(0xFF050505),
-    surfaceContainerLow: const Color(0xFF101010),
-    surfaceContainer: const Color(0xFF171717),
-    surfaceContainerHigh: const Color(0xFF1F1F1F),
-    surfaceContainerHighest: const Color(0xFF2A2A2A),
-    onSurfaceVariant: const Color(0xFFC3C3C7),
-    outline: const Color(0xFF64646A),
-    outlineVariant: const Color(0xFF3B3B40),
-    shadow: Colors.black.withValues(alpha: 0.45),
-    scrim: Colors.black.withValues(alpha: 0.65),
+    surface: kHomeCanvasColorDark,
+    onSurface: const Color(0xFFF2F2F5),
+    surfaceContainerLowest: const Color(0xFF1C1D24),
+    surfaceContainerLow: const Color(0xFF22232B),
+    surfaceContainer: const Color(0xFF2A2B34),
+    surfaceContainerHigh: const Color(0xFF32333D),
+    surfaceContainerHighest: const Color(0xFF3C3D48),
+    onSurfaceVariant: const Color(0xFFC2C3CC),
+    outline: const Color(0xFF7A7B86),
+    outlineVariant: const Color(0xFF4A4B56),
+    shadow: Colors.black.withValues(alpha: 0.55),
+    scrim: Colors.black.withValues(alpha: 0.72),
     inverseSurface: const Color(0xFFF5F5F5),
     onInverseSurface: const Color(0xFF111114),
     inversePrimary: const Color(0xFF2E2E33),

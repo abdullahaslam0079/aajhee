@@ -58,12 +58,11 @@ class SearchOffersState {
 class SearchOffers extends _$SearchOffers {
   static const _pageSize = 20;
 
-  late final DiscoveryService _discoveryService;
+  DiscoveryService get _discoveryService => ref.read(discoveryServiceProvider);
   int _requestId = 0;
 
   @override
   SearchOffersState build() {
-    _discoveryService = ref.read(discoveryServiceProvider);
     return const SearchOffersState();
   }
 

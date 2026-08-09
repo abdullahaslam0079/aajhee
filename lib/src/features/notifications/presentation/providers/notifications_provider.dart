@@ -62,13 +62,12 @@ class NotificationsState {
 class Notifications extends _$Notifications {
   static const _pageSize = 20;
 
-  late final NotificationService _service;
   int _requestId = 0;
+
+  NotificationService get _service => ref.read(notificationServiceProvider);
 
   @override
   NotificationsState build() {
-    _service = ref.watch(notificationServiceProvider);
-
     ref.listen(sessionProvider, (previous, next) {
       if (next.status == SessionStatus.authenticated) {
         Future.microtask(() async {

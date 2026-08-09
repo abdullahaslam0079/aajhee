@@ -109,4 +109,17 @@ class StorageService {
         final prefs = await _ensurePrefs();
         return prefs.clear();
       });
+
+  /// Clears persisted user data while keeping device-level keys (e.g. onboarding).
+  FutureEither<bool> clearUserData({
+    Set<String> preserveKeys = const {'onboarding_completed'},
+  }) async =>
+      runTask(() async {
+        final prefs = await _ensurePrefs();
+        final keys = prefs.getKeys().difference(preserveKeys);
+        for (final key in keys) {
+          await prefs.remove(key);
+        }
+        return true;
+      });
 }

@@ -9,6 +9,7 @@ class BranchTopOfferModel {
     required this.description,
     required this.offerType,
     required this.redemptionMode,
+    this.isOnline = false,
     required this.discountPercent,
     required this.itemName,
     required this.originalPrice,
@@ -22,6 +23,7 @@ class BranchTopOfferModel {
   final String description;
   final OfferType offerType;
   final OfferRedemptionMode redemptionMode;
+  final bool isOnline;
   final double discountPercent;
   final String itemName;
   final double? originalPrice;
@@ -49,6 +51,7 @@ class BranchTopOfferModel {
       redemptionMode: OfferRedemptionMode.fromApi(
         parseApiString(json['redemption_mode']),
       ),
+      isOnline: json['is_online'] as bool? ?? false,
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
       originalPrice: parseApiNullableDouble(json['original_price']),

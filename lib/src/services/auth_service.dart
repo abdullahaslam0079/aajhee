@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../utils/utils.dart';
+import 'cache_service.dart';
 import 'secure_storage_service.dart';
 
 class AuthService {
@@ -253,9 +254,14 @@ class AuthService {
 
   Future<void> _clearSession() async {
     _cachedAccessToken = null;
-    await SecureStorageService.instance.delete(accessTokenKey);
-    await SecureStorageService.instance.delete(refreshTokenKey);
-    await SecureStorageService.instance.delete(userKey);
+    await SecureStorageService.instance.deleteAll();
+    final cacheResult = await CacheService.instance.clearAll();
+    cacheResult.fold(
+      (failure) => AppLogger.warning(
+        'Failed to clear app caches on session clear: ${failure.message}',
+      ),
+      (_) {},
+    );
   }
 
   void dispose() {

@@ -15,10 +15,20 @@ class MapActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
+    final isDark = context.theme.brightness == Brightness.dark;
+
     return FloatingActionButton.small(
       heroTag: heroTag,
-      backgroundColor: colorScheme.surface,
-      elevation: 3,
+      backgroundColor:
+          isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+      foregroundColor: colorScheme.onSurface,
+      elevation: isDark ? 4 : 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppBorders.iconButton,
+        side: BorderSide(
+          color: colorScheme.outline.withValues(alpha: isDark ? 0.4 : 0.18),
+        ),
+      ),
       onPressed: onPressed,
       child: Icon(icon, color: colorScheme.onSurface),
     );

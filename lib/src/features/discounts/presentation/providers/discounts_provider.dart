@@ -9,23 +9,36 @@ part 'discounts_provider.g.dart';
 class DiscountsState {
   const DiscountsState({
     this.offers = const [],
+    this.page = 0,
+    this.hasMore = false,
     this.isLoading = false,
+    this.isLoadingMore = false,
     this.errorMessage,
   });
 
   final List<OfferModel> offers;
+  final int page;
+  final bool hasMore;
   final bool isLoading;
+  final bool isLoadingMore;
   final String? errorMessage;
 
   DiscountsState copyWith({
     List<OfferModel>? offers,
+    int? page,
+    bool? hasMore,
     bool? isLoading,
+    bool? isLoadingMore,
     String? errorMessage,
+    bool clearError = false,
   }) {
     return DiscountsState(
       offers: offers ?? this.offers,
+      page: page ?? this.page,
+      hasMore: hasMore ?? this.hasMore,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -37,47 +50,75 @@ EngagementService engagementService(Ref ref) {
 
 @Riverpod(keepAlive: true)
 class DiscountsFeed extends _$DiscountsFeed {
-  late final EngagementService _engagementService;
+  static const _pageSize = 20;
+
+  EngagementService get _engagementService =>
+      ref.read(engagementServiceProvider);
+  int _requestId = 0;
 
   @override
   DiscountsState build() {
-    _engagementService = ref.read(engagementServiceProvider);
     return const DiscountsState();
   }
 
-  Future<void> load() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+  Future<void> load() => _fetch(reset: true);
+
+  Future<void> loadMore() async {
+    if (!state.hasMore || state.isLoading || state.isLoadingMore) return;
+    await _fetch(reset: false);
+  }
+
+  Future<void> _fetch({required bool reset}) async {
+    final requestId = ++_requestId;
+    final nextPage = reset ? 1 : state.page + 1;
+
+    state = state.copyWith(
+      isLoading: reset,
+      isLoadingMore: !reset,
+      offers: reset ? const [] : state.offers,
+      clearError: true,
+    );
 
     try {
       await ref.read(savedAddressesProvider.notifier).ensureLoaded();
-      if (!ref.mounted) return;
+      if (!ref.mounted || requestId != _requestId) return;
 
       final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
       final result = await _engagementService.getDiscountsFeed(
         addressId: addressId,
+        page: nextPage,
+        pageSize: _pageSize,
       );
-      if (!ref.mounted) return;
+      if (!ref.mounted || requestId != _requestId) return;
 
       result.fold(
         (failure) {
           state = state.copyWith(
             isLoading: false,
+            isLoadingMore: false,
             errorMessage: failure.message,
           );
         },
-        (offers) {
+        (page) {
+          final offers = reset
+              ? page.results
+              : [...state.offers, ...page.results];
           state = state.copyWith(
             offers: offers,
+            page: page.page,
+            hasMore: page.hasMore,
             isLoading: false,
-            errorMessage: null,
+            isLoadingMore: false,
+            clearError: true,
           );
         },
       );
     } catch (error, stackTrace) {
       AppLogger.error('Failed to load discounts feed', error, stackTrace);
-      if (!ref.mounted) return;
+      if (!ref.mounted || requestId != _requestId) return;
       state = state.copyWith(
         isLoading: false,
+        isLoadingMore: false,
         errorMessage: 'Could not load discounts. Please try again.',
       );
     }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:goluto/src/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
@@ -43,7 +45,8 @@ class AuthController extends _$AuthController {
             .read(userProfileProvider.notifier)
             .syncFromAuthUser(session.user);
 
-        await PushNotificationService.instance.syncForAuthenticatedUser();
+        // Push sync also runs from SessionListenerWrapper; don't block navigation.
+        unawaited(PushNotificationService.instance.syncForAuthenticatedUser());
 
         if (!context.mounted) return;
 
@@ -90,8 +93,6 @@ class AuthController extends _$AuthController {
     await PushNotificationService.instance.unregisterCurrentDevice();
 
     final result = await ref.read(authRepositoryProvider).logout();
-
-    await ref.read(savedAddressesProvider.notifier).syncFromApi([]);
 
     state = false;
 

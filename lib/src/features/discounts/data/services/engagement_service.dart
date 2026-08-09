@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:goluto/src/config/app_config.dart';
+import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/utils/location_query_params.dart';
 import 'package:goluto/src/utils/utils.dart';
@@ -32,16 +33,26 @@ class EngagementService {
 
   Dio get _dio => AppConfig.dio;
 
-  FutureEither<List<OfferModel>> getDiscountsFeed({String? addressId}) async {
+  FutureEither<PaginatedPage<OfferModel>> getDiscountsFeed({
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
+      final params = <String, dynamic>{
+        'page': page,
+        'page_size': pageSize,
+        ...?LocationQueryParams.fromAddressId(addressId),
+      };
+      final response = await _dio.get<Map<String, dynamic>>(
         '/api/offers/discounts',
-        queryParameters: LocationQueryParams.fromAddressId(addressId),
+        queryParameters: params,
       );
-      final data = response.data ?? const [];
-      return data
-          .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
-          .toList();
+      final data = response.data;
+      if (data == null) {
+        return PaginatedPage.empty<OfferModel>(pageSize: pageSize);
+      }
+      return PaginatedPage.fromJson(data, OfferModel.fromJson);
     }, requiresNetwork: true);
   }
 
@@ -97,5 +108,48 @@ class EngagementService {
         isLiked: payload['is_liked'] as bool? ?? liked,
       );
     }, requiresNetwork: true);
+  }
+
+  FutureEither<FavoriteBranchesPage> getFavoriteBranches({
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    return runTask(() async {
+      final params = <String, dynamic>{
+        'page': page,
+        'page_size': pageSize,
+        ...?LocationQueryParams.fromAddressId(addressId),
+      };
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/user/favorites',
+        queryParameters: params,
+      );
+      final payload = response.data ?? const {};
+      return FavoriteBranchesPage.fromJson(payload);
+    }, requiresNetwork: true);
+  }
+}
+
+class FavoriteBranchesPage {
+  const FavoriteBranchesPage({
+    required this.page,
+    required this.likedBusinessIds,
+  });
+
+  final PaginatedPage<MapBranchModel> page;
+  final Set<int> likedBusinessIds;
+
+  bool get hasMore => page.hasMore;
+
+  factory FavoriteBranchesPage.fromJson(Map<String, dynamic> json) {
+    final page = PaginatedPage.fromJson(json, MapBranchModel.fromJson);
+    final rawIds = json['liked_business_ids'] as List<dynamic>? ?? const [];
+    return FavoriteBranchesPage(
+      page: page,
+      likedBusinessIds: {
+        for (final id in rawIds) parseApiInt(id),
+      }..remove(0),
+    );
   }
 }

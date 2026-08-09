@@ -1,6 +1,7 @@
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:goluto/src/features/mapFeature/presentation/constants/map_styles.dart';
 import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
@@ -32,6 +33,26 @@ class _MapScreenState extends ConsumerState<MapScreen>
       ref.watch(homeFeedProvider).branches;
 
   String? _focusedAddressId;
+
+  @override
+  void initState() {
+    super.initState();
+    storeCarouselController.addListener(_onCarouselScroll);
+  }
+
+  @override
+  void dispose() {
+    storeCarouselController.removeListener(_onCarouselScroll);
+    super.dispose();
+  }
+
+  void _onCarouselScroll() {
+    if (!storeCarouselController.hasClients) return;
+    final position = storeCarouselController.position;
+    if (position.pixels >= position.maxScrollExtent - 180) {
+      ref.read(homeFeedProvider.notifier).loadMore();
+    }
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     onMapCreated(controller);
@@ -85,6 +106,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
             LatLng(selectedAddress.latitude, selectedAddress.longitude),
           )
         : MapConstants.initialCameraPosition;
+    final isDark = context.theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -92,6 +114,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         children: [
           GoogleMap(
             mapType: MapType.normal,
+            style: isDark ? MapStyles.dark : null,
             initialCameraPosition: initialCameraPosition,
             zoomControlsEnabled: true,
             zoomGesturesEnabled: true,

@@ -23,16 +23,33 @@ class DiscoveryService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<List<MapBranchModel>> getMapBranches({String? addressId}) async {
+  FutureEither<PaginatedPage<MapBranchModel>> getMapBranches({
+    String? addressId,
+    int? categoryId,
+    int? branchId,
+    int? businessId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
+      final params = <String, dynamic>{
+        'page': page,
+        'page_size': pageSize,
+        if (categoryId != null) 'category_id': categoryId,
+        if (branchId != null) 'branch_id': branchId,
+        if (businessId != null) 'business_id': businessId,
+        ...?LocationQueryParams.fromAddressId(addressId),
+      };
+
+      final response = await _dio.get<Map<String, dynamic>>(
         '/api/map/branches',
-        queryParameters: LocationQueryParams.fromAddressId(addressId),
+        queryParameters: params,
       );
-      final data = response.data ?? const [];
-      return data
-          .map((item) => MapBranchModel.fromJson(item as Map<String, dynamic>))
-          .toList();
+      final data = response.data;
+      if (data == null) {
+        return PaginatedPage.empty<MapBranchModel>(pageSize: pageSize);
+      }
+      return PaginatedPage.fromJson(data, MapBranchModel.fromJson);
     }, requiresNetwork: true);
   }
 
@@ -40,50 +57,48 @@ class DiscoveryService {
     int branchId, {
     String? addressId,
   }) async {
-    return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
-        '/api/map/branches',
-        queryParameters: LocationQueryParams.fromAddressId(addressId),
-      );
-      final data = response.data ?? const [];
-      for (final item in data) {
-        final branch =
-            MapBranchModel.fromJson(item as Map<String, dynamic>);
-        if (branch.id == branchId) return branch;
-      }
-      return null;
-    }, requiresNetwork: true);
+    final result = await getMapBranches(
+      addressId: addressId,
+      branchId: branchId,
+      page: 1,
+      pageSize: 1,
+    );
+    return result.map((page) => page.results.isEmpty ? null : page.results.first);
   }
 
   FutureEither<MapBranchModel?> findBranchByBusinessId(
     int businessId, {
     String? addressId,
   }) async {
-    return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
-        '/api/map/branches',
-        queryParameters: LocationQueryParams.fromAddressId(addressId),
-      );
-      final data = response.data ?? const [];
-      for (final item in data) {
-        final branch =
-            MapBranchModel.fromJson(item as Map<String, dynamic>);
-        if (branch.businessId == businessId) return branch;
-      }
-      return null;
-    }, requiresNetwork: true);
+    final result = await getMapBranches(
+      addressId: addressId,
+      businessId: businessId,
+      page: 1,
+      pageSize: 1,
+    );
+    return result.map((page) => page.results.isEmpty ? null : page.results.first);
   }
 
-  FutureEither<List<OfferModel>> getOffers({String? addressId}) async {
+  FutureEither<PaginatedPage<OfferModel>> getOffers({
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
+      final params = <String, dynamic>{
+        'page': page,
+        'page_size': pageSize,
+        ...?LocationQueryParams.fromAddressId(addressId),
+      };
+      final response = await _dio.get<Map<String, dynamic>>(
         '/api/offers',
-        queryParameters: LocationQueryParams.fromAddressId(addressId),
+        queryParameters: params,
       );
-      final data = response.data ?? const [];
-      return data
-          .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
-          .toList();
+      final data = response.data;
+      if (data == null) {
+        return PaginatedPage.empty<OfferModel>(pageSize: pageSize);
+      }
+      return PaginatedPage.fromJson(data, OfferModel.fromJson);
     }, requiresNetwork: true);
   }
 
@@ -111,15 +126,24 @@ class DiscoveryService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<List<OfferModel>> getBranchOffers(int branchId) async {
+  FutureEither<PaginatedPage<OfferModel>> getBranchOffers(
+    int branchId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>(
+      final response = await _dio.get<Map<String, dynamic>>(
         '/api/branch/$branchId/offers',
+        queryParameters: {
+          'page': page,
+          'page_size': pageSize,
+        },
       );
-      final data = response.data ?? const [];
-      return data
-          .map((item) => OfferModel.fromJson(item as Map<String, dynamic>))
-          .toList();
+      final data = response.data;
+      if (data == null) {
+        return PaginatedPage.empty<OfferModel>(pageSize: pageSize);
+      }
+      return PaginatedPage.fromJson(data, OfferModel.fromJson);
     }, requiresNetwork: true);
   }
 }

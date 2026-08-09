@@ -19,7 +19,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
     // final colorScheme = context.theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: kHomeCanvasColor,
+      backgroundColor: homeCanvasOf(context),
       extendBody: true,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 220),
@@ -68,16 +68,19 @@ class BottomNavigationBarScreen extends ConsumerWidget {
       //   ),
       // ),
       bottomNavigationBar: BottomAppBar(
-        color: Colors.white,
-        elevation: 16,
-        shadowColor: Colors.black.withValues(alpha: 0.14),
+        color: context.theme.colorScheme.surfaceContainerLow,
+        elevation: 18,
+        shadowColor: Colors.black.withValues(alpha: 0.28),
         height: kBottomNavBarHeight,
         padding: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
-        shape: const AutomaticNotchedShape(
+        shape: AutomaticNotchedShape(
           RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(
+            borderRadius: const BorderRadius.vertical(
               top: Radius.circular(kBottomNavBarBorderRadius),
+            ),
+            side: BorderSide(
+              color: context.theme.colorScheme.outline.withValues(alpha: 0.28),
             ),
           ),
         ),
@@ -155,11 +158,11 @@ class _BottomItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
-    final inactive = cs.onSurface.withValues(alpha: 0.45);
+    final inactive = cs.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: AppBorders.md,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

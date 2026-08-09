@@ -11,4 +11,7 @@ extension NumExtension on num {
   // Duration helpers
   Duration get ms => Duration(milliseconds: toInt());
   Duration get seconds => Duration(seconds: toInt());
+
+  /// Euro amount with cents, e.g. `€5.55`.
+  String get asEuro => '€${toStringAsFixed(2)}';
 }
