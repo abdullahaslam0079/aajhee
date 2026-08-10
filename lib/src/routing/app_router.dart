@@ -15,8 +15,7 @@ import 'package:goluto/src/routing/global_navigator.dart';
 import 'package:goluto/src/routing/app_routes.dart';
 
 import 'package:goluto/src/features/auth/presentation/screens/login_screen.dart';
-import 'package:goluto/src/features/auth/presentation/screens/signup_screen.dart';
-import 'package:goluto/src/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:goluto/src/features/auth/presentation/screens/verify_otp_screen.dart';
 
 import 'package:goluto/src/features/offers/presentation/screens/home_offers_screen.dart';
 import 'package:goluto/src/features/offers/presentation/screens/top_picks_screen.dart';
@@ -44,19 +43,20 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
+      path: AppRoutes.verifyOtp,
+      name: 'verifyOtp',
+      builder: (context, state) {
+        final args = state.extra;
+        if (args is! PhoneOtpArgs) {
+          throw StateError('VerifyOtpScreen requires PhoneOtpArgs extra.');
+        }
+        return VerifyOtpScreen(args: args);
+      },
+    ),
+    GoRoute(
       path: AppRoutes.bottomNavigator,
       name: 'bottomNavigator',
       builder: (context, state) => const BottomNavigationBarScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.signup,
-      name: 'signup',
-      builder: (context, state) => const SignupScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.forgotPassword,
-      name: 'forgotPassword',
-      builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
       path: AppRoutes.home,

@@ -18,47 +18,25 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  FutureEither<AuthSession> login({
-    required String email,
-    required String password,
+  FutureEither<AuthSession> loginWithPhone({
+    required String idToken,
   }) async {
-    final result = await _authService.login(email: email, password: password);
+    final result = await _authService.loginWithPhone(idToken: idToken);
 
     return result.flatMap((response) {
       if (response == null) {
         return left(const ServerFailure('Login failed: User record not found'));
       }
 
-      return right(_parseAuthSession(response, email: email));
+      return right(_parseAuthSession(response));
     });
   }
 
-  @override
-  FutureEither<String> signUp({
-    required String name,
-    required String email,
-    required String password,
-    required String passwordConfirm,
-  }) {
-    return _authService.signUp(
-      name: name,
-      email: email,
-      password: password,
-      passwordConfirm: passwordConfirm,
-    );
-  }
-
-  AuthSession _parseAuthSession(
-    Map<String, dynamic> response, {
-    String? email,
-    String? name,
-  }) {
+  AuthSession _parseAuthSession(Map<String, dynamic> response) {
     final rawUser = response['user'] ?? response;
-    final user = UserModel.fromJson({
-      ...Map<String, dynamic>.from(rawUser as Map),
-      if (rawUser['email'] == null && email != null) 'email': email,
-      if (rawUser['name'] == null && name != null) 'name': name,
-    }).toEntity();
+    final user = UserModel.fromJson(
+      Map<String, dynamic>.from(rawUser as Map),
+    ).toEntity();
 
     final addresses = _parseAddresses(response['addresses']);
 
@@ -72,11 +50,6 @@ class AuthRepositoryImpl implements AuthRepository {
         .whereType<Map<String, dynamic>>()
         .map(SavedAddress.fromJson)
         .toList();
-  }
-
-  @override
-  FutureEither<void> forgotPassword({required String email}) {
-    return _authService.forgotPassword(email: email);
   }
 
   @override

@@ -9,6 +9,7 @@ class UserModel {
   const UserModel({
     required this.id,
     required this.email,
+    this.phone,
     this.name,
     this.photoUrl,
   });
@@ -17,6 +18,7 @@ class UserModel {
   final String id;
   @JsonKey(fromJson: _emailFromJson)
   final String email;
+  final String? phone;
   final String? name;
   final String? photoUrl;
 
@@ -28,6 +30,7 @@ class UserModel {
   AppUser toEntity() => AppUser(
         id: id,
         email: email,
+        phone: phone,
         name: name,
         photoUrl: photoUrl,
       );
@@ -35,6 +38,7 @@ class UserModel {
   factory UserModel.fromEntity(AppUser user) => UserModel(
         id: user.id,
         email: user.email,
+        phone: user.phone,
         name: user.name,
         photoUrl: user.photoUrl,
       );

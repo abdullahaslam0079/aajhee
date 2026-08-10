@@ -3,12 +3,14 @@ import 'package:equatable/equatable.dart';
 class AppUser extends Equatable {
   final String id;
   final String email;
+  final String? phone;
   final String? name;
   final String? photoUrl;
 
   const AppUser({
     required this.id,
     required this.email,
+    this.phone,
     this.name,
     this.photoUrl,
   });
@@ -19,5 +21,5 @@ class AppUser extends Equatable {
   bool get isNotEmpty => id.isNotEmpty;
 
   @override
-  List<Object?> get props => [id, email, name, photoUrl];
+  List<Object?> get props => [id, email, phone, name, photoUrl];
 }

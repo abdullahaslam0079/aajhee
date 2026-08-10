@@ -14,17 +14,17 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   bool _isSaving = false;
   String? _seedKey;
 
   void _syncFields(UserProfile profile) {
-    final seedKey = '${profile.name}|${profile.email}';
+    final seedKey = '${profile.name}|${profile.phone}|${profile.email}';
     if (_seedKey == seedKey) return;
 
-    _nameController.text = profile.displayName;
-    _emailController.text = profile.email;
+    _nameController.text = profile.name;
+    _phoneController.text = profile.phone ?? '';
     _seedKey = seedKey;
   }
 
@@ -36,7 +36,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -109,7 +109,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       SizedBox(height: AppSpacing.xs.h),
                       Text(
-                        'Update your name. Email cannot be changed.',
+                        'Update your name. Phone number cannot be changed here.',
                         style: tt.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -130,13 +130,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
-                        controller: _emailController,
+                        controller: _phoneController,
                         enabled: false,
                         readOnly: true,
-                        label: 'Email address',
-                        hint: 'you@example.com',
-                        keyboardType: TextInputType.emailAddress,
-                        prefixIcon: const Icon(Icons.email_outlined),
+                        label: 'Phone number',
+                        hint: '+49 …',
+                        keyboardType: TextInputType.phone,
+                        prefixIcon: const Icon(Icons.phone_outlined),
                       ),
                       SizedBox(height: AppSpacing.xl.h),
                       AppButton(

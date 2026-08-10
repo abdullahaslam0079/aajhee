@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import '../config/app_config.dart';
 import '../utils/utils.dart';
 import 'cache_service.dart';
+import 'firebase_phone_auth_service.dart';
 import 'secure_storage_service.dart';
 
 class AuthService {
@@ -39,6 +40,23 @@ class AuthService {
       });
       final data = response.data as Map<String, dynamic>;
       await _persistSession(data, email: email);
+      final sessionUser = await _readStoredUser();
+      _authStateController.add(sessionUser);
+      return data;
+    }, requiresNetwork: true);
+  }
+
+  /// Exchange a Firebase Phone Auth ID token for GoLuto JWTs.
+  FutureEither<Map<String, dynamic>?> loginWithPhone({
+    required String idToken,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/auth/phone',
+        data: {'id_token': idToken},
+      );
+      final data = response.data as Map<String, dynamic>;
+      await _persistSession(data);
       final sessionUser = await _readStoredUser();
       _authStateController.add(sessionUser);
       return data;
@@ -96,6 +114,12 @@ class AuthService {
           );
           AppLogger.error('Logout API error details', [error, stackTrace]);
         }
+        try {
+          await FirebasePhoneAuthService.instance.signOut();
+        } catch (error, stackTrace) {
+          AppLogger.warning('Firebase signOut failed: $error');
+          AppLogger.error('Firebase signOut details', [error, stackTrace]);
+        }
       } finally {
         await _clearSession();
         _authStateController.add(null);
@@ -127,6 +151,7 @@ class AuthService {
         ...current,
         if (user['id'] != null) 'id': user['id'].toString(),
         if (user['email'] != null) 'email': user['email'],
+        if (user['phone'] != null) 'phone': user['phone'],
         if (user['name'] != null) 'name': user['name'],
         if (user['photoUrl'] != null) 'photoUrl': user['photoUrl'],
       };
@@ -243,6 +268,7 @@ class AuthService {
     final sessionUser = <String, dynamic>{
       if (user['id'] != null) 'id': user['id'].toString(),
       if (user['email'] != null) 'email': user['email'],
+      if (user['phone'] != null) 'phone': user['phone'],
       if (user['name'] != null) 'name': user['name'],
       if (user['photoUrl'] != null) 'photoUrl': user['photoUrl'],
       if (email != null && user['email'] == null) 'email': email,

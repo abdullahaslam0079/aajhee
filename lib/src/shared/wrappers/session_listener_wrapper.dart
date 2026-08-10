@@ -22,8 +22,7 @@ class SessionListenerWrapper extends ConsumerWidget {
     AppRoutes.splash,
     AppRoutes.onboarding,
     AppRoutes.login,
-    AppRoutes.signup,
-    AppRoutes.forgotPassword,
+    AppRoutes.verifyOtp,
   };
 
   @override

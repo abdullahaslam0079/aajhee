@@ -81,7 +81,8 @@ class AppConfig {
   static bool _isPublicAuthPath(String path) {
     return path.contains('/api/auth/token') ||
         path.contains('/api/auth/register') ||
-        path.contains('/auth/forgot-password');
+        path.contains('/api/auth/phone') ||
+        path.contains('/api/auth/password/');
   }
 
   static String _getBaseUrl() {

@@ -6,10 +6,12 @@ class UserProfile extends Equatable {
   const UserProfile({
     required this.name,
     required this.email,
+    this.phone,
   });
 
   final String name;
   final String email;
+  final String? phone;
 
   static const empty = UserProfile(
     name: '',
@@ -18,7 +20,10 @@ class UserProfile extends Equatable {
 
   String get displayName {
     if (name.isNotEmpty) return name;
-    if (email.isNotEmpty) return email.split('@').first;
+    if (phone != null && phone!.isNotEmpty) return phone!;
+    if (email.isNotEmpty && !email.endsWith('@phone.goluto.local')) {
+      return email.split('@').first;
+    }
     return 'Your profile';
   }
 
@@ -26,22 +31,26 @@ class UserProfile extends Equatable {
     return UserProfile(
       name: user.name?.trim() ?? '',
       email: user.email,
+      phone: user.phone,
     );
   }
 
   UserProfile copyWith({
     String? name,
     String? email,
+    String? phone,
   }) {
     return UserProfile(
       name: name ?? this.name,
       email: email ?? this.email,
+      phone: phone ?? this.phone,
     );
   }
 
   Map<String, dynamic> toJson() => {
         'name': name,
         'email': email,
+        'phone': phone,
       };
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -50,6 +59,7 @@ class UserProfile extends Equatable {
       return UserProfile(
         name: storedName,
         email: json['email'] as String? ?? '',
+        phone: json['phone'] as String?,
       );
     }
 
@@ -61,9 +71,10 @@ class UserProfile extends Equatable {
     return UserProfile(
       name: parts.join(' '),
       email: json['email'] as String? ?? '',
+      phone: json['phone'] as String?,
     );
   }
 
   @override
-  List<Object?> get props => [name, email];
+  List<Object?> get props => [name, email, phone];
 }

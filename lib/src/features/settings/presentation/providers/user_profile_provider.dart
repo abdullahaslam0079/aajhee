@@ -140,6 +140,7 @@ class UserProfile extends _$UserProfile {
         final profile = entities.UserProfile(
           name: userModel.name?.trim() ?? '',
           email: userModel.email,
+          phone: userModel.phone,
         );
         final prefs = await _preferences;
         await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
@@ -166,6 +167,7 @@ class UserProfile extends _$UserProfile {
           email: userModel.email.isNotEmpty
               ? userModel.email
               : state.profile.email,
+          phone: userModel.phone ?? state.profile.phone,
         );
 
         final prefs = await _preferences;

@@ -21,16 +21,15 @@ class AuthController extends _$AuthController {
   @override
   bool build() => false;
 
-  void login({
+  Future<void> completePhoneLogin({
     required BuildContext context,
-    required String email,
-    required String password,
+    required String idToken,
   }) async {
     state = true;
 
     final result = await ref
         .read(authRepositoryProvider)
-        .login(email: email, password: password);
+        .loginWithPhone(idToken: idToken);
 
     state = false;
     await result.fold(
@@ -45,7 +44,6 @@ class AuthController extends _$AuthController {
             .read(userProfileProvider.notifier)
             .syncFromAuthUser(session.user);
 
-        // Push sync also runs from SessionListenerWrapper; don't block navigation.
         unawaited(PushNotificationService.instance.syncForAuthenticatedUser());
 
         if (!context.mounted) return;
@@ -54,35 +52,6 @@ class AuthController extends _$AuthController {
           context,
           hasSavedAddress: session.hasSavedAddress,
         );
-      },
-    );
-  }
-
-  void signUp({
-    required BuildContext context,
-    required String name,
-    required String email,
-    required String password,
-    required String passwordConfirm,
-  }) async {
-    state = true;
-
-    final result = await ref.read(authRepositoryProvider).signUp(
-          name: name,
-          email: email,
-          password: password,
-          passwordConfirm: passwordConfirm,
-        );
-
-    state = false;
-    result.fold(
-      (failure) =>
-          showToast(context, message: failure.message, status: 'error'),
-      (message) {
-        showToast(context, message: message, status: 'success');
-        if (context.mounted) {
-          context.go(AppRoutes.login);
-        }
       },
     );
   }
@@ -106,31 +75,5 @@ class AuthController extends _$AuthController {
     );
 
     context.go(AppRoutes.login);
-  }
-
-  void forgotPassword({
-    required BuildContext context,
-    required String email,
-  }) async {
-    state = true;
-
-    final result =
-        await ref.read(authRepositoryProvider).forgotPassword(email: email);
-
-    state = false;
-    result.fold(
-      (failure) =>
-          showToast(context, message: failure.message, status: 'error'),
-      (success) {
-        showToast(
-          context,
-          message: 'Password reset link sent successfully',
-          status: 'success',
-        );
-        if (context.mounted) {
-          context.go(AppRoutes.login);
-        }
-      },
-    );
   }
 }

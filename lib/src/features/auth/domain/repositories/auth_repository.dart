@@ -6,29 +6,14 @@ abstract class AuthRepository {
   /// Stream of auth state changes. Emits AppUser when authenticated, null when not.
   Stream<AppUser?> get onAuthStateChanged;
 
-  /// Sign in with email and password
-  FutureEither<AuthSession> login({
-    required String email,
-    required String password,
-  });
-
-  /// Sign up with email, password, and optional name
-  FutureEither<String> signUp({
-    required String name,
-    required String email,
-    required String password,
-    required String passwordConfirm,
-  });
-
-  /// Send a password reset email
-  FutureEither<void> forgotPassword({
-    required String email,
+  /// Sign in / sign up with a Firebase Phone Auth ID token.
+  FutureEither<AuthSession> loginWithPhone({
+    required String idToken,
   });
 
   /// Sign out the current user
   FutureEither<void> logout();
-  
+
   /// Check if the user is currently authenticated natively
   FutureEither<AppUser?> checkAuthState();
 }
-
