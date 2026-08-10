@@ -23,13 +23,12 @@ class HomeHeader extends StatelessWidget {
     final textTheme = context.theme.textTheme;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.ms.w,
-        AppSpacing.sm.h,
-        AppSpacing.ms.w,
-        0,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.ms.w,
+        vertical: AppSpacing.xs.h,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             child: _LocationBar(
@@ -79,10 +78,11 @@ class _LocationBar extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 2.w),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Deliver to',
+                'Location',
                 style: textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.48),
                   fontWeight: FontWeight.w500,

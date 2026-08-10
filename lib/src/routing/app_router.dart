@@ -18,7 +18,8 @@ import 'package:goluto/src/features/auth/presentation/screens/login_screen.dart'
 import 'package:goluto/src/features/auth/presentation/screens/signup_screen.dart';
 import 'package:goluto/src/features/auth/presentation/screens/forgot_password_screen.dart';
 
-import 'package:goluto/src/features/home/presentation/screens/home_page.dart';
+import 'package:goluto/src/features/offers/presentation/screens/home_offers_screen.dart';
+import 'package:goluto/src/features/offers/presentation/screens/top_picks_screen.dart';
 import 'package:goluto/src/features/onboarding/presentation/screens/onboarding_page.dart';
 import 'package:goluto/src/features/searchOffers/presentation/screens/search_offers_screen.dart';
 import 'package:goluto/src/features/splash/presentation/splash_screen.dart';
@@ -60,7 +61,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      builder: (context, state) => const HomePage(),
+      builder: (context, state) => const HomeOffersScreen(),
     ),
     GoRoute(
       path: AppRoutes.businessStore,
@@ -107,6 +108,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.searchOffers,
       name: 'searchOffers',
       builder: (context, state) => const SearchOffersScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.topPicks,
+      name: 'topPicks',
+      builder: (context, state) => const TopPicksScreen(),
     ),
     GoRoute(
       path: AppRoutes.addresses,

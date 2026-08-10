@@ -34,6 +34,25 @@ enum OfferRedemptionMode {
   bool get isViewOnly => this == viewOnly;
 }
 
+/// Where an offer can be redeemed: all channels, online-only, or in-store-only.
+enum OfferChannelFilter {
+  all,
+  online,
+  inStore;
+
+  String get label => switch (this) {
+        all => 'All',
+        online => 'Online',
+        inStore => 'In-store',
+      };
+
+  bool matches(OfferModel offer) => switch (this) {
+        all => true,
+        online => offer.isOnlineOnly,
+        inStore => !offer.isOnline,
+      };
+}
+
 class OfferModel {
   const OfferModel({
     required this.id,
@@ -149,6 +168,15 @@ class OfferModel {
   bool get isViewOnlyOffer => redemptionMode.isViewOnly;
 
   bool get isOnlineOnly => isOnline && branchIds.isEmpty;
+
+  bool get isHybridChannel => isOnline && branchIds.isNotEmpty;
+
+  /// Short label for list/meta chips: Online, In-store, or Online & In-store.
+  String get channelLabel {
+    if (isOnlineOnly) return 'Online';
+    if (isHybridChannel) return 'Online & In-store';
+    return 'In-store';
+  }
 
   String? get resolvedExternalUrl {
     final url = externalUrl?.trim();

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
+import 'package:goluto/src/features/offers/data/services/engagement_service.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/offers/presentation/widgets/offer_image_carousel.dart';
 import 'package:goluto/src/imports/core_imports.dart';

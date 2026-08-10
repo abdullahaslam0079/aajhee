@@ -48,18 +48,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       await ref.read(userProfileProvider.notifier).updateProfile(
             name: _nameController.text,
-            email: _emailController.text,
           );
 
       if (!mounted) return;
       showToast(context, message: 'Profile updated', status: 'success');
       context.pop();
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() => _isSaving = false);
+      final message = error is Exception
+          ? error.toString().replaceFirst('Exception: ', '')
+          : 'Could not save profile. Please try again.';
       showToast(
         context,
-        message: 'Could not save profile. Please try again.',
+        message: message.isNotEmpty
+            ? message
+            : 'Could not save profile. Please try again.',
         status: 'error',
       );
     }
@@ -105,7 +109,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       SizedBox(height: AppSpacing.xs.h),
                       Text(
-                        'Update your name and email address.',
+                        'Update your name. Email cannot be changed.',
                         style: tt.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -117,28 +121,22 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         label: 'Full name',
                         hint: 'e.g. Alex Morgan',
                         prefixIcon: const Icon(Icons.person_outline_rounded),
-                        textInputAction: TextInputAction.next,
+                        textInputAction: TextInputAction.done,
+                        onFieldSubmitted: (_) {
+                          if (!_isSaving) _saveProfile();
+                        },
                         validator: (v) =>
                             AppUtils.isBlank(v) ? 'Name is required' : null,
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
                         controller: _emailController,
-                        enabled: !_isSaving,
+                        enabled: false,
+                        readOnly: true,
                         label: 'Email address',
                         hint: 'you@example.com',
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: const Icon(Icons.email_outlined),
-                        textInputAction: TextInputAction.done,
-                        validator: (v) {
-                          if (AppUtils.isBlank(v)) {
-                            return 'Email is required';
-                          }
-                          if (!AppUtils.isValidEmail(v!)) {
-                            return 'Enter a valid email address';
-                          }
-                          return null;
-                        },
                       ),
                       SizedBox(height: AppSpacing.xl.h),
                       AppButton(

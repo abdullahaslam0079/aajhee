@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
+import 'package:goluto/src/features/offers/data/services/engagement_service.dart';
 import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/utils/logger.dart';
@@ -11,7 +11,7 @@ part 'favorite_stores_provider.g.dart';
 
 class FavoriteStoresState {
   const FavoriteStoresState({
-    this.favoriteBusinessIds = const {},
+    this.favoriteBranchIds = const {},
     this.branches = const [],
     this.page = 0,
     this.hasMore = false,
@@ -20,7 +20,7 @@ class FavoriteStoresState {
     this.errorMessage,
   });
 
-  final Set<int> favoriteBusinessIds;
+  final Set<int> favoriteBranchIds;
   final List<MapBranchModel> branches;
   final int page;
   final bool hasMore;
@@ -29,7 +29,7 @@ class FavoriteStoresState {
   final String? errorMessage;
 
   FavoriteStoresState copyWith({
-    Set<int>? favoriteBusinessIds,
+    Set<int>? favoriteBranchIds,
     List<MapBranchModel>? branches,
     int? page,
     bool? hasMore,
@@ -39,7 +39,7 @@ class FavoriteStoresState {
     bool clearError = false,
   }) {
     return FavoriteStoresState(
-      favoriteBusinessIds: favoriteBusinessIds ?? this.favoriteBusinessIds,
+      favoriteBranchIds: favoriteBranchIds ?? this.favoriteBranchIds,
       branches: branches ?? this.branches,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
@@ -49,7 +49,7 @@ class FavoriteStoresState {
     );
   }
 
-  bool isFavorite(int businessId) => favoriteBusinessIds.contains(businessId);
+  bool isFavorite(int branchId) => favoriteBranchIds.contains(branchId);
 }
 
 @Riverpod(keepAlive: true)
@@ -152,7 +152,7 @@ class FavoriteStores extends _$FavoriteStores {
               ? page.page.results
               : [...state.branches, ...page.page.results];
           state = state.copyWith(
-            favoriteBusinessIds: page.likedBusinessIds,
+            favoriteBranchIds: page.likedBranchIds,
             branches: branches,
             page: page.page.page,
             hasMore: page.hasMore,
@@ -174,41 +174,41 @@ class FavoriteStores extends _$FavoriteStores {
   }
 
   Future<void> toggle(
-    int businessId, {
+    int branchId, {
     MapBranchModel? branch,
   }) async {
     final session = ref.read(sessionProvider);
     if (session.status != SessionStatus.authenticated) return;
 
-    final wasFavorite = state.isFavorite(businessId);
+    final wasFavorite = state.isFavorite(branchId);
     final liked = !wasFavorite;
 
-    final previousIds = state.favoriteBusinessIds;
+    final previousIds = state.favoriteBranchIds;
     final previousBranches = state.branches;
 
     final optimisticIds = Set<int>.from(previousIds);
     var optimisticBranches = List<MapBranchModel>.from(previousBranches);
 
     if (liked) {
-      optimisticIds.add(businessId);
+      optimisticIds.add(branchId);
       if (branch != null &&
-          !optimisticBranches.any((b) => b.businessId == businessId)) {
+          !optimisticBranches.any((b) => b.id == branchId)) {
         optimisticBranches = [branch, ...optimisticBranches];
       }
     } else {
-      optimisticIds.remove(businessId);
+      optimisticIds.remove(branchId);
       optimisticBranches =
-          optimisticBranches.where((b) => b.businessId != businessId).toList();
+          optimisticBranches.where((b) => b.id != branchId).toList();
     }
 
     state = state.copyWith(
-      favoriteBusinessIds: optimisticIds,
+      favoriteBranchIds: optimisticIds,
       branches: optimisticBranches,
       clearError: true,
     );
 
-    final result = await EngagementService.instance.setBusinessLike(
-      businessId,
+    final result = await EngagementService.instance.setBranchLike(
+      branchId,
       liked: liked,
     );
 
@@ -217,12 +217,12 @@ class FavoriteStores extends _$FavoriteStores {
     await result.fold(
       (failure) async {
         state = state.copyWith(
-          favoriteBusinessIds: previousIds,
+          favoriteBranchIds: previousIds,
           branches: previousBranches,
           errorMessage: failure.message,
         );
         AppLogger.warning(
-          'Failed to sync business favorite: ${failure.message}',
+          'Failed to sync branch favorite: ${failure.message}',
         );
       },
       (engagement) async {
@@ -231,8 +231,7 @@ class FavoriteStores extends _$FavoriteStores {
           return;
         }
 
-        if (liked &&
-            !state.branches.any((b) => b.businessId == businessId)) {
+        if (liked && !state.branches.any((b) => b.id == branchId)) {
           await refresh();
         }
       },

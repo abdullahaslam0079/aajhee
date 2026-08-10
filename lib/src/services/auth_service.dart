@@ -119,6 +119,26 @@ class AuthService {
     });
   }
 
+  /// Persist an updated user payload (e.g. after profile edit) and notify listeners.
+  FutureEither<void> updateStoredUser(Map<String, dynamic> user) async {
+    return runTask(() async {
+      final current = await _readStoredUser() ?? <String, dynamic>{};
+      final sessionUser = <String, dynamic>{
+        ...current,
+        if (user['id'] != null) 'id': user['id'].toString(),
+        if (user['email'] != null) 'email': user['email'],
+        if (user['name'] != null) 'name': user['name'],
+        if (user['photoUrl'] != null) 'photoUrl': user['photoUrl'],
+      };
+
+      await SecureStorageService.instance.write(
+        userKey,
+        jsonEncode(sessionUser),
+      );
+      _authStateController.add(sessionUser);
+    });
+  }
+
   Future<void> handleSessionExpired() async {
     if (_isHandlingSessionExpiry) return;
     _isHandlingSessionExpiry = true;

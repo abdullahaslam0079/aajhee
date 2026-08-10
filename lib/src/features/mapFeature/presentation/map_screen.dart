@@ -12,7 +12,6 @@ import 'package:goluto/src/features/mapFeature/presentation/widgets/map_action_b
 import 'package:goluto/src/features/mapFeature/presentation/widgets/map_store_carousel.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
-import 'package:goluto/src/routing/app_routes.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -95,6 +94,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final feedState = ref.watch(homeFeedProvider);
     final selectedAddress = ref.watch(savedAddressesProvider).selectedAddress;
     final carouselBottomOffset = MapConstants.carouselBottomOffset(context);
+    final carouselBottomPadding = MapConstants.carouselBottomPadding(context);
+    final topSafe = MediaQuery.paddingOf(context).top;
     final branches = feedState.branches;
     final isLoading = feedState.isLoading && branches.isEmpty;
     final hasError = feedState.errorMessage != null && branches.isEmpty;
@@ -119,7 +120,10 @@ class _MapScreenState extends ConsumerState<MapScreen>
             zoomControlsEnabled: true,
             zoomGesturesEnabled: true,
             myLocationButtonEnabled: false,
-            padding: EdgeInsets.only(bottom: carouselBottomOffset),
+            padding: EdgeInsets.only(
+              top: topSafe,
+              bottom: carouselBottomOffset,
+            ),
             markers: branches.isEmpty
                 ? const {}
                 : buildMapMarkers(
@@ -154,19 +158,18 @@ class _MapScreenState extends ConsumerState<MapScreen>
             ),
           ),
           if (branches.isNotEmpty)
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 150),
-                child: MapStoreCarousel(
-                  branches: branches,
-                  selectedIndex: selectedIndex,
-                  scrollController: storeCarouselController,
-                  onStoreSelected: selectStore,
-                  onViewDetails: (branch) {
-                    context.push(AppRoutes.businessStore, extra: branch);
-                  },
-                ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 90.h,
+              child: MapStoreCarousel(
+                branches: branches,
+                selectedIndex: selectedIndex,
+                scrollController: storeCarouselController,
+                onStoreSelected: selectStore,
+                onViewDetails: (branch) {
+                  context.push(AppRoutes.businessStore, extra: branch);
+                },
               ),
             ),
           if (isLoading)

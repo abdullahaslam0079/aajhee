@@ -33,7 +33,7 @@ class EngagementService {
 
   Dio get _dio => AppConfig.dio;
 
-  FutureEither<PaginatedPage<OfferModel>> getDiscountsFeed({
+  FutureEither<PaginatedPage<OfferModel>> getTopPicksFeed({
     String? addressId,
     int page = 1,
     int pageSize = 20,
@@ -110,6 +110,23 @@ class EngagementService {
     }, requiresNetwork: true);
   }
 
+  FutureEither<BusinessEngagementResult> setBranchLike(
+    int branchId, {
+    required bool liked,
+  }) async {
+    return runTask(() async {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/branches/$branchId/like',
+        data: {'liked': liked},
+      );
+      final payload = response.data ?? const {};
+      return BusinessEngagementResult(
+        likeCount: parseApiInt(payload['like_count']),
+        isLiked: payload['is_liked'] as bool? ?? liked,
+      );
+    }, requiresNetwork: true);
+  }
+
   FutureEither<FavoriteBranchesPage> getFavoriteBranches({
     String? addressId,
     int page = 1,
@@ -134,22 +151,31 @@ class EngagementService {
 class FavoriteBranchesPage {
   const FavoriteBranchesPage({
     required this.page,
-    required this.likedBusinessIds,
+    required this.likedBranchIds,
   });
 
   final PaginatedPage<MapBranchModel> page;
-  final Set<int> likedBusinessIds;
+  final Set<int> likedBranchIds;
 
   bool get hasMore => page.hasMore;
 
   factory FavoriteBranchesPage.fromJson(Map<String, dynamic> json) {
     final page = PaginatedPage.fromJson(json, MapBranchModel.fromJson);
-    final rawIds = json['liked_business_ids'] as List<dynamic>? ?? const [];
+    final rawBranchIds =
+        json['liked_branch_ids'] as List<dynamic>? ?? const [];
+    final likedBranchIds = {
+      for (final id in rawBranchIds) parseApiInt(id),
+    }..remove(0);
+
+    // Fallback for older API responses that only returned business ids +
+    // one representative branch per business.
+    if (likedBranchIds.isEmpty) {
+      likedBranchIds.addAll(page.results.map((branch) => branch.id));
+    }
+
     return FavoriteBranchesPage(
       page: page,
-      likedBusinessIds: {
-        for (final id in rawIds) parseApiInt(id),
-      }..remove(0),
+      likedBranchIds: likedBranchIds,
     );
   }
 }

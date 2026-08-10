@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
-import 'package:goluto/src/features/discounts/presentation/widgets/discount_offer_card.dart';
+import 'package:goluto/src/features/offers/presentation/widgets/offer_list_card.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/features/searchOffers/presentation/providers/search_offers_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
@@ -253,7 +253,7 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
         }
 
         final offer = state.offers[index];
-        return DiscountOfferCard(
+        return OfferListCard(
           offer: offer,
           onTap: () => _openOffer(context, offer),
         );

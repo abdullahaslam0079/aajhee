@@ -1,18 +1,19 @@
 import 'package:goluto/src/features/businessStore/presentation/widgets/business_store_card.dart';
 import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/home/presentation/utils/category_icons.dart';
-import 'package:goluto/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
-import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
 import 'package:goluto/src/features/home/presentation/widgets/category_widget.dart';
+import 'package:goluto/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
 import 'package:goluto/src/features/home/presentation/widgets/home_header.dart';
+import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
 import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-class HomePage extends ConsumerWidget {
-  const HomePage({super.key});
+/// Stores tab: nearby branches with category filters.
+class StoresTabScreen extends ConsumerWidget {
+  const StoresTabScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -61,122 +62,117 @@ class HomePage extends ConsumerWidget {
                 parent: BouncingScrollPhysics(),
               ),
               slivers: [
-              SliverToBoxAdapter(
-                child: HomeHeader(
-                  locationText: locationText,
-                  onLocationTap: () => showDeliveryAddressPicker(context, ref),
-                  onFavoritesTap: () => context.push(AppRoutes.favorites),
-                  onNotificationsTap: () =>
-                      context.push(AppRoutes.notifications),
-                  notificationUnreadCount: unreadCount,
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.ms.w,
-                    10.h,
-                    AppSpacing.ms.w,
-                    4.h,
-                  ),
-                  child: _HomeSearchBar(
-                    onTap: () => context.push(AppRoutes.searchOffers),
-                  ),
-                ),
-              ),
-              if (homeFeedState.isLoading && homeFeedState.branches.isEmpty)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (homeFeedState.errorMessage != null &&
-                  homeFeedState.branches.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _HomeFeedError(
-                    message: homeFeedState.errorMessage!,
-                    onRetry: () => ref.read(homeFeedProvider.notifier).load(),
-                  ),
-                )
-              else ...[
                 SliverPersistentHeader(
                   pinned: true,
-                  delegate: _HomeCategoriesHeaderDelegate(
-                    selectedCategoryIndex: homeFeedState.selectedCategoryIndex,
-                    categoryLabels: categoryLabels,
-                    onCategoryTap: (index) => ref
-                        .read(homeFeedProvider.notifier)
-                        .selectCategory(index),
-                    textTheme: textTheme,
+                  delegate: _PinnedStoresHeaderDelegate(
+                    locationText: locationText,
+                    unreadCount: unreadCount,
                     backgroundColor: homeCanvasOf(context),
+                    onLocationTap: () =>
+                        showDeliveryAddressPicker(context, ref),
+                    onFavoritesTap: () => context.push(AppRoutes.favorites),
+                    onNotificationsTap: () =>
+                        context.push(AppRoutes.notifications),
                   ),
                 ),
-                if (branches.isEmpty)
+                if (homeFeedState.isLoading && homeFeedState.branches.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (homeFeedState.errorMessage != null &&
+                    homeFeedState.branches.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
-                    child: _EmptyCategoryState(
-                      onClearFilter: homeFeedState.selectedCategoryIndex == 0
-                          ? null
-                          : () => ref
-                              .read(homeFeedProvider.notifier)
-                              .selectCategory(0),
+                    child: _StoresFeedError(
+                      message: homeFeedState.errorMessage!,
+                      onRetry: () =>
+                          ref.read(homeFeedProvider.notifier).load(),
                     ),
                   )
                 else ...[
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.ms.w,
-                        2.h,
-                        AppSpacing.ms.w,
-                        10.h,
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: _StoresCategoriesHeaderDelegate(
+                      selectedCategoryIndex:
+                          homeFeedState.selectedCategoryIndex,
+                      categoryLabels: categoryLabels,
+                      onCategoryTap: (index) => ref
+                          .read(homeFeedProvider.notifier)
+                          .selectCategory(index),
+                      textTheme: textTheme,
+                      backgroundColor: homeCanvasOf(context),
+                    ),
+                  ),
+                  if (branches.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _EmptyCategoryState(
+                        onClearFilter:
+                            homeFeedState.selectedCategoryIndex == 0
+                                ? null
+                                : () => ref
+                                    .read(homeFeedProvider.notifier)
+                                    .selectCategory(0),
                       ),
-                      child: Text(
-                        'Nearby stores',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.15,
-                          color: colorScheme.onSurface.withValues(alpha: 0.9),
+                    )
+                  else ...[
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.ms.w,
+                          2.h,
+                          AppSpacing.ms.w,
+                          10.h,
+                        ),
+                        child: Text(
+                          'Nearby stores',
+                          style: textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.15,
+                            color:
+                                colorScheme.onSurface.withValues(alpha: 0.9),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
-                    sliver: SliverList.separated(
-                      itemCount: branches.length +
-                          (homeFeedState.isLoadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= branches.length) {
-                          return Padding(
-                            padding: EdgeInsets.symmetric(
-                              vertical: AppSpacing.md.h,
-                            ),
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          );
-                        }
-                        final branch = branches[index];
-                        return BusinessStoreCard(
-                          branch: branch,
-                          onTap: () {
-                            context.push(
-                              AppRoutes.businessStore,
-                              extra: branch,
+                    SliverPadding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
+                      sliver: SliverList.separated(
+                        itemCount: branches.length +
+                            (homeFeedState.isLoadingMore ? 1 : 0),
+                        itemBuilder: (context, index) {
+                          if (index >= branches.length) {
+                            return Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: AppSpacing.md.h,
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             );
-                          },
-                        );
-                      },
-                      separatorBuilder: (_, __) =>
-                          SizedBox(height: AppSpacing.ms.h),
+                          }
+                          final branch = branches[index];
+                          return BusinessStoreCard(
+                            branch: branch,
+                            onTap: () {
+                              context.push(
+                                AppRoutes.businessStore,
+                                extra: branch,
+                              );
+                            },
+                          );
+                        },
+                        separatorBuilder: (_, __) =>
+                            SizedBox(height: AppSpacing.ms.h),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
+                SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
               ],
-              SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
-            ],
-          ),
+            ),
           ),
         ),
       ),
@@ -184,8 +180,63 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-class _HomeFeedError extends StatelessWidget {
-  const _HomeFeedError({
+class _PinnedStoresHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _PinnedStoresHeaderDelegate({
+    required this.locationText,
+    required this.unreadCount,
+    required this.backgroundColor,
+    required this.onLocationTap,
+    required this.onFavoritesTap,
+    required this.onNotificationsTap,
+  });
+
+  final String locationText;
+  final int unreadCount;
+  final Color backgroundColor;
+  final VoidCallback onLocationTap;
+  final VoidCallback onFavoritesTap;
+  final VoidCallback onNotificationsTap;
+
+  /// Padding + content; 44.h leaves room for location column + 40 icon buttons.
+  double get _extent => (AppSpacing.xs.h * 2 + 44.h).ceilToDouble();
+
+  @override
+  double get minExtent => _extent;
+
+  @override
+  double get maxExtent => _extent;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return ColoredBox(
+      color: backgroundColor,
+      child: SizedBox(
+        height: _extent,
+        child: HomeHeader(
+          locationText: locationText,
+          onLocationTap: onLocationTap,
+          onFavoritesTap: onFavoritesTap,
+          onNotificationsTap: onNotificationsTap,
+          notificationUnreadCount: unreadCount,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _PinnedStoresHeaderDelegate oldDelegate) {
+    return locationText != oldDelegate.locationText ||
+        unreadCount != oldDelegate.unreadCount ||
+        backgroundColor != oldDelegate.backgroundColor;
+  }
+}
+
+class _StoresFeedError extends StatelessWidget {
+  const _StoresFeedError({
     required this.message,
     required this.onRetry,
   });
@@ -271,64 +322,8 @@ class _EmptyCategoryState extends StatelessWidget {
   }
 }
 
-class _HomeSearchBar extends StatelessWidget {
-  const _HomeSearchBar({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = context.theme.colorScheme;
-    final textTheme = context.theme.textTheme;
-    final isDark = colorScheme.brightness == Brightness.dark;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppBorders.input,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: isDark
-                ? colorScheme.surfaceContainerHigh
-                : colorScheme.onSurface.withValues(alpha: 0.05),
-            borderRadius: AppBorders.input,
-            border: isDark
-                ? Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.32),
-                  )
-                : null,
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.search_rounded,
-                  size: 20,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-                SizedBox(width: 10.w),
-                Expanded(
-                  child: Text(
-                    'Search brands or items',
-                    style: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
-  _HomeCategoriesHeaderDelegate({
+class _StoresCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
+  _StoresCategoriesHeaderDelegate({
     required this.selectedCategoryIndex,
     required this.categoryLabels,
     required this.onCategoryTap,
@@ -428,7 +423,7 @@ class _HomeCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  bool shouldRebuild(covariant _HomeCategoriesHeaderDelegate oldDelegate) {
+  bool shouldRebuild(covariant _StoresCategoriesHeaderDelegate oldDelegate) {
     return selectedCategoryIndex != oldDelegate.selectedCategoryIndex ||
         categoryLabels != oldDelegate.categoryLabels ||
         textTheme != oldDelegate.textTheme ||

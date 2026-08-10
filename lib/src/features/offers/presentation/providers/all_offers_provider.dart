@@ -1,14 +1,16 @@
-import 'package:goluto/src/features/discounts/data/services/engagement_service.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/home/data/services/discovery_service.dart';
+import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:goluto/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'discounts_provider.g.dart';
+part 'all_offers_provider.g.dart';
 
-class DiscountsState {
-  const DiscountsState({
+class AllOffersState {
+  const AllOffersState({
     this.offers = const [],
+    this.channelFilter = OfferChannelFilter.all,
     this.page = 0,
     this.hasMore = false,
     this.isLoading = false,
@@ -17,14 +19,20 @@ class DiscountsState {
   });
 
   final List<OfferModel> offers;
+  final OfferChannelFilter channelFilter;
   final int page;
   final bool hasMore;
   final bool isLoading;
   final bool isLoadingMore;
   final String? errorMessage;
 
-  DiscountsState copyWith({
+  List<OfferModel> get visibleOffers => channelFilter == OfferChannelFilter.all
+      ? offers
+      : offers.where(channelFilter.matches).toList();
+
+  AllOffersState copyWith({
     List<OfferModel>? offers,
+    OfferChannelFilter? channelFilter,
     int? page,
     bool? hasMore,
     bool? isLoading,
@@ -32,8 +40,9 @@ class DiscountsState {
     String? errorMessage,
     bool clearError = false,
   }) {
-    return DiscountsState(
+    return AllOffersState(
       offers: offers ?? this.offers,
+      channelFilter: channelFilter ?? this.channelFilter,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       isLoading: isLoading ?? this.isLoading,
@@ -44,22 +53,15 @@ class DiscountsState {
 }
 
 @Riverpod(keepAlive: true)
-EngagementService engagementService(Ref ref) {
-  return EngagementService.instance;
-}
-
-@Riverpod(keepAlive: true)
-class DiscountsFeed extends _$DiscountsFeed {
+class AllOffersFeed extends _$AllOffersFeed {
   static const _pageSize = 20;
+  static const _minVisibleWhenFiltered = 8;
 
-  EngagementService get _engagementService =>
-      ref.read(engagementServiceProvider);
+  DiscoveryService get _discoveryService => ref.read(discoveryServiceProvider);
   int _requestId = 0;
 
   @override
-  DiscountsState build() {
-    return const DiscountsState();
-  }
+  AllOffersState build() => const AllOffersState();
 
   Future<void> load() => _fetch(reset: true);
 
@@ -68,7 +70,30 @@ class DiscountsFeed extends _$DiscountsFeed {
     await _fetch(reset: false);
   }
 
-  Future<void> _fetch({required bool reset}) async {
+  Future<void> setChannelFilter(OfferChannelFilter filter) async {
+    if (state.channelFilter == filter) return;
+    state = state.copyWith(channelFilter: filter);
+    if (filter != OfferChannelFilter.all &&
+        state.visibleOffers.length < _minVisibleWhenFiltered &&
+        state.hasMore) {
+      await _ensureFilteredVisible();
+    }
+  }
+
+  Future<void> _ensureFilteredVisible() async {
+    var guard = 0;
+    while (ref.mounted &&
+        state.hasMore &&
+        !state.isLoading &&
+        !state.isLoadingMore &&
+        state.visibleOffers.length < _minVisibleWhenFiltered &&
+        guard < 5) {
+      guard++;
+      await _fetch(reset: false, autoFill: false);
+    }
+  }
+
+  Future<void> _fetch({required bool reset, bool autoFill = true}) async {
     final requestId = ++_requestId;
     final nextPage = reset ? 1 : state.page + 1;
 
@@ -84,7 +109,7 @@ class DiscountsFeed extends _$DiscountsFeed {
       if (!ref.mounted || requestId != _requestId) return;
 
       final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
-      final result = await _engagementService.getDiscountsFeed(
+      final result = await _discoveryService.getOffers(
         addressId: addressId,
         page: nextPage,
         pageSize: _pageSize,
@@ -113,13 +138,22 @@ class DiscountsFeed extends _$DiscountsFeed {
           );
         },
       );
+
+      if (autoFill &&
+          ref.mounted &&
+          requestId == _requestId &&
+          state.channelFilter != OfferChannelFilter.all &&
+          state.visibleOffers.length < _minVisibleWhenFiltered &&
+          state.hasMore) {
+        await _ensureFilteredVisible();
+      }
     } catch (error, stackTrace) {
-      AppLogger.error('Failed to load discounts feed', error, stackTrace);
+      AppLogger.error('Failed to load all offers feed', error, stackTrace);
       if (!ref.mounted || requestId != _requestId) return;
       state = state.copyWith(
         isLoading: false,
         isLoadingMore: false,
-        errorMessage: 'Could not load discounts. Please try again.',
+        errorMessage: 'Could not load offers. Please try again.',
       );
     }
   }

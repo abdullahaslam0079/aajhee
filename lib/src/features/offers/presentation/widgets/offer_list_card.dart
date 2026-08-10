@@ -1,11 +1,10 @@
-import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-/// Horizontal deal row for the discounts feed.
-class DiscountOfferCard extends ConsumerWidget {
-  const DiscountOfferCard({
+/// Horizontal deal row for offer list feeds.
+class OfferListCard extends StatelessWidget {
+  const OfferListCard({
     super.key,
     required this.offer,
     required this.onTap,
@@ -15,17 +14,11 @@ class DiscountOfferCard extends ConsumerWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
     final muted = cs.onSurface.withValues(alpha: 0.52);
-    final isFavorite = offer.businessId > 0 &&
-        ref.watch(
-          favoriteStoresProvider.select(
-            (s) => s.isFavorite(offer.businessId),
-          ),
-        );
     final imageUrls = offer.displayImageUrls;
     final hasGallery = imageUrls.length > 1;
     final category = offer.categoryName.trim();
@@ -82,13 +75,6 @@ class DiscountOfferCard extends ConsumerWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            if (offer.businessId > 0)
-                              _FavoriteButton(
-                                isFavorite: isFavorite,
-                                onTap: () => ref
-                                    .read(favoriteStoresProvider.notifier)
-                                    .toggle(offer.businessId),
-                              ),
                           ],
                         ),
                         SizedBox(height: 6.h),
@@ -102,24 +88,20 @@ class DiscountOfferCard extends ConsumerWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (category.isNotEmpty ||
-                            offer.nearestDistanceKm != null ||
-                            offer.isOnline) ...[
-                          SizedBox(height: 4.h),
-                          Text(
-                            _metaLine(
-                              category,
-                              offer.nearestDistanceKm,
-                              isOnline: offer.isOnline,
-                            ),
-                            style: tt.labelSmall?.copyWith(
-                              color: muted,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                        SizedBox(height: 4.h),
+                        Text(
+                          _metaLine(
+                            category,
+                            offer.nearestDistanceKm,
+                            channelLabel: offer.channelLabel,
                           ),
-                        ],
+                          style: tt.labelSmall?.copyWith(
+                            color: muted,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const Spacer(),
                         SizedBox(height: 6.h),
                         _PriceRow(offer: offer),
@@ -151,12 +133,11 @@ class DiscountOfferCard extends ConsumerWidget {
 String _metaLine(
   String category,
   double? nearestDistanceKm, {
-  bool isOnline = false,
+  required String channelLabel,
 }) {
-  final parts = <String>[];
-  if (isOnline) parts.add('Online');
+  final parts = <String>[channelLabel];
   if (category.isNotEmpty) parts.add(category);
-  if (nearestDistanceKm != null) {
+  if (nearestDistanceKm != null && channelLabel != 'Online') {
     parts.add(GeoDistanceUtils.formatDistanceLabel(nearestDistanceKm));
   }
   return parts.join(' · ');
@@ -317,40 +298,6 @@ class _ImagePlaceholder extends StatelessWidget {
           style: context.theme.textTheme.titleLarge?.copyWith(
             fontWeight: FontWeight.w800,
             color: cs.primary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoriteButton extends StatelessWidget {
-  const _FavoriteButton({
-    required this.isFavorite,
-    required this.onTap,
-  });
-
-  final bool isFavorite;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final appColors = context.appColors;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: AppBorders.iconButton,
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.all(4.r),
-          child: Icon(
-            isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-            size: 20,
-            color: isFavorite
-                ? appColors.favorite
-                : cs.onSurface.withValues(alpha: 0.4),
           ),
         ),
       ),

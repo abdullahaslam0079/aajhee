@@ -34,7 +34,7 @@ class BusinessStoreCard extends ConsumerWidget {
         : cs.surfaceContainerLowest;
     final isFavorite = ref.watch(
       favoriteStoresProvider.select(
-        (state) => state.isFavorite(branch.businessId),
+        (state) => state.isFavorite(branch.id),
       ),
     );
     final distanceKm = branch.distanceKm ?? _distanceKm(ref);
@@ -139,7 +139,7 @@ class BusinessStoreCard extends ConsumerWidget {
                         onTap: () => ref
                             .read(favoriteStoresProvider.notifier)
                             .toggle(
-                              branch.businessId,
+                              branch.id,
                               branch: branch,
                             ),
                         child: Ink(

@@ -49,6 +49,9 @@ abstract final class MapConstants {
   static const double bottomNavInset =
       kBottomNavBarHeight + kBottomNavBarBottomMargin;
 
+  /// Space above the bottom nav where the store carousel sits.
+  static double carouselBottomPadding(BuildContext context) => bottomNavInset;
+
   static double carouselBottomOffset(BuildContext context) =>
       carouselHeight + bottomNavInset;
 

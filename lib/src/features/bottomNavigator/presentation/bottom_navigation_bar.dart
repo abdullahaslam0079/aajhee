@@ -5,7 +5,7 @@ import 'package:goluto/src/features/settings/presentation/settings.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/discounts/presentation/discounts_tab_screen.dart';
+import 'package:goluto/src/features/home/presentation/screens/stores_tab_screen.dart';
 import 'package:goluto/src/features/mapFeature/presentation/map_screen.dart';
 
 class BottomNavigationBarScreen extends ConsumerWidget {
@@ -28,11 +28,11 @@ class BottomNavigationBarScreen extends ConsumerWidget {
         child: KeyedSubtree(
           key: ValueKey(selectedIndex),
           child: selectedIndex == 0
-              ? const HomePage()
+              ? const HomeOffersScreen()
               : selectedIndex == 1
               ? const MapScreen()
               : selectedIndex == 2
-              ? const DiscountsTabScreen()
+              ? const StoresTabScreen()
               : const SettingsScreen(),
         ),
       ),
@@ -114,9 +114,9 @@ class BottomNavigationBarScreen extends ConsumerWidget {
             Expanded(
               child: _BottomItem(
                 icon: selectedIndex == 2
-                    ? Icons.local_offer_rounded
-                    : Icons.local_offer_outlined,
-                label: 'Discounts',
+                    ? Icons.storefront_rounded
+                    : Icons.storefront_outlined,
+                label: 'Stores',
                 selected: selectedIndex == 2,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)

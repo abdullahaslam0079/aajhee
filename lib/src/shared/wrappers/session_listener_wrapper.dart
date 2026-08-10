@@ -1,6 +1,7 @@
 import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:goluto/src/features/availedOffers/presentation/providers/availed_offers_provider.dart';
-import 'package:goluto/src/features/discounts/presentation/providers/discounts_provider.dart';
+import 'package:goluto/src/features/offers/presentation/providers/top_picks_provider.dart';
+import 'package:goluto/src/features/offers/presentation/providers/all_offers_provider.dart';
 import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
 import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
@@ -64,7 +65,8 @@ class SessionListenerWrapper extends ConsumerWidget {
     ref.invalidate(userProfileProvider);
     ref.invalidate(favoriteStoresProvider);
     ref.invalidate(homeFeedProvider);
-    ref.invalidate(discountsFeedProvider);
+    ref.invalidate(topPicksFeedProvider);
+    ref.invalidate(allOffersFeedProvider);
     ref.invalidate(notificationsProvider);
     ref.invalidate(notificationPreferencesProvider);
     ref.invalidate(themePreferencesProvider);

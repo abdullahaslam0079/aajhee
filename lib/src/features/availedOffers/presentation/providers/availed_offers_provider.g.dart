@@ -41,7 +41,7 @@ final class AvailedOffersProvider
   }
 }
 
-String _$availedOffersHash() => r'e99d5c67bb0f9f2eb63b046c1bb43d40a41a7e6c';
+String _$availedOffersHash() => r'dcb1351eca37cfbe4b0fa624aca9780d2e841f43';
 
 abstract class _$AvailedOffers extends $Notifier<AvailedOffersState> {
   AvailedOffersState build();

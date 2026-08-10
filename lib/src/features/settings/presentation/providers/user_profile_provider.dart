@@ -3,9 +3,12 @@ import 'dart:convert';
 
 import 'package:goluto/src/features/auth/domain/entities/user.dart';
 import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:goluto/src/features/settings/data/services/user_profile_service.dart';
 import 'package:goluto/src/features/settings/domain/entities/user_profile.dart'
     as entities;
 import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:goluto/src/services/auth_service.dart';
+import 'package:goluto/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'user_profile_provider.g.dart';
@@ -75,12 +78,17 @@ class UserProfile extends _$UserProfile {
         }
 
         state = UserProfileState(profile: stored);
+        // Refresh from server when online so name stays in sync.
+        if (session.status == SessionStatus.authenticated) {
+          unawaited(_refreshFromServer());
+        }
         return;
       }
 
       if (session.status == SessionStatus.authenticated &&
           session.user != null) {
         await _hydrateFromSession(session.user!, overwrite: true);
+        unawaited(_refreshFromServer());
         return;
       }
 
@@ -122,17 +130,49 @@ class UserProfile extends _$UserProfile {
     state = const UserProfileState();
   }
 
-  Future<void> updateProfile({
-    required String name,
-    required String email,
-  }) async {
-    final profile = entities.UserProfile(
-      name: name.trim(),
-      email: email.trim(),
+  Future<void> _refreshFromServer() async {
+    final result = await UserProfileService.instance.fetchProfile();
+    await result.fold(
+      (failure) async {
+        AppLogger.warning('Failed to refresh profile: ${failure.message}');
+      },
+      (userModel) async {
+        final profile = entities.UserProfile(
+          name: userModel.name?.trim() ?? '',
+          email: userModel.email,
+        );
+        final prefs = await _preferences;
+        await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
+        if (!ref.mounted) return;
+        state = UserProfileState(profile: profile);
+        await AuthService.instance.updateStoredUser(userModel.toJson());
+      },
+    );
+  }
+
+  Future<void> updateProfile({required String name}) async {
+    final trimmedName = name.trim();
+    final result = await UserProfileService.instance.updateProfile(
+      name: trimmedName,
     );
 
-    final prefs = await _preferences;
-    await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
-    state = UserProfileState(profile: profile);
+    await result.fold(
+      (failure) async {
+        throw Exception(failure.message);
+      },
+      (userModel) async {
+        final profile = entities.UserProfile(
+          name: userModel.name?.trim() ?? trimmedName,
+          email: userModel.email.isNotEmpty
+              ? userModel.email
+              : state.profile.email,
+        );
+
+        final prefs = await _preferences;
+        await prefs.setString(_storageKey, jsonEncode(profile.toJson()));
+        state = UserProfileState(profile: profile);
+        await AuthService.instance.updateStoredUser(userModel.toJson());
+      },
+    );
   }
 }

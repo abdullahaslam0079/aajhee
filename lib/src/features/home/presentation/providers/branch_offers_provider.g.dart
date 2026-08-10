@@ -57,7 +57,7 @@ final class BranchOffersProvider
   }
 }
 
-String _$branchOffersHash() => r'1d2c53ab28008304cd937f44d991b880ba8b3e2f';
+String _$branchOffersHash() => r'4cda22c6e03c98c2c278c7f59ec9e4ba138c2ebf';
 
 final class BranchOffersFamily extends $Family
     with

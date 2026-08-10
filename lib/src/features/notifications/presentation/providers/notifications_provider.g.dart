@@ -85,7 +85,7 @@ final class NotificationsProvider
   }
 }
 
-String _$notificationsHash() => r'4bf2f9ce72d2a003c1e80d814bc462c329603324';
+String _$notificationsHash() => r'7f32b023779c235a5289039b18baa590decbf9fe';
 
 abstract class _$Notifications extends $Notifier<NotificationsState> {
   NotificationsState build();

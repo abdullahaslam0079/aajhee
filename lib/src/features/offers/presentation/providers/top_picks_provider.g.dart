@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'discounts_provider.dart';
+part of 'top_picks_provider.dart';
 
 // **************************************************************************
 // RiverpodGenerator
@@ -52,49 +52,49 @@ final class EngagementServiceProvider extends $FunctionalProvider<
 
 String _$engagementServiceHash() => r'232fba8d549db9a7753a16e22333fc135d4afcd3';
 
-@ProviderFor(DiscountsFeed)
-final discountsFeedProvider = DiscountsFeedProvider._();
+@ProviderFor(TopPicksFeed)
+final topPicksFeedProvider = TopPicksFeedProvider._();
 
-final class DiscountsFeedProvider
-    extends $NotifierProvider<DiscountsFeed, DiscountsState> {
-  DiscountsFeedProvider._()
+final class TopPicksFeedProvider
+    extends $NotifierProvider<TopPicksFeed, TopPicksState> {
+  TopPicksFeedProvider._()
       : super(
           from: null,
           argument: null,
           retry: null,
-          name: r'discountsFeedProvider',
+          name: r'topPicksFeedProvider',
           isAutoDispose: false,
           dependencies: null,
           $allTransitiveDependencies: null,
         );
 
   @override
-  String debugGetCreateSourceHash() => _$discountsFeedHash();
+  String debugGetCreateSourceHash() => _$topPicksFeedHash();
 
   @$internal
   @override
-  DiscountsFeed create() => DiscountsFeed();
+  TopPicksFeed create() => TopPicksFeed();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(DiscountsState value) {
+  Override overrideWithValue(TopPicksState value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<DiscountsState>(value),
+      providerOverride: $SyncValueProvider<TopPicksState>(value),
     );
   }
 }
 
-String _$discountsFeedHash() => r'c55a04a264a569e0dcea1436931273a2470a5785';
+String _$topPicksFeedHash() => r'fe566fa1cbe8977c6dd4a3160d21b4a46f8b876b';
 
-abstract class _$DiscountsFeed extends $Notifier<DiscountsState> {
-  DiscountsState build();
+abstract class _$TopPicksFeed extends $Notifier<TopPicksState> {
+  TopPicksState build();
   @$mustCallSuper
   @override
   WhenComplete runBuild() {
-    final ref = this.ref as $Ref<DiscountsState, DiscountsState>;
+    final ref = this.ref as $Ref<TopPicksState, TopPicksState>;
     final element = ref.element as $ClassProviderElement<
-        AnyNotifier<DiscountsState, DiscountsState>,
-        DiscountsState,
+        AnyNotifier<TopPicksState, TopPicksState>,
+        TopPicksState,
         Object?,
         Object?>;
     return element.handleCreate(ref, build);

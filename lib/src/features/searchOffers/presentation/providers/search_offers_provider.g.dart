@@ -41,7 +41,7 @@ final class SearchOffersProvider
   }
 }
 
-String _$searchOffersHash() => r'eb04b55a4277329fdb0ddffeaebdf5ec86a36d89';
+String _$searchOffersHash() => r'2eba1ccfa4836440bd337388139327afc9186ce8';
 
 abstract class _$SearchOffers extends $Notifier<SearchOffersState> {
   SearchOffersState build();
