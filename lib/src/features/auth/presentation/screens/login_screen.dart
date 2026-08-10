@@ -1,8 +1,10 @@
+import 'dart:io' show Platform;
+
 import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
-/// Phone number entry — primary consumer auth screen.
+/// Phone number entry with Google / Apple social sign-in.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -14,9 +16,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   bool _isSending = false;
+  bool _isSocialLoading = false;
+  bool _appleAvailable = false;
 
   /// Default to Germany (+49); user can edit the full E.164 value.
   static const _defaultCountryCode = '+49';
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAppleAvailability();
+  }
+
+  Future<void> _checkAppleAvailability() async {
+    if (kIsWeb) return;
+    if (!(Platform.isIOS || Platform.isMacOS || Platform.isAndroid)) return;
+    final available =
+        await FirebaseSocialAuthService.instance.isAppleSignInAvailable();
+    if (mounted) setState(() => _appleAvailable = available);
+  }
 
   @override
   void dispose() {
@@ -28,7 +46,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final trimmed = raw.trim().replaceAll(RegExp(r'[\s\-()]'), '');
     if (trimmed.startsWith('+')) return trimmed;
     if (trimmed.startsWith('00')) return '+${trimmed.substring(2)}';
-    // Local number without country code → prepend default.
     final digits = trimmed.replaceAll(RegExp(r'\D'), '');
     if (digits.startsWith('0')) {
       return '$_defaultCountryCode${digits.substring(1)}';
@@ -50,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
 
       if (session.isAutoVerified && session.idToken != null) {
-        await ref.read(authControllerProvider.notifier).completePhoneLogin(
+        await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
               context: context,
               idToken: session.idToken!,
             );
@@ -86,10 +103,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    setState(() => _isSocialLoading = true);
+    try {
+      final idToken =
+          await FirebaseSocialAuthService.instance.signInWithGoogle();
+      if (!mounted) return;
+      await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
+            context: context,
+            idToken: idToken,
+          );
+    } catch (error) {
+      if (!mounted) return;
+      showToast(
+        context,
+        message: FirebaseSocialAuthService.instance.mapErrorToMessage(error),
+        status: 'error',
+      );
+    } finally {
+      if (mounted) setState(() => _isSocialLoading = false);
+    }
+  }
+
+  Future<void> _signInWithApple() async {
+    setState(() => _isSocialLoading = true);
+    try {
+      final idToken =
+          await FirebaseSocialAuthService.instance.signInWithApple();
+      if (!mounted) return;
+      await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
+            context: context,
+            idToken: idToken,
+          );
+    } catch (error) {
+      if (!mounted) return;
+      showToast(
+        context,
+        message: FirebaseSocialAuthService.instance.mapErrorToMessage(error),
+        status: 'error',
+      );
+    } finally {
+      if (mounted) setState(() => _isSocialLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAuthBusy = ref.watch(authControllerProvider);
-    final isLoading = _isSending || isAuthBusy;
+    final isLoading = _isSending || _isSocialLoading || isAuthBusy;
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
 
@@ -104,7 +165,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 SizedBox(height: AppSpacing.xl.h),
                 Text(
                   'auth.log_in'.tr(),
-                  style: tt.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style:
+                      tt.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: AppSpacing.sm.h),
                 Text(
@@ -133,7 +195,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             return 'auth.phone_required'.tr();
                           }
                           final normalized = _normalizeToE164(v!);
-                          final digits = normalized.replaceAll(RegExp(r'\D'), '');
+                          final digits =
+                              normalized.replaceAll(RegExp(r'\D'), '');
                           if (digits.length < 8) {
                             return 'auth.phone_invalid'.tr();
                           }
@@ -143,13 +206,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       SizedBox(height: AppSpacing.lg.h),
                       AppButton(
                         label: 'auth.send_code'.tr(),
-                        isLoading: isLoading,
+                        isLoading: _isSending || isAuthBusy,
                         onPressed: isLoading ? null : _sendCode,
                         width: ButtonSize.large,
                         isFullWidth: true,
                       ),
                     ],
                   ),
+                ),
+                SizedBox(height: AppSpacing.xl.h),
+                Row(
+                  children: [
+                    const Expanded(child: Divider()),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: AppSpacing.md.w),
+                      child: Text(
+                        'auth.or_continue_with'.tr(),
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    const Expanded(child: Divider()),
+                  ],
+                ),
+                SizedBox(height: AppSpacing.lg.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _SocialIconButton(
+                      backgroundColor:
+                          const Color(0xFFEA4335).withValues(alpha: 0.9),
+                      assetPath: AppAssets.googleIcon,
+                      enabled: !isLoading,
+                      onPressed: _signInWithGoogle,
+                    ),
+                    if (_appleAvailable) ...[
+                      SizedBox(width: 20.w),
+                      _SocialIconButton(
+                        backgroundColor: const Color(0xFF000000),
+                        assetPath: AppAssets.appleIcon,
+                        enabled: !isLoading,
+                        onPressed: _signInWithApple,
+                      ),
+                    ],
+                  ],
                 ),
                 SizedBox(height: AppSpacing.xl.h),
                 Text(
@@ -161,6 +262,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SocialIconButton extends StatelessWidget {
+  const _SocialIconButton({
+    required this.backgroundColor,
+    required this.assetPath,
+    required this.onPressed,
+    required this.enabled,
+  });
+
+  final Color backgroundColor;
+  final String assetPath;
+  final VoidCallback onPressed;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 50.w,
+      height: 50.w,
+      child: TextButton(
+        onPressed: enabled ? onPressed : null,
+        style: TextButton.styleFrom(
+          backgroundColor: backgroundColor,
+          disabledBackgroundColor: backgroundColor.withValues(alpha: 0.4),
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppBorders.button,
+          ),
+        ),
+        child: SvgPicture.asset(assetPath),
       ),
     );
   }

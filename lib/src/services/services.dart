@@ -12,4 +12,5 @@ export 'device_info_service.dart';
 export 'version_update_service.dart';
 export 'push_notification_service.dart';
 export 'firebase_phone_auth_service.dart';
+export 'firebase_social_auth_service.dart';
 

@@ -46,13 +46,13 @@ class AuthService {
     }, requiresNetwork: true);
   }
 
-  /// Exchange a Firebase Phone Auth ID token for GoLuto JWTs.
-  FutureEither<Map<String, dynamic>?> loginWithPhone({
+  /// Exchange a Firebase Auth ID token (phone/Google/Apple) for GoLuto JWTs.
+  FutureEither<Map<String, dynamic>?> loginWithFirebase({
     required String idToken,
   }) async {
     return runTask(() async {
       final response = await _dio.post<Map<String, dynamic>>(
-        '/api/auth/phone',
+        '/api/auth/firebase',
         data: {'id_token': idToken},
       );
       final data = response.data as Map<String, dynamic>;
@@ -61,6 +61,13 @@ class AuthService {
       _authStateController.add(sessionUser);
       return data;
     }, requiresNetwork: true);
+  }
+
+  /// Backwards-compatible alias for phone login.
+  FutureEither<Map<String, dynamic>?> loginWithPhone({
+    required String idToken,
+  }) {
+    return loginWithFirebase(idToken: idToken);
   }
 
   FutureEither<String> signUp({

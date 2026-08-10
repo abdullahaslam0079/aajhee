@@ -47,7 +47,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
 
       if (!mounted) return;
 
-      await ref.read(authControllerProvider.notifier).completePhoneLogin(
+      await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
             context: context,
             idToken: idToken,
           );
@@ -74,7 +74,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
       if (!mounted) return;
 
       if (session.isAutoVerified && session.idToken != null) {
-        await ref.read(authControllerProvider.notifier).completePhoneLogin(
+        await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
               context: context,
               idToken: session.idToken!,
             );

@@ -82,6 +82,7 @@ class AppConfig {
     return path.contains('/api/auth/token') ||
         path.contains('/api/auth/register') ||
         path.contains('/api/auth/phone') ||
+        path.contains('/api/auth/firebase') ||
         path.contains('/api/auth/password/');
   }
 

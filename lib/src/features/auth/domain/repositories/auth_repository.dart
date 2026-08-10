@@ -6,7 +6,12 @@ abstract class AuthRepository {
   /// Stream of auth state changes. Emits AppUser when authenticated, null when not.
   Stream<AppUser?> get onAuthStateChanged;
 
-  /// Sign in / sign up with a Firebase Phone Auth ID token.
+  /// Sign in / sign up with a Firebase Auth ID token (phone/Google/Apple).
+  FutureEither<AuthSession> loginWithFirebase({
+    required String idToken,
+  });
+
+  /// Backwards-compatible alias for [loginWithFirebase].
   FutureEither<AuthSession> loginWithPhone({
     required String idToken,
   });

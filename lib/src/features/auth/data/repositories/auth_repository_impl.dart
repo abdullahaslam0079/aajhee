@@ -18,10 +18,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  FutureEither<AuthSession> loginWithPhone({
+  FutureEither<AuthSession> loginWithFirebase({
     required String idToken,
   }) async {
-    final result = await _authService.loginWithPhone(idToken: idToken);
+    final result = await _authService.loginWithFirebase(idToken: idToken);
 
     return result.flatMap((response) {
       if (response == null) {
@@ -30,6 +30,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
       return right(_parseAuthSession(response));
     });
+  }
+
+  @override
+  FutureEither<AuthSession> loginWithPhone({
+    required String idToken,
+  }) {
+    return loginWithFirebase(idToken: idToken);
   }
 
   AuthSession _parseAuthSession(Map<String, dynamic> response) {

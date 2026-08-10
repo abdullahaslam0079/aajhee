@@ -21,7 +21,7 @@ class AuthController extends _$AuthController {
   @override
   bool build() => false;
 
-  Future<void> completePhoneLogin({
+  Future<void> completeFirebaseLogin({
     required BuildContext context,
     required String idToken,
   }) async {
@@ -29,7 +29,7 @@ class AuthController extends _$AuthController {
 
     final result = await ref
         .read(authRepositoryProvider)
-        .loginWithPhone(idToken: idToken);
+        .loginWithFirebase(idToken: idToken);
 
     state = false;
     await result.fold(
@@ -54,6 +54,14 @@ class AuthController extends _$AuthController {
         );
       },
     );
+  }
+
+  /// Backwards-compatible alias.
+  Future<void> completePhoneLogin({
+    required BuildContext context,
+    required String idToken,
+  }) {
+    return completeFirebaseLogin(context: context, idToken: idToken);
   }
 
   Future<void> logout({required BuildContext context}) async {
