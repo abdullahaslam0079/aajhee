@@ -23,9 +23,30 @@ import 'package:goluto/src/features/onboarding/presentation/screens/onboarding_p
 import 'package:goluto/src/features/searchOffers/presentation/screens/search_offers_screen.dart';
 import 'package:goluto/src/features/splash/presentation/splash_screen.dart';
 
+/// Firebase Phone Auth reCAPTCHA redirects via a custom URL scheme.
+/// GoRouter must ignore those callbacks or it shows "Page Not Found".
+bool _isFirebaseAuthCallback(GoRouterState state) {
+  final uri = state.uri;
+  if (uri.host == 'firebaseauth') return true;
+  if (uri.path == '/link' || uri.path.endsWith('/link')) return true;
+  if (uri.scheme.contains('googleusercontent')) return true;
+  final raw = uri.toString();
+  return raw.contains('firebaseauth/link') ||
+      raw.contains('/__/auth/callback') ||
+      raw.contains('authType=verifyApp');
+}
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: AppRoutes.splash,
+  onException: (context, state, router) {
+    if (_isFirebaseAuthCallback(state)) {
+      // Stay on the current screen; Firebase Auth consumes the callback.
+      return;
+    }
+    // Unknown routes: go back to a safe screen instead of crashing.
+    router.go(AppRoutes.login);
+  },
   routes: <RouteBase>[
     GoRoute(
       path: AppRoutes.splash,

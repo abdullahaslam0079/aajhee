@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -15,6 +16,10 @@ class FirebaseSocialAuthService {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  /// iOS OAuth client from `GoogleService-Info.plist` (`CLIENT_ID`).
+  static const _googleIosClientId =
+      '860507972929-5idpj482c4u24h6gub43m2m8acvdg3p8.apps.googleusercontent.com';
+
   /// Web OAuth client from `google-services.json` (client_type 3).
   /// Needed so Google returns an ID token usable by Firebase.
   static const _googleServerClientId =
@@ -25,28 +30,39 @@ class FirebaseSocialAuthService {
   Future<void> _ensureGoogleInitialized() async {
     if (_googleInitialized) return;
     await GoogleSignIn.instance.initialize(
+      clientId: defaultTargetPlatform == TargetPlatform.iOS
+          ? _googleIosClientId
+          : null,
       serverClientId: _googleServerClientId,
     );
     _googleInitialized = true;
   }
 
   Future<String> signInWithGoogle() async {
-    await _ensureGoogleInitialized();
+    try {
+      await _ensureGoogleInitialized();
 
-    final account = await GoogleSignIn.instance.authenticate(
-      scopeHint: const ['email', 'profile'],
-    );
-    final idToken = account.authentication.idToken;
-    if (idToken == null || idToken.isEmpty) {
-      throw FirebaseAuthException(
-        code: 'missing-google-id-token',
-        message: 'Google Sign-In did not return an ID token.',
+      final account = await GoogleSignIn.instance.authenticate(
+        scopeHint: const ['email', 'profile'],
       );
-    }
+      final idToken = account.authentication.idToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'missing-google-id-token',
+          message: 'Google Sign-In did not return an ID token.',
+        );
+      }
 
-    final credential = GoogleAuthProvider.credential(idToken: idToken);
-    final result = await _auth.signInWithCredential(credential);
-    return _requireIdToken(result.user);
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final result = await _auth.signInWithCredential(credential);
+      return _requireIdToken(result.user);
+    } catch (error, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('[GoLuto] Google sign-in failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+      rethrow;
+    }
   }
 
   Future<String> signInWithApple() async {
@@ -139,6 +155,9 @@ class FirebaseSocialAuthService {
         return 'Sign-in was cancelled.';
       }
       return error.message;
+    }
+    if (kDebugMode) {
+      return 'Social sign-in failed: $error';
     }
     return 'Social sign-in failed. Please try again.';
   }

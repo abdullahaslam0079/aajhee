@@ -4,6 +4,10 @@ import 'package:goluto/src/features/auth/presentation/providers/auth_provider.da
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
+/// Paid Apple Developer Program + Sign In with Apple entitlement required on iOS.
+/// Free personal teams cannot provision `com.apple.developer.applesignin`.
+const kAppleSignInEnabledOnApplePlatforms = false;
+
 /// Phone number entry with Google / Apple social sign-in.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -31,6 +35,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _checkAppleAvailability() async {
     if (kIsWeb) return;
     if (!(Platform.isIOS || Platform.isMacOS || Platform.isAndroid)) return;
+
+    // Free personal Apple teams cannot use Sign In with Apple on device builds.
+    if ((Platform.isIOS || Platform.isMacOS) &&
+        !kAppleSignInEnabledOnApplePlatforms) {
+      return;
+    }
+
     final available =
         await FirebaseSocialAuthService.instance.isAppleSignInAvailable();
     if (mounted) setState(() => _appleAvailable = available);
@@ -91,8 +102,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           resendToken: session.resendToken,
         ),
       );
-    } catch (error) {
+    } catch (error, stackTrace) {
       if (!mounted) return;
+      debugPrint('[GoLuto] Send OTP failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
       showToast(
         context,
         message: FirebasePhoneAuthService.instance.mapErrorToMessage(error),
@@ -113,8 +126,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             context: context,
             idToken: idToken,
           );
-    } catch (error) {
+    } catch (error, stackTrace) {
       if (!mounted) return;
+      debugPrint('[GoLuto] Google sign-in failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
       showToast(
         context,
         message: FirebaseSocialAuthService.instance.mapErrorToMessage(error),
@@ -135,8 +150,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             context: context,
             idToken: idToken,
           );
-    } catch (error) {
+    } catch (error, stackTrace) {
       if (!mounted) return;
+      debugPrint('[GoLuto] Apple sign-in failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
       showToast(
         context,
         message: FirebaseSocialAuthService.instance.mapErrorToMessage(error),
