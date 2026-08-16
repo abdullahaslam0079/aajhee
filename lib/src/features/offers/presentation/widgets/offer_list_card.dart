@@ -319,7 +319,7 @@ class _PriceRow extends StatelessWidget {
     final original = offer.originalPrice;
     final discounted = offer.discountedPrice;
 
-    if (original != null && discounted != null) {
+    if (discounted != null) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.baseline,
         textBaseline: TextBaseline.alphabetic,
@@ -331,15 +331,17 @@ class _PriceRow extends StatelessWidget {
               color: appColors.deal,
             ),
           ),
-          SizedBox(width: 6.w),
-          Text(
-            original.asEuro,
-            style: tt.labelSmall?.copyWith(
-              color: muted,
-              decoration: TextDecoration.lineThrough,
-              decorationColor: muted,
+          if (original != null) ...[
+            SizedBox(width: 6.w),
+            Text(
+              original.asEuro,
+              style: tt.labelSmall?.copyWith(
+                color: muted,
+                decoration: TextDecoration.lineThrough,
+                decorationColor: muted,
+              ),
             ),
-          ),
+          ],
         ],
       );
     }

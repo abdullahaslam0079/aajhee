@@ -70,8 +70,7 @@ class _OfferDetailSheet extends StatelessWidget {
         shortDescription.isNotEmpty && shortDescription != detailsBody;
     final externalUrl = offer.resolvedExternalUrl;
     final maxHeight = MediaQuery.sizeOf(context).height * 0.88;
-    final hasPrices =
-        offer.originalPrice != null && offer.discountedPrice != null;
+    final hasPrices = offer.hasPromoPrice;
 
     return Align(
       alignment: Alignment.bottomCenter,
@@ -179,16 +178,18 @@ class _OfferDetailSheet extends StatelessWidget {
                                     height: 1,
                                   ),
                                 ),
-                                SizedBox(width: 8.w),
-                                Text(
-                                  offer.originalPrice!.asEuro,
-                                  style: tt.titleMedium?.copyWith(
-                                    color: muted,
-                                    fontWeight: FontWeight.w500,
-                                    decoration: TextDecoration.lineThrough,
-                                    decorationColor: muted,
+                                if (offer.hasCompareAtPrice) ...[
+                                  SizedBox(width: 8.w),
+                                  Text(
+                                    offer.originalPrice!.asEuro,
+                                    style: tt.titleMedium?.copyWith(
+                                      color: muted,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.lineThrough,
+                                      decorationColor: muted,
+                                    ),
                                   ),
-                                ),
+                                ],
                               ],
                             ),
                             if (offer.discountPercent > 0)

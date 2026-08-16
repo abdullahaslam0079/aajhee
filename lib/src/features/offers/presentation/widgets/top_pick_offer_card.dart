@@ -158,8 +158,7 @@ class TopPickOfferCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const Spacer(),
-                          if (offer.discountedPrice != null &&
-                              offer.originalPrice != null)
+                          if (offer.discountedPrice != null)
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.baseline,
                               textBaseline: TextBaseline.alphabetic,
@@ -171,19 +170,21 @@ class TopPickOfferCard extends StatelessWidget {
                                     color: appColors.deal,
                                   ),
                                 ),
-                                SizedBox(width: 5.w),
-                                Flexible(
-                                  child: Text(
-                                    offer.originalPrice!.asEuro,
-                                    style: tt.labelSmall?.copyWith(
-                                      color: muted,
-                                      decoration: TextDecoration.lineThrough,
-                                      decorationColor: muted,
+                                if (offer.originalPrice != null) ...[
+                                  SizedBox(width: 5.w),
+                                  Flexible(
+                                    child: Text(
+                                      offer.originalPrice!.asEuro,
+                                      style: tt.labelSmall?.copyWith(
+                                        color: muted,
+                                        decoration: TextDecoration.lineThrough,
+                                        decorationColor: muted,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
+                                ],
                               ],
                             )
                           else if (offer.discountPercent > 0)

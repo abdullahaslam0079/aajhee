@@ -178,8 +178,13 @@ class OfferModel {
 
   String get viewOnlyActionLabel => offerType.viewOnlyActionLabel;
 
+  bool get hasCompareAtPrice =>
+      originalPrice != null && discountedPrice != null;
+
+  bool get hasPromoPrice => discountedPrice != null;
+
   String get detailText {
-    if (originalPrice != null && discountedPrice != null) {
+    if (hasCompareAtPrice) {
       return 'Instead of €${originalPrice!.toStringAsFixed(2)}';
     }
     if (isTimeLimited && endsAt != null) {

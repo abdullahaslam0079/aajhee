@@ -580,8 +580,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
         : usageStatus.isAvailable;
     final dealTypeLabel = offer.typeBadgeLabel;
     final description = offer.subtitle;
-    final hasPrices =
-        offer.originalPrice != null && offer.discountedPrice != null;
+    final hasPrices = offer.hasPromoPrice;
     final validityText = !hasPrices &&
             offer.isTimeLimited &&
             offer.endsAt != null
@@ -849,7 +848,7 @@ class _OfferPriceRow extends StatelessWidget {
     final original = offer.originalPrice;
     final discounted = offer.discountedPrice;
 
-    if (original != null && discounted != null) {
+    if (discounted != null) {
       return Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -862,20 +861,22 @@ class _OfferPriceRow extends StatelessWidget {
               height: 1,
             ),
           ),
-          SizedBox(width: 6.w),
-          Padding(
-            padding: EdgeInsets.only(bottom: 1.h),
-            child: Text(
-              original.asEuro,
-              style: tt.labelMedium?.copyWith(
-                color: muted,
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.lineThrough,
-                decorationColor: muted,
-                height: 1,
+          if (original != null) ...[
+            SizedBox(width: 6.w),
+            Padding(
+              padding: EdgeInsets.only(bottom: 1.h),
+              child: Text(
+                original.asEuro,
+                style: tt.labelMedium?.copyWith(
+                  color: muted,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: muted,
+                  height: 1,
+                ),
               ),
             ),
-          ),
+          ],
         ],
       );
     }
