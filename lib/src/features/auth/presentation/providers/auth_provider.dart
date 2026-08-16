@@ -24,6 +24,7 @@ class AuthController extends _$AuthController {
   Future<void> completeFirebaseLogin({
     required BuildContext context,
     required String idToken,
+    String? displayName,
   }) async {
     state = true;
 
@@ -43,6 +44,21 @@ class AuthController extends _$AuthController {
         await ref
             .read(userProfileProvider.notifier)
             .syncFromAuthUser(session.user);
+
+        final trimmedName = displayName?.trim();
+        if (trimmedName != null &&
+            trimmedName.isNotEmpty &&
+            trimmedName != session.user.name) {
+          try {
+            await ref
+                .read(userProfileProvider.notifier)
+                .updateProfile(name: trimmedName);
+          } catch (error) {
+            AppLogger.warning(
+              'Could not save display name after login: $error',
+            );
+          }
+        }
 
         unawaited(PushNotificationService.instance.syncForAuthenticatedUser());
 

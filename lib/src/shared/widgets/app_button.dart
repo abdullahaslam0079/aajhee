@@ -48,9 +48,9 @@ class AppButton extends StatelessWidget {
     final isDisabled = onPressed == null || isLoading;
 
     final buttonHeight = switch (height) {
-      ButtonSize.small  => 36.h,
-      ButtonSize.medium => 48.h,
-      ButtonSize.large  => 56.h,
+      ButtonSize.small  => 36.r,
+      ButtonSize.medium => 44.r,
+      ButtonSize.large  => 52.r,
     };
 
     final buttonWidth = switch (width) {
@@ -97,10 +97,12 @@ class AppButton extends StatelessWidget {
           : Row(
               key: const ValueKey('content'),
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 if (prefixIcon != null) ...[
                   prefixIcon!,
-                  const SizedBox(width: 8),
+                  SizedBox(width: 10.r),
                 ],
                 Text(
                   label,

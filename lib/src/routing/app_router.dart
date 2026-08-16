@@ -14,6 +14,7 @@ import 'package:goluto/src/features/offerScanner/presentation/offer_scanner_scre
 import 'package:goluto/src/routing/global_navigator.dart';
 import 'package:goluto/src/routing/app_routes.dart';
 
+import 'package:goluto/src/features/auth/presentation/models/phone_otp_args.dart';
 import 'package:goluto/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:goluto/src/features/auth/presentation/screens/verify_otp_screen.dart';
 

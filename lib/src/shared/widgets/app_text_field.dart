@@ -25,15 +25,22 @@ class AppTextField extends StatelessWidget {
     this.focusNode,
     this.keyboardType,
     this.textInputAction,
+    this.textCapitalization = TextCapitalization.none,
     this.obscureText = false,
     this.readOnly = false,
     this.enabled = true,
     this.maxLines = 1,
     this.minLines,
+    this.maxLength,
+    this.prefix,
     this.prefixIcon,
+    this.prefixIconConstraints,
     this.suffixIcon,
     this.initialValue,
     this.autofocus = false,
+    this.inputFormatters,
+    this.autofillHints,
+    this.floatingLabelBehavior,
   });
 
   final String? label;
@@ -45,15 +52,22 @@ class AppTextField extends StatelessWidget {
   final FocusNode? focusNode;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
+  final TextCapitalization textCapitalization;
   final bool obscureText;
   final bool readOnly;
   final bool enabled;
   final int? maxLines;
   final int? minLines;
+  final int? maxLength;
+  final Widget? prefix;
   final Widget? prefixIcon;
+  final BoxConstraints? prefixIconConstraints;
   final Widget? suffixIcon;
   final String? initialValue;
   final bool autofocus;
+  final List<TextInputFormatter>? inputFormatters;
+  final Iterable<String>? autofillHints;
+  final FloatingLabelBehavior? floatingLabelBehavior;
 
   @override
   Widget build(BuildContext context) {
@@ -69,20 +83,28 @@ class AppTextField extends StatelessWidget {
       focusNode: focusNode,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
+      textCapitalization: textCapitalization,
       obscureText: obscureText,
       readOnly: readOnly,
       enabled: enabled,
       maxLines: obscureText ? 1 : maxLines,
       minLines: minLines,
+      maxLength: maxLength,
       autofocus: autofocus,
+      inputFormatters: inputFormatters,
+      autofillHints: autofillHints,
       style: tt.bodyLarge?.copyWith(color: cs.onSurface),
       cursorColor: cs.primary,
       decoration: InputDecoration(
         isDense: true,
         labelText: label,
         hintText: hint,
+        prefix: prefix,
         prefixIcon: prefixIcon,
+        prefixIconConstraints: prefixIconConstraints,
         suffixIcon: suffixIcon,
+        counterText: maxLength == null ? null : '',
+        floatingLabelBehavior: floatingLabelBehavior,
       ),
     );
   }
