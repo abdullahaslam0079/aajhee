@@ -4,7 +4,8 @@ import 'package:goluto/src/utils/media_url_utils.dart';
 
 enum OfferType {
   percentageBill('percentage_bill'),
-  item('item');
+  item('item'),
+  deal('deal');
 
   const OfferType(this.apiValue);
 
@@ -16,6 +17,19 @@ enum OfferType {
       orElse: () => OfferType.percentageBill,
     );
   }
+
+  String get typeBadgeLabel => switch (this) {
+        item => 'Item deal',
+        deal => 'Deal',
+        percentageBill => 'Flat off',
+      };
+
+  String get viewOnlyActionLabel => switch (this) {
+        deal => 'View Deal',
+        _ => 'View Offer',
+      };
+
+  String get defaultExternalUrlLabel => viewOnlyActionLabel;
 }
 
 enum OfferRedemptionMode {
@@ -74,6 +88,7 @@ class OfferModel {
     this.imageUrls = const [],
     required this.discountPercent,
     required this.itemName,
+    this.includedItems = const [],
     required this.originalPrice,
     required this.discountedPrice,
     required this.usageLimitType,
@@ -120,6 +135,7 @@ class OfferModel {
   final List<String> imageUrls;
   final double discountPercent;
   final String itemName;
+  final List<String> includedItems;
   final double? originalPrice;
   final double? discountedPrice;
   final String usageLimitType;
@@ -148,12 +164,19 @@ class OfferModel {
 
   String get subtitle {
     if (description.trim().isNotEmpty) return description.trim();
+    if (offerType == OfferType.deal && includedItems.isNotEmpty) {
+      return includedItems.join(' · ');
+    }
     if (itemName.trim().isNotEmpty) return itemName.trim();
     if (offerType == OfferType.percentageBill) {
       return 'On the entire bill';
     }
     return '';
   }
+
+  String get typeBadgeLabel => offerType.typeBadgeLabel;
+
+  String get viewOnlyActionLabel => offerType.viewOnlyActionLabel;
 
   String get detailText {
     if (originalPrice != null && discountedPrice != null) {
@@ -187,9 +210,7 @@ class OfferModel {
   String externalLinkButtonLabel(String storeName) {
     final custom = externalUrlLabel?.trim();
     if (custom != null && custom.isNotEmpty) return custom;
-    final brand = storeName.trim();
-    if (brand.isNotEmpty) return 'Visit $brand';
-    return 'Visit official site';
+    return offerType.defaultExternalUrlLabel;
   }
 
   String get summaryText {
@@ -244,6 +265,7 @@ class OfferModel {
       imageUrls: imageUrls,
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
+      includedItems: _parseIncludedItems(json['included_items']),
       originalPrice: parseApiNullableDouble(json['original_price']),
       discountedPrice: parseApiNullableDouble(json['discounted_price']),
       usageLimitType: parseApiString(json['usage_limit_type']) ?? '',
@@ -292,6 +314,14 @@ class OfferModel {
     return parseApiString(branchJson['name']);
   }
 
+  static List<String> _parseIncludedItems(dynamic value) {
+    if (value is! List) return const [];
+    return value
+        .map((item) => (item?.toString() ?? '').trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
   static List<String> _parseImageUrls(dynamic value) {
     if (value is! List<dynamic>) return const [];
     final urls = <String>[];
@@ -331,6 +361,7 @@ class OfferModel {
       imageUrls: imageUrls,
       discountPercent: discountPercent,
       itemName: itemName,
+      includedItems: includedItems,
       originalPrice: originalPrice,
       discountedPrice: discountedPrice,
       usageLimitType: usageLimitType,
@@ -384,6 +415,7 @@ class OfferModel {
       imageUrls: imageUrls,
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
+      includedItems: _parseIncludedItems(json['included_items']),
       originalPrice: parseApiNullableDouble(json['original_price']),
       discountedPrice: parseApiNullableDouble(json['discounted_price']),
       usageLimitType: '',

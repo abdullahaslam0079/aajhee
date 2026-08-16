@@ -53,6 +53,7 @@ class AvailedOfferSummaryModel {
     required this.imageUrl,
     required this.discountPercent,
     required this.itemName,
+    this.includedItems = const [],
     required this.originalPrice,
     required this.discountedPrice,
   });
@@ -69,6 +70,7 @@ class AvailedOfferSummaryModel {
   final String? imageUrl;
   final double discountPercent;
   final String itemName;
+  final List<String> includedItems;
   final double? originalPrice;
   final double? discountedPrice;
 
@@ -77,12 +79,17 @@ class AvailedOfferSummaryModel {
 
   String get subtitle {
     if (description.trim().isNotEmpty) return description.trim();
+    if (offerType == OfferType.deal && includedItems.isNotEmpty) {
+      return includedItems.join(' · ');
+    }
     if (itemName.trim().isNotEmpty) return itemName.trim();
     if (offerType == OfferType.percentageBill) {
       return 'On the entire bill';
     }
     return '';
   }
+
+  String get typeBadgeLabel => offerType.typeBadgeLabel;
 
   factory AvailedOfferSummaryModel.fromJson(Map<String, dynamic> json) {
     final imageUrls = <String>[];
@@ -110,6 +117,10 @@ class AvailedOfferSummaryModel {
           (imageUrls.isNotEmpty ? imageUrls.first : null),
       discountPercent: parseApiDouble(json['discount_percent']),
       itemName: parseApiString(json['item_name']) ?? '',
+      includedItems: (json['included_items'] as List<dynamic>? ?? [])
+          .map((item) => (item?.toString() ?? '').trim())
+          .where((item) => item.isNotEmpty)
+          .toList(),
       originalPrice: parseApiNullableDouble(json['original_price']),
       discountedPrice: parseApiNullableDouble(json['discounted_price']),
     );

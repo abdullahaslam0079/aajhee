@@ -572,15 +572,13 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
     final imageUrl = imageUrls.isNotEmpty ? imageUrls.first : null;
     final isViewOnly = offer.isViewOnlyOffer;
     final statusLabel = isViewOnly
-        ? 'View offer'
+        ? offer.viewOnlyActionLabel
         : _shortStatusLabel(usageStatus);
     final statusShowsAvailable = isViewOnly || usageStatus.isAvailable;
     final isTappable = isViewOnly
         ? offer.isActive
         : usageStatus.isAvailable;
-    final dealTypeLabel = offer.offerType == OfferType.item
-        ? 'Item deal'
-        : 'Flat off';
+    final dealTypeLabel = offer.typeBadgeLabel;
     final description = offer.subtitle;
     final hasPrices =
         offer.originalPrice != null && offer.discountedPrice != null;

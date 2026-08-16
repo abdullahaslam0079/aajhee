@@ -58,8 +58,7 @@ class _OfferDetailSheet extends StatelessWidget {
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.62);
     final galleryUrls = offer.displayImageUrls;
-    final dealTypeLabel =
-        offer.offerType == OfferType.item ? 'Item deal' : 'Flat off';
+    final dealTypeLabel = offer.typeBadgeLabel;
     final shortDescription = offer.description.trim();
     final detailedDescription = offer.detailedDescription.trim();
     final detailsBody = detailedDescription.isNotEmpty
@@ -243,6 +242,35 @@ class _OfferDetailSheet extends StatelessWidget {
                         Text(
                           detailsBody,
                           style: tt.bodyLarge?.copyWith(height: 1.5),
+                        ),
+                      ],
+                      if (offer.offerType == OfferType.deal &&
+                          offer.includedItems.isNotEmpty) ...[
+                        SizedBox(height: AppSpacing.md.h),
+                        Text(
+                          'Included',
+                          style: tt.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        SizedBox(height: AppSpacing.xs.h),
+                        ...offer.includedItems.map(
+                          (item) => Padding(
+                            padding: EdgeInsets.only(bottom: AppSpacing.xxs.h),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.check_circle_outline,
+                                  size: 16,
+                                  color: cs.primary,
+                                ),
+                                SizedBox(width: 6.w),
+                                Expanded(
+                                  child: Text(item, style: tt.bodyLarge),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                       SizedBox(height: AppSpacing.md.h),

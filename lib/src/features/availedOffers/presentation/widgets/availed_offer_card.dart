@@ -1,5 +1,4 @@
 import 'package:goluto/src/features/availedOffers/data/models/availed_offer_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
@@ -171,9 +170,7 @@ class AvailedOfferCard extends StatelessWidget {
                         ),
                         SizedBox(height: AppSpacing.sm.h),
                         _TagChip(
-                          label: offer.offerType == OfferType.item
-                              ? 'Item deal'
-                              : 'Dine in',
+                          label: offer.typeBadgeLabel,
                           icon: Icons.local_offer_outlined,
                         ),
                       ],
