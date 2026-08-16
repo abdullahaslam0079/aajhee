@@ -108,16 +108,16 @@ class AvailedOfferCard extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        if (offer.isOnline) ...[
-                          SizedBox(height: AppSpacing.xxs.h),
-                          Text(
-                            'Online',
-                            style: tt.labelSmall?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        SizedBox(height: AppSpacing.xxs.h),
+                        Text(
+                          offer.isOnline
+                              ? 'Online & In-store'
+                              : 'In-store only',
+                          style: tt.labelSmall?.copyWith(
+                            color: cs.primary,
+                            fontWeight: FontWeight.w700,
                           ),
-                        ],
+                        ),
                         if (offer.subtitle.isNotEmpty) ...[
                           SizedBox(height: AppSpacing.xxs.h),
                           Text(

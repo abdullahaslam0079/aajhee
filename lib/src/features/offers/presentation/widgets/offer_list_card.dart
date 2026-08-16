@@ -1,9 +1,10 @@
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 /// Horizontal deal row for offer list feeds.
-class OfferListCard extends StatelessWidget {
+class OfferListCard extends ConsumerWidget {
   const OfferListCard({
     super.key,
     required this.offer,
@@ -14,7 +15,7 @@ class OfferListCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
@@ -22,6 +23,12 @@ class OfferListCard extends StatelessWidget {
     final imageUrls = offer.displayImageUrls;
     final hasGallery = imageUrls.length > 1;
     final category = offer.categoryName.trim();
+    final logoUrl = offer.businessLogoUrl ??
+        ref.watch(
+          homeFeedProvider.select(
+            (state) => state.logoUrlForBusiness(offer.businessId),
+          ),
+        );
 
     return Material(
       color: Colors.transparent,
@@ -45,7 +52,7 @@ class OfferListCard extends StatelessWidget {
                   _OfferThumbnail(
                     imageUrl: imageUrls.isNotEmpty ? imageUrls.first : null,
                     businessName: offer.businessName,
-                    discountPercent: offer.discountPercent,
+                    badgeLabel: offer.promoBadgeLabel,
                     galleryCount: hasGallery ? imageUrls.length : null,
                     debugLabel: offer.title,
                     dealColor: appColors.deal,
@@ -60,7 +67,7 @@ class OfferListCard extends StatelessWidget {
                           children: [
                             StoreLogoBadge(
                               name: offer.businessName,
-                              imageUrl: offer.businessLogoUrl,
+                              imageUrl: logoUrl,
                               size: 20,
                             ),
                             SizedBox(width: 6.w),
@@ -93,7 +100,9 @@ class OfferListCard extends StatelessWidget {
                           _metaLine(
                             category,
                             offer.nearestDistanceKm,
-                            channelLabel: offer.channelLabel,
+                            channelLabel: offer.channelShortLabel,
+                            showDistance: offer.isAvailableInStore,
+                            typeLabel: offer.isDealOffer ? 'Deal' : null,
                           ),
                           style: tt.labelSmall?.copyWith(
                             color: muted,
@@ -134,10 +143,15 @@ String _metaLine(
   String category,
   double? nearestDistanceKm, {
   required String channelLabel,
+  required bool showDistance,
+  String? typeLabel,
 }) {
-  final parts = <String>[channelLabel];
+  final parts = <String>[
+    if (typeLabel != null) typeLabel,
+    channelLabel,
+  ];
   if (category.isNotEmpty) parts.add(category);
-  if (nearestDistanceKm != null && channelLabel != 'Online') {
+  if (showDistance && nearestDistanceKm != null) {
     parts.add(GeoDistanceUtils.formatDistanceLabel(nearestDistanceKm));
   }
   return parts.join(' · ');
@@ -147,7 +161,7 @@ class _OfferThumbnail extends StatelessWidget {
   const _OfferThumbnail({
     required this.imageUrl,
     required this.businessName,
-    required this.discountPercent,
+    required this.badgeLabel,
     required this.debugLabel,
     required this.dealColor,
     required this.onDealColor,
@@ -156,7 +170,7 @@ class _OfferThumbnail extends StatelessWidget {
 
   final String? imageUrl;
   final String businessName;
-  final double discountPercent;
+  final String? badgeLabel;
   final String debugLabel;
   final Color dealColor;
   final Color onDealColor;
@@ -205,7 +219,7 @@ class _OfferThumbnail extends StatelessWidget {
                 ),
               ),
             ),
-            if (discountPercent > 0)
+            if (badgeLabel != null)
               Positioned(
                 left: 6.w,
                 top: 6.h,
@@ -216,7 +230,7 @@ class _OfferThumbnail extends StatelessWidget {
                     borderRadius: AppBorders.full,
                   ),
                   child: Text(
-                    '${discountPercent.toStringAsFixed(0)}% OFF',
+                    badgeLabel!,
                     style: tt.labelSmall?.copyWith(
                       color: onDealColor,
                       fontWeight: FontWeight.w800,
@@ -357,10 +371,12 @@ class _PriceRow extends StatelessWidget {
     }
 
     return Text(
-      'Special price',
+      offer.isDealOffer ? 'Deal' : 'Special price',
       style: tt.labelMedium?.copyWith(
-        fontWeight: FontWeight.w600,
-        color: cs.onSurfaceVariant,
+        fontWeight: FontWeight.w800,
+        color: offer.isDealOffer
+            ? (appColors.onDealContainer ?? appColors.deal)
+            : cs.onSurfaceVariant,
       ),
     );
   }

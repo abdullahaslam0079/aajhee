@@ -1,9 +1,10 @@
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
 
 /// Compact portrait card for horizontal Top picks carousels.
-class TopPickOfferCard extends StatelessWidget {
+class TopPickOfferCard extends ConsumerWidget {
   const TopPickOfferCard({
     super.key,
     required this.offer,
@@ -16,7 +17,7 @@ class TopPickOfferCard extends StatelessWidget {
   final double? width;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
@@ -25,6 +26,12 @@ class TopPickOfferCard extends StatelessWidget {
     final muted = cs.onSurface.withValues(alpha: 0.55);
     final imageUrls = offer.displayImageUrls;
     final cardWidth = width ?? 156.w;
+    final logoUrl = offer.businessLogoUrl ??
+        ref.watch(
+          homeFeedProvider.select(
+            (state) => state.logoUrlForBusiness(offer.businessId),
+          ),
+        );
 
     return Material(
       color: Colors.transparent,
@@ -79,7 +86,7 @@ class TopPickOfferCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (offer.discountPercent > 0)
+                      if (offer.promoBadgeLabel != null)
                         Positioned(
                           left: 8.w,
                           top: 8.h,
@@ -93,7 +100,7 @@ class TopPickOfferCard extends StatelessWidget {
                               borderRadius: AppBorders.full,
                             ),
                             child: Text(
-                              '${offer.discountPercent.toStringAsFixed(0)}% OFF',
+                              offer.promoBadgeLabel!,
                               style: tt.labelSmall?.copyWith(
                                 color: appColors.onDeal,
                                 fontWeight: FontWeight.w800,
@@ -106,25 +113,7 @@ class TopPickOfferCard extends StatelessWidget {
                       Positioned(
                         right: 8.w,
                         top: 8.h,
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 7.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: cs.scrim.withValues(alpha: 0.55),
-                            borderRadius: AppBorders.full,
-                          ),
-                          child: Text(
-                            offer.channelLabel,
-                            style: tt.labelSmall?.copyWith(
-                              color: cs.surfaceContainerLowest,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 9.5,
-                              height: 1,
-                            ),
-                          ),
-                        ),
+                        child: _ChannelBadge(offer: offer),
                       ),
                     ],
                   ),
@@ -137,14 +126,26 @@ class TopPickOfferCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            offer.businessName,
-                            style: tt.labelSmall?.copyWith(
-                              color: cs.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          Row(
+                            children: [
+                              StoreLogoBadge(
+                                name: offer.businessName,
+                                imageUrl: logoUrl,
+                                size: 16,
+                              ),
+                              SizedBox(width: 5.w),
+                              Expanded(
+                                child: Text(
+                                  offer.businessName,
+                                  style: tt.labelSmall?.copyWith(
+                                    color: cs.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ),
                           SizedBox(height: 3.h),
                           Text(
@@ -194,6 +195,14 @@ class TopPickOfferCard extends StatelessWidget {
                                 fontWeight: FontWeight.w800,
                                 color: appColors.deal,
                               ),
+                            )
+                          else if (offer.isDealOffer)
+                            Text(
+                              'Deal',
+                              style: tt.labelMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: appColors.deal,
+                              ),
                             ),
                         ],
                       ),
@@ -204,6 +213,54 @@ class TopPickOfferCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ChannelBadge extends StatelessWidget {
+  const _ChannelBadge({required this.offer});
+
+  final OfferModel offer;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final tt = context.theme.textTheme;
+    final icons = <IconData>[
+      if (offer.isAvailableOnline) Icons.language_rounded,
+      if (offer.isAvailableInStore) Icons.storefront_outlined,
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: isDark ? 0.78 : 0.56),
+        borderRadius: AppBorders.full,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: isDark ? 0.42 : 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < icons.length; i++) ...[
+            if (i > 0) SizedBox(width: 3.w),
+            Icon(icons[i], size: 11, color: Colors.white),
+          ],
+          if (!offer.isHybridChannel) ...[
+            SizedBox(width: 3.w),
+            Text(
+              offer.channelShortLabel,
+              style: tt.labelSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 9.5,
+                height: 1,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -55,6 +55,16 @@ class HomeFeedState {
   /// Branches are already filtered server-side by [selectedCategoryIndex].
   List<MapBranchModel> get filteredBranches => branches;
 
+  String? logoUrlForBusiness(int businessId) {
+    if (businessId <= 0) return null;
+    for (final branch in branches) {
+      if (branch.businessId != businessId) continue;
+      final url = branch.businessLogoUrl?.trim();
+      if (url != null && url.isNotEmpty) return url;
+    }
+    return null;
+  }
+
   List<String> get categoryLabels => [
         'All',
         ...categories.map((category) => category.name),

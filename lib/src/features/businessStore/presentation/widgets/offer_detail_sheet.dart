@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:goluto/src/features/offers/data/services/engagement_service.dart';
 import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:goluto/src/features/offers/presentation/widgets/offer_image_carousel.dart';
 import 'package:goluto/src/imports/core_imports.dart';
 import 'package:goluto/src/imports/packages_imports.dart';
@@ -24,7 +25,7 @@ Future<void> showOfferDetailSheet(
   );
 }
 
-class _OfferDetailSheet extends StatelessWidget {
+class _OfferDetailSheet extends ConsumerWidget {
   const _OfferDetailSheet({
     required this.offer,
     required this.storeName,
@@ -53,10 +54,17 @@ class _OfferDetailSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
     final muted = cs.onSurface.withValues(alpha: 0.62);
+    final logoUrl = storeLogoUrl ??
+        offer.businessLogoUrl ??
+        ref.watch(
+          homeFeedProvider.select(
+            (state) => state.logoUrlForBusiness(offer.businessId),
+          ),
+        );
     final galleryUrls = offer.displayImageUrls;
     final dealTypeLabel = offer.typeBadgeLabel;
     final shortDescription = offer.description.trim();
@@ -127,7 +135,7 @@ class _OfferDetailSheet extends StatelessWidget {
                         children: [
                           StoreLogoBadge(
                             name: storeName,
-                            imageUrl: storeLogoUrl,
+                            imageUrl: logoUrl,
                             size: 28,
                           ),
                           SizedBox(width: 8.w),
@@ -281,12 +289,22 @@ class _OfferDetailSheet extends StatelessWidget {
                         children: [
                           _DetailChip(
                             label: dealTypeLabel,
-                            icon: Icons.storefront_outlined,
+                            icon: Icons.local_offer_outlined,
+                            accent: offer.isDealOffer,
                           ),
-                          if (offer.isOnline)
-                            const _DetailChip(
-                              label: 'Online',
+                          if (offer.isAvailableOnline)
+                            _DetailChip(
+                              label: offer.isOnlineOnly
+                                  ? 'Online only'
+                                  : 'Online',
                               icon: Icons.language_rounded,
+                            ),
+                          if (offer.isAvailableInStore)
+                            _DetailChip(
+                              label: offer.isInStoreOnly
+                                  ? 'In-store only'
+                                  : 'In-store',
+                              icon: Icons.storefront_outlined,
                             ),
                           if (offer.isViewOnlyOffer)
                             const _DetailChip(

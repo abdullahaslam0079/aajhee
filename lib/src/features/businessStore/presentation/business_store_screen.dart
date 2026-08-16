@@ -612,7 +612,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                   children: [
                     _OfferThumbnail(
                       imageUrl: imageUrl,
-                      discountPercent: offer.discountPercent,
+                      badgeLabel: offer.promoBadgeLabel,
                       debugLabel: 'offer ${offer.title}',
                       showQrBadge: !isViewOnly,
                       dealColor: appColors.deal,
@@ -675,12 +675,22 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                               ),
                               _OfferTagChip(
                                 label: dealTypeLabel,
-                                icon: Icons.storefront_outlined,
+                                icon: Icons.local_offer_outlined,
+                                accent: offer.isDealOffer,
                               ),
-                              if (offer.isOnline)
-                                const _OfferTagChip(
-                                  label: 'Online',
+                              if (offer.isAvailableOnline)
+                                _OfferTagChip(
+                                  label: offer.isOnlineOnly
+                                      ? 'Online only'
+                                      : 'Online',
                                   icon: Icons.language_rounded,
+                                ),
+                              if (offer.isAvailableInStore)
+                                _OfferTagChip(
+                                  label: offer.isInStoreOnly
+                                      ? 'In-store only'
+                                      : 'In-store',
+                                  icon: Icons.storefront_outlined,
                                 ),
                             ],
                           ),
@@ -710,7 +720,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
 class _OfferThumbnail extends StatelessWidget {
   const _OfferThumbnail({
     required this.imageUrl,
-    required this.discountPercent,
+    required this.badgeLabel,
     required this.debugLabel,
     required this.showQrBadge,
     required this.dealColor,
@@ -718,7 +728,7 @@ class _OfferThumbnail extends StatelessWidget {
   });
 
   final String? imageUrl;
-  final double discountPercent;
+  final String? badgeLabel;
   final String debugLabel;
   final bool showQrBadge;
   final Color dealColor;
@@ -779,7 +789,7 @@ class _OfferThumbnail extends StatelessWidget {
               ],
             ),
           ),
-          if (discountPercent > 0)
+          if (badgeLabel != null)
             Positioned(
               left: 5.w,
               top: 5.h,
@@ -794,7 +804,7 @@ class _OfferThumbnail extends StatelessWidget {
                   boxShadow: AppShadows.subtle,
                 ),
                 child: Text(
-                  '${discountPercent.toStringAsFixed(0)}% OFF',
+                  badgeLabel!,
                   style: tt.labelSmall?.copyWith(
                     color: onDealColor,
                     fontWeight: FontWeight.w800,
@@ -891,6 +901,16 @@ class _OfferPriceRow extends StatelessWidget {
       );
     }
 
+    if (offer.isDealOffer) {
+      return Text(
+        'Deal',
+        style: tt.labelLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: appColors.deal,
+        ),
+      );
+    }
+
     return const SizedBox.shrink();
   }
 }
@@ -950,15 +970,24 @@ class _OfferTagChip extends StatelessWidget {
   const _OfferTagChip({
     required this.label,
     required this.icon,
+    this.accent = false,
   });
 
   final String label;
   final IconData icon;
+  final bool accent;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
+    final appColors = context.appColors;
+    final backgroundColor = accent
+        ? appColors.deal.withValues(alpha: 0.14)
+        : cs.surfaceContainerHigh.withValues(alpha: 0.7);
+    final foregroundColor = accent
+        ? (appColors.onDealContainer ?? appColors.deal)
+        : cs.onSurfaceVariant;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -966,19 +995,19 @@ class _OfferTagChip extends StatelessWidget {
         vertical: 3.h,
       ),
       decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh.withValues(alpha: 0.7),
+        color: backgroundColor,
         borderRadius: AppBorders.full,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: cs.onSurfaceVariant),
+          Icon(icon, size: 11, color: foregroundColor),
           SizedBox(width: 3.w),
           Text(
             label,
             style: tt.labelSmall?.copyWith(
-              color: cs.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+              color: foregroundColor,
+              fontWeight: FontWeight.w700,
               fontSize: 10.5,
               height: 1.1,
             ),

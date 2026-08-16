@@ -62,8 +62,8 @@ enum OfferChannelFilter {
 
   bool matches(OfferModel offer) => switch (this) {
         all => true,
-        online => offer.isOnlineOnly,
-        inStore => !offer.isOnline,
+        online => offer.isAvailableOnline,
+        inStore => offer.isAvailableInStore,
       };
 }
 
@@ -79,6 +79,7 @@ class OfferModel {
     required this.offerType,
     required this.redemptionMode,
     this.isOnline = false,
+    this.isInStore = true,
     required this.title,
     required this.description,
     required this.detailedDescription,
@@ -126,6 +127,7 @@ class OfferModel {
   final OfferType offerType;
   final OfferRedemptionMode redemptionMode;
   final bool isOnline;
+  final bool isInStore;
   final String title;
   final String description;
   final String detailedDescription;
@@ -178,6 +180,17 @@ class OfferModel {
 
   String get viewOnlyActionLabel => offerType.viewOnlyActionLabel;
 
+  bool get isDealOffer => offerType == OfferType.deal;
+
+  /// Thumbnail callout: DEAL for combo deals, otherwise % OFF when set.
+  String? get promoBadgeLabel {
+    if (isDealOffer) return 'DEAL';
+    if (discountPercent > 0) {
+      return '${discountPercent.toStringAsFixed(0)}% OFF';
+    }
+    return null;
+  }
+
   bool get hasCompareAtPrice =>
       originalPrice != null && discountedPrice != null;
 
@@ -195,14 +208,27 @@ class OfferModel {
 
   bool get isViewOnlyOffer => redemptionMode.isViewOnly;
 
-  bool get isOnlineOnly => isOnline && branchIds.isEmpty;
+  bool get isAvailableOnline => isOnline;
 
-  bool get isHybridChannel => isOnline && branchIds.isNotEmpty;
+  bool get isAvailableInStore => isInStore;
 
-  /// Short label for list/meta chips: Online, In-store, or Online & In-store.
+  bool get isOnlineOnly => isOnline && !isInStore;
+
+  bool get isInStoreOnly => isInStore && !isOnline;
+
+  bool get isHybridChannel => isOnline && isInStore;
+
+  /// Full label for details: Online only, In-store only, or Online & In-store.
   String get channelLabel {
-    if (isOnlineOnly) return 'Online';
     if (isHybridChannel) return 'Online & In-store';
+    if (isOnlineOnly) return 'Online only';
+    return 'In-store only';
+  }
+
+  /// Compact label for cards and image badges.
+  String get channelShortLabel {
+    if (isHybridChannel) return 'Both';
+    if (isOnlineOnly) return 'Online';
     return 'In-store';
   }
 
@@ -245,6 +271,9 @@ class OfferModel {
 
   factory OfferModel.fromJson(Map<String, dynamic> json) {
     final imageUrls = _parseImageUrls(json['image_urls']);
+    final branchIds = _parseBranchIds(json);
+    final featuredBranchId = _parseFeaturedBranchId(json['featured_branch']);
+    final isOnline = parseApiBool(json['is_online']);
     return OfferModel(
       id: parseApiInt(json['id']),
       businessId: parseApiInt(json['business_id']),
@@ -252,14 +281,18 @@ class OfferModel {
       categoryId: parseApiInt(json['category_id']),
       categoryName: parseApiString(json['category_name']) ?? '',
       category: CategoryModel.fromJson(json['category'] as Map<String, dynamic>),
-      branchIds: (json['branch_ids'] as List<dynamic>? ?? [])
-          .map((id) => parseApiInt(id))
-          .toList(),
+      branchIds: branchIds,
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
       redemptionMode: OfferRedemptionMode.fromApi(
         parseApiString(json['redemption_mode']),
       ),
-      isOnline: json['is_online'] as bool? ?? false,
+      isOnline: isOnline,
+      isInStore: _resolveIsInStore(
+        json,
+        isOnline: isOnline,
+        branchIds: branchIds,
+        featuredBranchId: featuredBranchId,
+      ),
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
       detailedDescription: parseApiString(json['detailed_description']) ?? '',
@@ -302,21 +335,108 @@ class OfferModel {
       businessViewCount: parseApiInt(json['business_view_count']),
       businessLikeCount: parseApiInt(json['business_like_count']),
       isBusinessLiked: json['is_business_liked'] as bool? ?? false,
-      businessLogoUrl: resolveMediaUrl(parseApiString(json['business_logo_url'])),
-      featuredBranchId: _parseFeaturedBranchId(json['featured_branch']),
+      businessLogoUrl: _parseBusinessLogoUrl(json),
+      featuredBranchId: featuredBranchId,
       featuredBranchName: _parseFeaturedBranchName(json['featured_branch']),
       nearestDistanceKm: parseApiNullableDouble(json['nearest_distance_km']),
     );
   }
 
+  static List<int> _parseBranchIds(Map<String, dynamic> json) {
+    final raw = json['branch_ids'] ?? json['branches'];
+    if (raw is List) {
+      final ids = <int>[];
+      for (final item in raw) {
+        final id = item is Map
+            ? parseApiInt(item['id'])
+            : parseApiInt(item);
+        if (id > 0) ids.add(id);
+      }
+      return ids;
+    }
+
+    final single = json['branch_id'];
+    if (single != null) {
+      final id = parseApiInt(single);
+      if (id > 0) return [id];
+    }
+    return const [];
+  }
+
+  static bool _resolveIsInStore(
+    Map<String, dynamic> json, {
+    required bool isOnline,
+    required List<int> branchIds,
+    required int? featuredBranchId,
+  }) {
+    final explicit = parseApiNullableBool(
+      json['is_in_store'] ??
+          json['available_in_store'] ??
+          json['in_store'],
+    );
+    if (explicit != null) return explicit;
+    return !isOnline || branchIds.isNotEmpty || featuredBranchId != null;
+  }
+
   static int? _parseFeaturedBranchId(dynamic branchJson) {
-    if (branchJson is! Map<String, dynamic>) return null;
-    return parseApiInt(branchJson['id']);
+    if (branchJson == null) return null;
+    if (branchJson is Map) {
+      final id = parseApiInt(branchJson['id']);
+      return id > 0 ? id : null;
+    }
+    final id = parseApiInt(branchJson);
+    return id > 0 ? id : null;
   }
 
   static String? _parseFeaturedBranchName(dynamic branchJson) {
     if (branchJson is! Map<String, dynamic>) return null;
     return parseApiString(branchJson['name']);
+  }
+
+  static String? _parseBusinessLogoUrl(Map<String, dynamic> json) {
+    String? fromValue(dynamic value) {
+      if (value == null) return null;
+      if (value is Map) {
+        return resolveMediaUrl(
+          parseApiString(
+            value['url'] ??
+                value['logo_url'] ??
+                value['logo'] ??
+                value['image'],
+          ),
+        );
+      }
+      return resolveMediaUrl(parseApiString(value));
+    }
+
+    final direct = fromValue(
+      json['business_logo_url'] ??
+          json['business_logo'] ??
+          json['logo_url'] ??
+          json['logo'],
+    );
+    if (direct != null) return direct;
+
+    final business = json['business'];
+    if (business is Map) {
+      final nested = fromValue(
+        business['logo_url'] ??
+            business['business_logo_url'] ??
+            business['logo'] ??
+            business['image'],
+      );
+      if (nested != null) return nested;
+    }
+
+    final featured = json['featured_branch'];
+    if (featured is Map) {
+      return fromValue(
+        featured['business_logo_url'] ??
+            featured['logo_url'] ??
+            featured['logo'],
+      );
+    }
+    return null;
   }
 
   static List<String> _parseIncludedItems(dynamic value) {
@@ -357,6 +477,7 @@ class OfferModel {
       offerType: offerType,
       redemptionMode: redemptionMode,
       isOnline: isOnline,
+      isInStore: isInStore,
       title: title,
       description: description,
       detailedDescription: detailedDescription,
@@ -397,6 +518,9 @@ class OfferModel {
 
   factory OfferModel.fromQrSummary(Map<String, dynamic> json) {
     final imageUrls = _parseImageUrls(json['image_urls']);
+    final branchIds = _parseBranchIds(json);
+    final featuredBranchId = _parseFeaturedBranchId(json['featured_branch']);
+    final isOnline = parseApiBool(json['is_online']);
     return OfferModel(
       id: parseApiInt(json['id']),
       businessId: 0,
@@ -404,12 +528,18 @@ class OfferModel {
       categoryId: 0,
       categoryName: '',
       category: const CategoryModel(id: 0, name: ''),
-      branchIds: const [],
+      branchIds: branchIds,
       offerType: OfferType.fromApi(parseApiString(json['offer_type']) ?? ''),
       redemptionMode: OfferRedemptionMode.fromApi(
         parseApiString(json['redemption_mode']),
       ),
-      isOnline: json['is_online'] as bool? ?? false,
+      isOnline: isOnline,
+      isInStore: _resolveIsInStore(
+        json,
+        isOnline: isOnline,
+        branchIds: branchIds,
+        featuredBranchId: featuredBranchId,
+      ),
       title: parseApiString(json['title']) ?? '',
       description: parseApiString(json['description']) ?? '',
       detailedDescription: parseApiString(json['detailed_description']) ?? '',
@@ -423,6 +553,7 @@ class OfferModel {
       includedItems: _parseIncludedItems(json['included_items']),
       originalPrice: parseApiNullableDouble(json['original_price']),
       discountedPrice: parseApiNullableDouble(json['discounted_price']),
+      businessLogoUrl: _parseBusinessLogoUrl(json),
       usageLimitType: '',
       usageLimitCount: 1,
       isEnabled: json['is_enabled'] as bool? ?? true,

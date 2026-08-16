@@ -106,7 +106,14 @@ class MapBranchModel {
         json['highest_discount_percent'],
         fallback: topOffer?.discountPercent ?? 0,
       ),
-      businessLogoUrl: resolveMediaUrl(parseApiString(json['business_logo_url'])),
+      businessLogoUrl: resolveMediaUrl(
+        parseApiString(
+          json['business_logo_url'] ??
+              json['logo_url'] ??
+              json['business_logo'] ??
+              json['logo'],
+        ),
+      ),
       highestDiscountOfferImageUrl: resolveMediaUrl(
         parseApiString(json['highest_discount_offer_image_url']),
       ),
