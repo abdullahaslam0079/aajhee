@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/availedOffers/data/models/availed_offer_model.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/availedOffers/data/models/availed_offer_model.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class AvailedOfferCard extends StatelessWidget {
   const AvailedOfferCard({
@@ -29,16 +29,9 @@ class AvailedOfferCard extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(AppSpacing.sm.r),
           decoration: BoxDecoration(
-            color: cs.onPrimary,
-            borderRadius: AppBorders.lg,
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.45)),
-            boxShadow: [
-              BoxShadow(
-                color: cs.shadow.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            color: cs.surfaceContainerLowest,
+            borderRadius: AppBorders.card,
+            border: Border.all(color: cs.outlineVariant),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

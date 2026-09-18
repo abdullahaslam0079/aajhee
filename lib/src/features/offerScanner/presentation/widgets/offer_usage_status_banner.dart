@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class OfferUsageStatusBanner extends StatelessWidget {
   const OfferUsageStatusBanner({

@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/offers/data/services/engagement_service.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/offer_image_carousel.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/offers/data/services/engagement_service.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/offer_image_carousel.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 Future<void> showOfferDetailSheet(
   BuildContext context, {

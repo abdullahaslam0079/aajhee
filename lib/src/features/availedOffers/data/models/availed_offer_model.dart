@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/home/data/models/category_model.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/utils/api_value_parsers.dart';
-import 'package:goluto/src/utils/media_url_utils.dart';
+import 'package:aajhee/src/features/home/data/models/category_model.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/utils/api_value_parsers.dart';
+import 'package:aajhee/src/utils/media_url_utils.dart';
 
 class AvailedOfferBranchModel {
   const AvailedOfferBranchModel({

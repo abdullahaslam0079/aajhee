@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:goluto/src/services/auth_service.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/services/auth_service.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 class AppConfig {
   AppConfig._();
@@ -149,7 +149,7 @@ class AppConfig {
   static String _getBaseUrl() {
     return dotenv.get(
       'API_BASE_URL',
-      fallback: 'https://api.goluto.de',
+      fallback: 'https://api.aajhee.com',
     );
   }
 }

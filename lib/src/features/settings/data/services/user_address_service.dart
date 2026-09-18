@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:goluto/src/config/app_config.dart';
-import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/config/app_config.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 class UserAddressService {
   UserAddressService._();

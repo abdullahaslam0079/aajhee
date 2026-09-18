@@ -12,9 +12,9 @@ Color _colorFromHex(String hex) {
 }
 
 /// Soft canvas for home feed and shell backgrounds.
-/// Light: warm off-white. Dark: soft charcoal with clear elevation room.
-const Color kHomeCanvasColor = Color(0xFFF7F7F8);
-const Color kHomeCanvasColorDark = Color(0xFF12131A);
+/// Light: warm grey. Dark: true charcoal. Neutral — no blue cast.
+const Color kHomeCanvasColor = Color(0xFFF5F5F5);
+const Color kHomeCanvasColorDark = Color(0xFF121212);
 
 Color homeCanvasOf(BuildContext context) {
   return Theme.of(context).brightness == Brightness.dark
@@ -132,11 +132,15 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       backgroundColor: colorScheme.surface,
       foregroundColor: colorScheme.onSurface,
       elevation: 0,
-      centerTitle: true,
+      scrolledUnderElevation: 0,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: false,
       titleTextStyle: textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.25,
         color: colorScheme.onSurface,
       ),
+      iconTheme: IconThemeData(color: colorScheme.onSurface, size: 22),
     ),
 
     // Button Themes
@@ -193,44 +197,54 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         side: BorderSide(color: colorScheme.outlineVariant, width: 1),
         borderRadius: AppBorders.card,
       ),
-      color: colorScheme.surfaceContainerLow,
+      color: colorScheme.surfaceContainerLowest,
     ),
 
     // Input Decoration Theme
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
+      fillColor: colorScheme.surfaceContainerLowest,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: AppBorders.input,
-        borderSide: BorderSide(color: colorScheme.outline),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: AppBorders.input,
-        borderSide: BorderSide(color: colorScheme.outline),
+        borderSide: BorderSide(color: colorScheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: AppBorders.input,
-        borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: AppBorders.input,
         borderSide: BorderSide(color: colorScheme.error),
       ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: AppBorders.input,
+        borderSide: BorderSide(color: colorScheme.error, width: 1.5),
+      ),
       floatingLabelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
-      labelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant.withOpacity(0.6)),
-      hintStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant.withOpacity(0.6)),
+      labelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+      hintStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
     ),
 
     // Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: colorScheme.surface,
-      indicatorColor: colorScheme.secondaryContainer,
-      elevation: 8,
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      indicatorColor: colorScheme.primary.withValues(alpha: 0.1),
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-      height: 80,
+      height: 72,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return textTheme.labelSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold);
+          return textTheme.labelSmall?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
+          );
         }
         return textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant);
       }),
@@ -311,16 +325,20 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     dialogTheme: DialogThemeData(
       shape: const RoundedRectangleBorder(borderRadius: AppBorders.dialog),
       elevation: 0,
-      backgroundColor: colorScheme.surface,
-      titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-      contentTextStyle: textTheme.bodyMedium,
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      contentTextStyle: textTheme.bodyMedium?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+      ),
     ),
 
     // Bottom Sheet Theme
-    bottomSheetTheme: const BottomSheetThemeData(
+    bottomSheetTheme: BottomSheetThemeData(
       showDragHandle: true,
       elevation: 0,
-      shape: RoundedRectangleBorder(
+      backgroundColor: colorScheme.surfaceContainerLowest,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
         borderRadius: AppBorders.bottomSheet,
       ),
     ),
@@ -355,7 +373,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     // Tooltip Theme
     tooltipTheme: TooltipThemeData(
       decoration: BoxDecoration(
-        color: colorScheme.inverseSurface.withOpacity(0.9),
+        color: colorScheme.inverseSurface.withValues(alpha: 0.92),
         borderRadius: AppBorders.sm,
       ),
       textStyle: textTheme.labelSmall?.copyWith(color: colorScheme.onInverseSurface),
@@ -365,7 +383,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
 
 ThemeData buildLightTheme({required String primaryColorHex}) {
   final accent = _colorFromHex(
-    primaryColorHex.isNotEmpty ? primaryColorHex : '#1F1F21',
+    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.lightPrimaryHex,
   );
   final colorScheme = ColorScheme.fromSeed(
     seedColor: accent,
@@ -373,70 +391,70 @@ ThemeData buildLightTheme({required String primaryColorHex}) {
   ).copyWith(
     primary: accent,
     onPrimary: Colors.white,
-    
-    primaryContainer: const Color(0xFFE8E8EA),
-    onPrimaryContainer: const Color(0xFF0F0F10),
-    secondary: const Color(0xFF2A2A2E),
+    primaryContainer: const Color(0xFFECECEC),
+    onPrimaryContainer: const Color(0xFF1A1A1A),
+    secondary: AppBrandColors.lightSecondary,
     onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFE5E7EB),
-    onSecondaryContainer: const Color(0xFF111827),
-    // surface: Colors.white,
-    surface: const Color(0xFFE8E8E8),
-    onSurface: const Color(0xFF0F0F10),
+    secondaryContainer: const Color(0xFFE8E8E8),
+    onSecondaryContainer: const Color(0xFF1A1A1A),
+    surface: kHomeCanvasColor,
+    onSurface: const Color(0xFF1A1A1A),
     surfaceContainerLowest: Colors.white,
-    surfaceContainerLow: const Color(0xFFFAFAFA),
+    surfaceContainerLow: Colors.white,
     surfaceContainer: const Color(0xFFF5F5F5),
-    surfaceContainerHigh: const Color(0xFFEDEDED),
-    surfaceContainerHighest: const Color(0xFFE5E5E5),
-    onSurfaceVariant: const Color(0xFF5A5A5F),
-    outline: const Color(0xFFBDBDC2),
-    outlineVariant: Colors.white,
-    shadow: Colors.black.withValues(alpha: 0.18),
-    scrim: Colors.black.withValues(alpha: 0.5),
-    inverseSurface: const Color(0xFF18181B),
-    onInverseSurface: const Color(0xFFF3F4F6),
-    inversePrimary: const Color(0xFFCACACF),
+    surfaceContainerHigh: const Color(0xFFECECEC),
+    surfaceContainerHighest: const Color(0xFFE0E0E0),
+    onSurfaceVariant: const Color(0xFF6B6B6B),
+    outline: const Color(0xFFD4D4D4),
+    outlineVariant: const Color(0xFFE5E5E5),
+    shadow: Colors.black.withValues(alpha: 0.12),
+    scrim: Colors.black.withValues(alpha: 0.46),
+    inverseSurface: const Color(0xFF1A1A1A),
+    onInverseSurface: const Color(0xFFF5F5F5),
+    inversePrimary: const Color(0xFFF2F2F2),
   );
   return _buildTheme(colorScheme, AppPalettes.light);
 }
 
 ThemeData buildDarkTheme({required String primaryColorHex}) {
   final accent = _colorFromHex(
-    primaryColorHex.isNotEmpty ? primaryColorHex : '#CFCFD4',
+    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.darkPrimaryHex,
   );
   final colorScheme = ColorScheme.fromSeed(
     seedColor: accent,
     brightness: Brightness.dark,
   ).copyWith(
     primary: accent,
-    onPrimary: const Color(0xFF12131A),
-    primaryContainer: const Color(0xFF2E2F38),
-    onPrimaryContainer: const Color(0xFFE8E8ED),
-    secondary: const Color(0xFFD5D6DE),
-    onSecondary: const Color(0xFF12131A),
-    secondaryContainer: const Color(0xFF2A2B34),
-    onSecondaryContainer: const Color(0xFFE5E7EB),
+    onPrimary: const Color(0xFF1A1A1A),
+    primaryContainer: const Color(0xFF2A2A2A),
+    onPrimaryContainer: const Color(0xFFF2F2F2),
+    secondary: AppBrandColors.darkSecondary,
+    onSecondary: const Color(0xFF121212),
+    secondaryContainer: const Color(0xFF2A2A2A),
+    onSecondaryContainer: const Color(0xFFE8E8E8),
     surface: kHomeCanvasColorDark,
-    onSurface: const Color(0xFFF2F2F5),
-    surfaceContainerLowest: const Color(0xFF1C1D24),
-    surfaceContainerLow: const Color(0xFF22232B),
-    surfaceContainer: const Color(0xFF2A2B34),
-    surfaceContainerHigh: const Color(0xFF32333D),
-    surfaceContainerHighest: const Color(0xFF3C3D48),
-    onSurfaceVariant: const Color(0xFFC2C3CC),
-    outline: const Color(0xFF7A7B86),
-    outlineVariant: const Color(0xFF4A4B56),
+    onSurface: const Color(0xFFF2F2F2),
+    surfaceContainerLowest: const Color(0xFF1C1C1C),
+    surfaceContainerLow: const Color(0xFF1C1C1C),
+    surfaceContainer: const Color(0xFF242424),
+    surfaceContainerHigh: const Color(0xFF2E2E2E),
+    surfaceContainerHighest: const Color(0xFF3A3A3A),
+    onSurfaceVariant: const Color(0xFFA3A3A3),
+    outline: const Color(0xFF4A4A4A),
+    outlineVariant: const Color(0xFF2E2E2E),
     shadow: Colors.black.withValues(alpha: 0.55),
     scrim: Colors.black.withValues(alpha: 0.72),
-    inverseSurface: const Color(0xFFF5F5F5),
-    onInverseSurface: const Color(0xFF111114),
-    inversePrimary: const Color(0xFF2E2E33),
+    inverseSurface: const Color(0xFFF2F2F2),
+    onInverseSurface: const Color(0xFF121212),
+    inversePrimary: const Color(0xFF1A1A1A),
   );
   return _buildTheme(colorScheme, AppPalettes.dark);
 }
 
 CupertinoThemeData buildCupertinoTheme({required String primaryColorHex}) {
-  final seed = _colorFromHex(primaryColorHex.isNotEmpty ? primaryColorHex : '#007AFF');
+  final seed = _colorFromHex(
+    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.lightPrimaryHex,
+  );
   const fontFamily = AppFonts.primary;
 
   return CupertinoThemeData(

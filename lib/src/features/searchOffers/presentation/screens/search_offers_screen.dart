@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/offer_list_card.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/searchOffers/presentation/providers/search_offers_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/offer_list_card.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/searchOffers/presentation/providers/search_offers_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class SearchOffersScreen extends ConsumerStatefulWidget {
   const SearchOffersScreen({super.key});
@@ -120,7 +120,7 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => ref.read(searchOffersProvider.notifier).refresh(),
-              child: _buildBody(context, state, cs, tt),
+              child: _buildBody(context, state),
             ),
           ),
         ],
@@ -131,31 +131,17 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
   Widget _buildBody(
     BuildContext context,
     SearchOffersState state,
-    ColorScheme cs,
-    TextTheme tt,
   ) {
     if (!state.hasQuery) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-        children: [
-          SizedBox(height: 120.h),
-          Icon(
-            Icons.search_rounded,
-            size: 56,
-            color: cs.primary.withValues(alpha: 0.7),
-          ),
-          SizedBox(height: AppSpacing.md.h),
-          Text(
-            'Find offers near you',
-            textAlign: TextAlign.center,
-            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: AppSpacing.sm.h),
-          Text(
-            'Type a product like “PS5” or a brand, then press Search.',
-            textAlign: TextAlign.center,
-            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+        children: const [
+          SizedBox(height: 80),
+          AppEmptyState(
+            icon: Icons.search_rounded,
+            title: 'Find offers near you',
+            subtitle:
+                'Type a product like “PS5” or a brand, then press Search.',
           ),
         ],
       );
@@ -164,9 +150,9 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
     if (state.isLoading && state.offers.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(height: 160.h),
-          const Center(child: CircularProgressIndicator()),
+        children: const [
+          SizedBox(height: 160),
+          AppLoading(message: 'Searching offers...'),
         ],
       );
     }
@@ -174,23 +160,12 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
     if (state.errorMessage != null && state.offers.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
         children: [
-          SizedBox(height: 120.h),
-          Icon(Icons.error_outline_rounded, size: 56, color: cs.error),
-          SizedBox(height: AppSpacing.md.h),
-          Text(
-            state.errorMessage!,
-            textAlign: TextAlign.center,
-            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-          ),
-          SizedBox(height: AppSpacing.lg.h),
-          Center(
-            child: FilledButton(
-              onPressed: () =>
-                  ref.read(searchOffersProvider.notifier).refresh(),
-              child: const Text('Retry'),
-            ),
+          SizedBox(height: 80.h),
+          AppErrorWidget(
+            title: 'Could not search offers',
+            message: state.errorMessage,
+            onRetry: () => ref.read(searchOffersProvider.notifier).refresh(),
           ),
         ],
       );
@@ -199,25 +174,13 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
     if (state.offers.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
         children: [
-          SizedBox(height: 120.h),
-          Icon(
-            Icons.local_offer_outlined,
-            size: 56,
-            color: cs.primary.withValues(alpha: 0.7),
-          ),
-          SizedBox(height: AppSpacing.md.h),
-          Text(
-            'No offers found',
-            textAlign: TextAlign.center,
-            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: AppSpacing.sm.h),
-          Text(
-            'Nothing matched “${state.query}”. Try another brand or item.',
-            textAlign: TextAlign.center,
-            style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          SizedBox(height: 80.h),
+          AppEmptyState(
+            icon: Icons.local_offer_outlined,
+            title: 'No offers found',
+            subtitle:
+                'Nothing matched “${state.query}”. Try another brand or item.',
           ),
         ],
       );
@@ -242,13 +205,7 @@ class _SearchOffersScreenState extends ConsumerState<SearchOffersScreen> {
         if (index >= state.offers.length) {
           return Padding(
             padding: EdgeInsets.symmetric(vertical: AppSpacing.md.h),
-            child: const Center(
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2.5),
-              ),
-            ),
+            child: const AppLoading(size: 22, strokeWidth: 2.5),
           );
         }
 

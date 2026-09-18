@@ -7,23 +7,29 @@ import 'package:flutter/material.dart';
 abstract final class AppBrandColors {
   AppBrandColors._();
 
-  // ── Primary (nav, selected chips, CTAs, distance) ─────────────────────────
+  // ── Primary (nav, selected chips, CTAs) ───────────────────────────────────
+  // Charcoal. Dark mode uses the same hue, inverted for contrast.
 
-  static const String lightPrimaryHex = '#1F1F21';
-  static const String darkPrimaryHex = '#E8E8ED';
+  static const Color lightPrimary = Color(0xFF1A1A1A);
+  static const Color darkPrimary = Color(0xFFF2F2F2);
+  static const String lightPrimaryHex = '#1A1A1A';
+  static const String darkPrimaryHex = '#F2F2F2';
+
+  static const Color lightSecondary = Color(0xFF525252);
+  static const Color darkSecondary = Color(0xFFA3A3A3);
 
   // ── Deal accent (% Off, sale prices, favorited hearts) ────────────────────
-  // Deep wine — calm against charcoal greys. Swap this family to retheme deals.
+  // Wine — same hue in both modes. The only chromatic color.
 
-  static const Color lightDeal = Color(0xFF7A3E3E);
+  static const Color lightDeal = Color(0xFF7A3038);
   static const Color lightOnDeal = Color(0xFFFFFFFF);
-  static const Color lightDealContainer = Color(0xFFF0E4E4);
-  static const Color lightOnDealContainer = Color(0xFF4A2424);
+  static const Color lightDealContainer = Color(0xFFF4E8E9);
+  static const Color lightOnDealContainer = Color(0xFF4A1E22);
 
-  static const Color darkDeal = Color(0xFFC45F5F);
-  static const Color darkOnDeal = Color(0xFFFFFFFF);
-  static const Color darkDealContainer = Color(0xFF3F2528);
-  static const Color darkOnDealContainer = Color(0xFFF5DADA);
+  static const Color darkDeal = Color(0xFFD08A90);
+  static const Color darkOnDeal = Color(0xFF1A1A1A);
+  static const Color darkDealContainer = Color(0xFF3A2428);
+  static const Color darkOnDealContainer = Color(0xFFF0D6D8);
 }
 
 /// App-specific colors that aren't part of the standard [ColorScheme].
@@ -155,19 +161,18 @@ class AppPalettes {
     onDeal: AppBrandColors.lightOnDeal,
     dealContainer: AppBrandColors.lightDealContainer,
     onDealContainer: AppBrandColors.lightOnDealContainer,
-    success: Color(0xFF2E7D32),
+    success: Color(0xFF3F6B54),
     onSuccess: Colors.white,
-    successContainer: Color(0xFFA5D6A7),
-    onSuccessContainer: Color(0xFF1B5E20),
-    // System warning only (toasts) — not for deals.
-    warning: Color(0xFFB45309),
+    successContainer: Color(0xFFDCE8E1),
+    onSuccessContainer: Color(0xFF1F3D2E),
+    warning: Color(0xFF8F6A32),
     onWarning: Colors.white,
-    warningContainer: Color(0xFFFDE68A),
-    onWarningContainer: Color(0xFF78350F),
-    info: Color(0xFF0288D1),
+    warningContainer: Color(0xFFF3E8D4),
+    onWarningContainer: Color(0xFF4A3718),
+    info: Color(0xFF525252),
     onInfo: Colors.white,
-    infoContainer: Color(0xFF81D4FA),
-    onInfoContainer: Color(0xFF01579B),
+    infoContainer: Color(0xFFECECEC),
+    onInfoContainer: Color(0xFF1A1A1A),
   );
 
   static const dark = AppColorsExtension(
@@ -175,17 +180,17 @@ class AppPalettes {
     onDeal: AppBrandColors.darkOnDeal,
     dealContainer: AppBrandColors.darkDealContainer,
     onDealContainer: AppBrandColors.darkOnDealContainer,
-    success: Color(0xFF81C784),
-    onSuccess: Color(0xFF003300),
-    successContainer: Color(0xFF1B5E20),
-    onSuccessContainer: Color(0xFFA5D6A7),
-    warning: Color(0xFFFBBF24),
-    onWarning: Color(0xFF451A03),
-    warningContainer: Color(0xFF78350F),
-    onWarningContainer: Color(0xFFFDE68A),
-    info: Color(0xFF4FC3F7),
-    onInfo: Color(0xFF01579B),
-    infoContainer: Color(0xFF0277BD),
-    onInfoContainer: Color(0xFFE1F5FE),
+    success: Color(0xFF8FBB9C),
+    onSuccess: Color(0xFF102016),
+    successContainer: Color(0xFF1C2A22),
+    onSuccessContainer: Color(0xFFC5D8CC),
+    warning: Color(0xFFC4A36A),
+    onWarning: Color(0xFF1C160C),
+    warningContainer: Color(0xFF2E2818),
+    onWarningContainer: Color(0xFFE8D6B0),
+    info: Color(0xFFA3A3A3),
+    onInfo: Color(0xFF121212),
+    infoContainer: Color(0xFF2A2A2A),
+    onInfoContainer: Color(0xFFE8E8E8),
   );
 }

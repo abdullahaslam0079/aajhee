@@ -1,11 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:goluto/src/config/app_config.dart';
-import 'package:goluto/src/features/home/data/models/category_model.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/searchOffers/data/models/offer_search_page.dart';
-import 'package:goluto/src/utils/location_query_params.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/config/app_config.dart';
+import 'package:aajhee/src/features/home/data/models/category_model.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/searchOffers/data/models/offer_search_page.dart';
+import 'package:aajhee/src/utils/location_query_params.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 class DiscoveryService {
   DiscoveryService._();

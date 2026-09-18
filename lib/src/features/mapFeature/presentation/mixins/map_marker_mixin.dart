@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/mapFeature/presentation/utils/map_marker_icon_manager.dart';
-import 'package:goluto/src/imports/core_imports.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_marker_icon_manager.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 mixin MapMarkerMixin<T extends StatefulWidget> on State<T> {

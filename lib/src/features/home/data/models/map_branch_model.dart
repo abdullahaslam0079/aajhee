@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/home/data/models/branch_top_offer_model.dart';
-import 'package:goluto/src/features/home/data/models/category_model.dart';
-import 'package:goluto/src/utils/api_value_parsers.dart';
-import 'package:goluto/src/utils/media_url_utils.dart';
+import 'package:aajhee/src/features/home/data/models/branch_top_offer_model.dart';
+import 'package:aajhee/src/features/home/data/models/category_model.dart';
+import 'package:aajhee/src/utils/api_value_parsers.dart';
+import 'package:aajhee/src/utils/media_url_utils.dart';
 
 class MapBranchModel {
   const MapBranchModel({

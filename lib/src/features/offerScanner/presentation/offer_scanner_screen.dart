@@ -1,17 +1,17 @@
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
-import 'package:goluto/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
-import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
-import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_counter_confirmation_sheet.dart';
-import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_redemption_success_dialog.dart';
-import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/branch_offers_provider.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/widgets/offer_counter_confirmation_sheet.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/widgets/offer_redemption_success_dialog.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class OfferScannerScreen extends ConsumerStatefulWidget {
@@ -374,7 +374,7 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
                 ),
                 SizedBox(width: AppSpacing.xs.w),
                 Text(
-                  'Goluto',
+                  'Aajhee',
                   style: tt.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                     color: cs.primary,

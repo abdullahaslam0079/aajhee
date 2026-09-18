@@ -1,4 +1,4 @@
-import 'package:goluto/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
 
 IconData categoryIconForName(String name) {
   final normalized = name.trim().toLowerCase();

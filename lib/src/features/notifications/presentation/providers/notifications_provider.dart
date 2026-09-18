@@ -1,10 +1,10 @@
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/features/notifications/data/models/app_notification.dart';
-import 'package:goluto/src/features/notifications/data/services/notification_service.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/utils/logger.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/notifications/data/models/app_notification.dart';
+import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'notifications_provider.g.dart';

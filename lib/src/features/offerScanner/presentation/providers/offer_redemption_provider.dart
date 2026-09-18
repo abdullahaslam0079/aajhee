@@ -1,12 +1,12 @@
-import 'package:goluto/src/features/availedOffers/presentation/providers/availed_offers_provider.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
-import 'package:goluto/src/features/offerScanner/data/services/offer_service.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_qr_codec.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
-import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
+import 'package:aajhee/src/features/availedOffers/presentation/providers/availed_offers_provider.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/branch_offers_provider.dart';
+import 'package:aajhee/src/features/offerScanner/data/services/offer_service.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_payment_preview.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_qr_codec.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'offer_redemption_provider.g.dart';

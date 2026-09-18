@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/mapFeature/presentation/utils/discount_marker_icon_renderer.dart';
-import 'package:goluto/src/features/mapFeature/presentation/utils/map_branch_extensions.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/discount_marker_icon_renderer.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_branch_extensions.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapMarkerTheme {

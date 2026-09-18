@@ -1,4 +1,4 @@
-# 🎉 Welcome to GoLuto!
+# 🎉 Welcome to Aajhee!
 
 This project was generated dynamically based on your specific requirements. Before running your app for the first time, follow this brief setup guide to configure the required environment variables, permissions, and dependencies locally.
 

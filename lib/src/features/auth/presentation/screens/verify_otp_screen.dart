@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/auth/presentation/models/phone_otp_args.dart';
-import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
-import 'package:goluto/src/features/auth/presentation/widgets/otp_code_input.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/auth/presentation/models/phone_otp_args.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:aajhee/src/features/auth/presentation/widgets/otp_code_input.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class VerifyOtpScreen extends ConsumerStatefulWidget {
   const VerifyOtpScreen({
@@ -167,12 +167,12 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
     final canResend = _resendSeconds == 0 && !isLoading && !_isResending;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
         title: Text('auth.verify_otp_title'.tr()),
         centerTitle: true,
         scrolledUnderElevation: 0,
-        backgroundColor: cs.surface,
+        backgroundColor: cs.surfaceContainerLowest,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

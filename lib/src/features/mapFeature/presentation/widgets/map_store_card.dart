@@ -1,10 +1,10 @@
 import 'dart:math' as math;
 
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class MapStoreCard extends ConsumerWidget {
   const MapStoreCard({
@@ -35,8 +35,9 @@ class MapStoreCard extends ConsumerWidget {
         ? '${branch.categoryName} • ${distanceKm.toStringAsFixed(1)} km'
         : '${distanceKm.toStringAsFixed(1)} km away';
 
-    final cardColor =
-        isDark ? colorScheme.surfaceContainerHigh : colorScheme.surface;
+    final cardColor = isDark
+        ? colorScheme.surfaceContainerHigh
+        : colorScheme.surfaceContainerLowest;
     final footerColor = isDark
         ? colorScheme.surfaceContainerHighest
         : colorScheme.surfaceContainerLow;

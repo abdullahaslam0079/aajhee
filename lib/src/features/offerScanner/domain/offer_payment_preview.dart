@@ -1,5 +1,5 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/utils/api_value_parsers.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/utils/api_value_parsers.dart';
 
 class OfferPaymentPreview {
   const OfferPaymentPreview({

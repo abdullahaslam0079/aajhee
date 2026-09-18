@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'location_provider.g.dart';

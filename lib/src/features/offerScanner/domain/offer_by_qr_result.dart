@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_result.dart';
-import 'package:goluto/src/utils/api_value_parsers.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_payment_preview.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_result.dart';
+import 'package:aajhee/src/utils/api_value_parsers.dart';
 
 class OfferQrBranch {
   const OfferQrBranch({

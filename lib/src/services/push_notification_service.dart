@@ -5,11 +5,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:goluto/src/features/notifications/data/services/notification_service.dart';
-import 'package:goluto/src/routing/app_routes.dart';
-import 'package:goluto/src/routing/global_navigator.dart';
-import 'package:goluto/src/services/secure_storage_service.dart';
-import 'package:goluto/src/utils/logger.dart';
+import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
+import 'package:aajhee/src/routing/global_navigator.dart';
+import 'package:aajhee/src/services/secure_storage_service.dart';
+import 'package:aajhee/src/utils/logger.dart';
 import 'package:go_router/go_router.dart';
 
 @pragma('vm:entry-point')
@@ -26,8 +26,8 @@ class PushNotificationService {
   static final PushNotificationService instance = PushNotificationService._();
 
   static const _tokenStorageKey = 'fcm_device_token';
-  static const _androidChannelId = 'goluto_default';
-  static const _androidChannelName = 'GoLuto';
+  static const _androidChannelId = 'aajhee_default';
+  static const _androidChannelName = 'Aajhee';
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
@@ -45,14 +45,14 @@ class PushNotificationService {
       await Firebase.initializeApp();
       _firebaseReady = true;
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      debugPrint('[GoLuto] Firebase initialized');
+      debugPrint('[Aajhee] Firebase initialized');
     } catch (error, stackTrace) {
       AppLogger.warning(
         'Firebase not configured; push notifications disabled until '
         'google-services.json / GoogleService-Info.plist are added. $error',
       );
       AppLogger.error('Firebase init failed', [error, stackTrace]);
-      debugPrint('[GoLuto] Firebase init failed: $error');
+      debugPrint('[Aajhee] Firebase init failed: $error');
       return;
     }
 
@@ -96,7 +96,7 @@ class PushNotificationService {
       if (!authorized) {
         AppLogger.info('Push permission not granted.');
         debugPrint(
-          '[GoLuto] Push permission not granted: ${settings.authorizationStatus}',
+          '[Aajhee] Push permission not granted: ${settings.authorizationStatus}',
         );
         return;
       }
@@ -110,7 +110,7 @@ class PushNotificationService {
           if (apns != null && apns.isNotEmpty) break;
           await Future<void>.delayed(const Duration(milliseconds: 500));
         }
-        debugPrint('[GoLuto] APNs token ready: ${apns != null && apns.isNotEmpty}');
+        debugPrint('[Aajhee] APNs token ready: ${apns != null && apns.isNotEmpty}');
         if (apns == null || apns.isEmpty) {
           AppLogger.warning(
             'APNs token unavailable; skipping iOS FCM registration. '
@@ -118,7 +118,7 @@ class PushNotificationService {
             'paid Apple Developer account for OS banners.',
           );
           debugPrint(
-            '[GoLuto] Skipping FCM on iOS (no APNs). Inbox notifications still work.',
+            '[Aajhee] Skipping FCM on iOS (no APNs). Inbox notifications still work.',
           );
           return;
         }
@@ -127,16 +127,16 @@ class PushNotificationService {
       final token = await messaging.getToken();
       if (token == null || token.isEmpty) {
         AppLogger.warning('FCM token unavailable.');
-        debugPrint('[GoLuto] FCM token unavailable');
+        debugPrint('[Aajhee] FCM token unavailable');
         return;
       }
 
-      debugPrint('[GoLuto] FCM token acquired (${token.length} chars)');
+      debugPrint('[Aajhee] FCM token acquired (${token.length} chars)');
       await _persistAndRegisterToken(token);
     } catch (error, stackTrace) {
       AppLogger.warning('Push sync skipped: $error');
       AppLogger.error('Push sync failed', [error, stackTrace]);
-      debugPrint('[GoLuto] Push sync skipped: $error');
+      debugPrint('[Aajhee] Push sync skipped: $error');
     }
   }
 
@@ -237,11 +237,11 @@ class PushNotificationService {
         AppLogger.warning(
           'Failed to register device token: ${failure.message}',
         );
-        debugPrint('[GoLuto] Device register failed: ${failure.message}');
+        debugPrint('[Aajhee] Device register failed: ${failure.message}');
       },
       (_) {
         AppLogger.info('Device token registered for push.');
-        debugPrint('[GoLuto] Device token registered for push');
+        debugPrint('[Aajhee] Device token registered for push');
       },
     );
   }

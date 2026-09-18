@@ -1,16 +1,16 @@
 import 'dart:ui';
 
-import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/branch_offers_provider.dart';
-import 'package:goluto/src/features/offers/offer_feature_flags.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
-import 'package:goluto/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/branch_offers_provider.dart';
+import 'package:aajhee/src/features/offers/offer_feature_flags.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/providers/offer_usage_status_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class BusinessStoreScreen extends ConsumerStatefulWidget {
   const BusinessStoreScreen({
@@ -186,7 +186,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
               if (offersState.isLoading)
                 const SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
+                  child: AppLoading(message: 'Loading offers...'),
                 )
               else if (offersState.errorMessage != null)
                 SliverFillRemaining(
@@ -198,13 +198,12 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                   ),
                 )
               else if (offers.isEmpty)
-                SliverFillRemaining(
+                const SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(
-                    child: Text(
-                      'No offers available for this branch.',
-                      style: tt.bodyLarge?.copyWith(color: muted),
-                    ),
+                  child: AppEmptyState(
+                    icon: Icons.local_offer_outlined,
+                    title: 'No offers here yet',
+                    subtitle: 'This store has no active deals right now.',
                   ),
                 )
               else ...[
@@ -234,9 +233,7 @@ class _BusinessStoreScreenState extends ConsumerState<BusinessStoreScreen> {
                           padding: EdgeInsets.symmetric(
                             vertical: AppSpacing.md.h,
                           ),
-                          child: const Center(
-                            child: CircularProgressIndicator(),
-                          ),
+                          child: const AppLoading(size: 22, strokeWidth: 2.5),
                         ),
                     ],
                   ),
@@ -1029,31 +1026,10 @@ class _OffersError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = context.theme.textTheme;
-    final colorScheme = context.theme.colorScheme;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.error_outline_rounded,
-            size: 48,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          SizedBox(height: AppSpacing.md.h),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: AppSpacing.lg.h),
-          FilledButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
-      ),
+    return AppErrorWidget(
+      title: 'Could not load offers',
+      message: message,
+      onRetry: onRetry,
     );
   }
 }

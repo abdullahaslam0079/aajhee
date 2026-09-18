@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 /// Gradient banner used on the Top picks screen.
 class TopPicksHighlightBanner extends StatelessWidget {
@@ -144,13 +144,13 @@ class OffersSearchBar extends StatelessWidget {
           decoration: BoxDecoration(
             color: isDark
                 ? colorScheme.surfaceContainerHigh
-                : colorScheme.onSurface.withValues(alpha: 0.05),
+                : colorScheme.surfaceContainerLowest,
             borderRadius: AppBorders.input,
-            border: isDark
-                ? Border.all(
-                    color: colorScheme.outline.withValues(alpha: 0.32),
-                  )
-                : null,
+            border: Border.all(
+              color: isDark
+                  ? colorScheme.outline.withValues(alpha: 0.32)
+                  : colorScheme.outlineVariant,
+            ),
           ),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 13.h),
@@ -209,12 +209,8 @@ class OfferChannelFilterChips extends StatelessWidget {
               ? cs.primary
               : isDark
                   ? cs.surfaceContainerHigh
-                  : cs.onSurface.withValues(alpha: 0.05);
-          final fg = isSelected
-              ? cs.onPrimary
-              : isDark
-                  ? cs.onSurfaceVariant
-                  : cs.onSurface.withValues(alpha: 0.68);
+                  : cs.surfaceContainerLowest;
+          final fg = isSelected ? cs.onPrimary : cs.onSurfaceVariant;
           final icon = switch (filter) {
             OfferChannelFilter.all => Icons.apps_rounded,
             OfferChannelFilter.online => Icons.language_rounded,
@@ -230,11 +226,13 @@ class OfferChannelFilterChips extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: bg,
                   borderRadius: AppBorders.md,
-                  border: !isSelected && isDark
-                      ? Border.all(
-                          color: cs.outline.withValues(alpha: 0.32),
-                        )
-                      : null,
+                  border: isSelected
+                      ? null
+                      : Border.all(
+                          color: isDark
+                              ? cs.outline.withValues(alpha: 0.32)
+                              : cs.outlineVariant,
+                        ),
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 12.w),

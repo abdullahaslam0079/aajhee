@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/businessStore/presentation/widgets/business_store_card.dart';
-import 'package:goluto/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/businessStore/presentation/widgets/business_store_card.dart';
+import 'package:aajhee/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
@@ -51,16 +51,21 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
       ),
       body: SafeArea(
         child: favoritesState.isLoading && favoriteBranches.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading(message: 'Loading favorites...')
             : favoritesState.errorMessage != null && favoriteBranches.isEmpty
-                ? _FavoritesError(
-                    message: favoritesState.errorMessage!,
+                ? AppErrorWidget(
+                    title: 'Could not load favorites',
+                    message: favoritesState.errorMessage,
                     onRetry: () =>
                         ref.read(favoriteStoresProvider.notifier).refresh(),
                   )
                 : favoriteBranches.isEmpty
-                    ? _EmptyFavorites(
-                        onBrowse: () => context.go(AppRoutes.bottomNavigator),
+                    ? AppEmptyState(
+                        icon: Icons.favorite_border_rounded,
+                        title: 'No favorites yet',
+                        subtitle: 'Tap the heart on a store to save it here.',
+                        actionLabel: 'Browse stores',
+                        onAction: () => context.go(AppRoutes.bottomNavigator),
                       )
                     : RefreshIndicator(
                         onRefresh: () =>
@@ -82,9 +87,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                             if (index >= favoriteBranches.length) {
                               return const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
+                                child: AppLoading(size: 22, strokeWidth: 2.5),
                               );
                             }
                             final branch = favoriteBranches[index];
@@ -103,89 +106,3 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
   }
 }
 
-class _EmptyFavorites extends StatelessWidget {
-  const _EmptyFavorites({required this.onBrowse});
-
-  final VoidCallback onBrowse;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = context.theme.colorScheme;
-    final textTheme = context.theme.textTheme;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.favorite_border_rounded,
-              size: 56,
-              color: colorScheme.primary.withValues(alpha: 0.7),
-            ),
-            SizedBox(height: AppSpacing.md.h),
-            Text(
-              'No favorites yet',
-              style: textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            SizedBox(height: AppSpacing.sm.h),
-            Text(
-              'Tap the heart on a store to save it here.',
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            SizedBox(height: AppSpacing.lg.h),
-            FilledButton(onPressed: onBrowse, child: const Text('Browse stores')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FavoritesError extends StatelessWidget {
-  const _FavoritesError({
-    required this.message,
-    required this.onRetry,
-  });
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = context.theme.colorScheme;
-    final textTheme = context.theme.textTheme;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 48,
-              color: colorScheme.error,
-            ),
-            SizedBox(height: AppSpacing.md.h),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            ),
-            SizedBox(height: AppSpacing.lg.h),
-            FilledButton(onPressed: onRetry, child: const Text('Try again')),
-          ],
-        ),
-      ),
-    );
-  }
-}

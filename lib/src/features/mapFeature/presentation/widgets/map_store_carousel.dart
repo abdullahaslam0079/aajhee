@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
-import 'package:goluto/src/features/mapFeature/presentation/widgets/map_store_card.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_store_card.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class MapStoreCarousel extends StatelessWidget {
   const MapStoreCarousel({

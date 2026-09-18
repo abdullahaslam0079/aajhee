@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_payment_preview.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class OfferPaymentSummaryCard extends StatelessWidget {
   const OfferPaymentSummaryCard({

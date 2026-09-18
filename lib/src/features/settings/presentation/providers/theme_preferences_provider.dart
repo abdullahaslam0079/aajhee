@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/notifications/data/services/notification_service.dart';
-import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
+import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

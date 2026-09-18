@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 /// Compact portrait card for horizontal Top picks carousels.
 class TopPickOfferCard extends ConsumerWidget {
@@ -22,7 +22,6 @@ class TopPickOfferCard extends ConsumerWidget {
     final tt = context.theme.textTheme;
     final appColors = context.appColors;
     final isDark = cs.brightness == Brightness.dark;
-    final canvas = homeCanvasOf(context);
     final muted = cs.onSurface.withValues(alpha: 0.55);
     final imageUrls = offer.displayImageUrls;
     final cardWidth = width ?? 156.w;
@@ -41,11 +40,12 @@ class TopPickOfferCard extends ConsumerWidget {
         child: Ink(
           width: cardWidth,
           decoration: BoxDecoration(
-            color: canvas,
+            color: cs.surfaceContainerLowest,
             borderRadius: AppBorders.card,
             border: Border.all(
-              color: cs.onSurface.withValues(alpha: isDark ? 0.28 : 0.14),
-              width: 1,
+              color: isDark
+                  ? cs.outline.withValues(alpha: 0.4)
+                  : cs.outlineVariant,
             ),
           ),
           child: ClipRRect(
@@ -120,7 +120,7 @@ class TopPickOfferCard extends ConsumerWidget {
                 ),
                 Expanded(
                   child: ColoredBox(
-                    color: canvas,
+                    color: cs.surfaceContainerLowest,
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(10.w, 8.h, 10.w, 10.h),
                       child: Column(

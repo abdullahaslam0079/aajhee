@@ -1,4 +1,4 @@
-import 'package:goluto/src/utils/api_value_parsers.dart';
+import 'package:aajhee/src/utils/api_value_parsers.dart';
 
 class AppNotification {
   const AppNotification({

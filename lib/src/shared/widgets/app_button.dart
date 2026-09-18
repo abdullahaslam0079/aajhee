@@ -73,9 +73,9 @@ class AppButton extends StatelessWidget {
     };
 
     final (bg, fg, border) = switch (variant) {
-      ButtonVariant.primary   => (color ?? cs.primary, color ?? cs.onPrimary, null),
+      ButtonVariant.primary   => (color ?? cs.primary, textColor ?? cs.onPrimary, null),
       ButtonVariant.secondary => (cs.secondaryContainer, cs.onSecondaryContainer, null),
-      ButtonVariant.outline   => (Colors.transparent, cs.primary, BorderSide(color: cs.outline, width: 1.5)),
+      ButtonVariant.outline   => (Colors.transparent, cs.primary, BorderSide(color: cs.outline, width: 1)),
       ButtonVariant.ghost     => (Colors.transparent, cs.primary, null),
       ButtonVariant.danger    => (cs.error, cs.onError, null),
       ButtonVariant.success   => (appColors.success, appColors.onSuccess, null),
@@ -109,7 +109,7 @@ class AppButton extends StatelessWidget {
                   style: tt.labelLarge?.copyWith(
                     fontSize: fontSize,
                     fontWeight: FontWeight.w600,
-                    color: isDisabled ? fg.withOpacity(0.5) : textColor ?? fg,
+                    color: isDisabled ? fg.withValues(alpha: 0.5) : textColor ?? fg,
                   ),
                 ),
                 if (suffixIcon != null) ...[

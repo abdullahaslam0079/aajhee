@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
-import 'package:goluto/src/theme/app_fonts.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/theme/app_fonts.dart';
 
-/// Goluto wordmark: "Go" lands first, brief pause, then "luto" flows in beside it.
-class GolutoSplashLogo extends StatefulWidget {
-  const GolutoSplashLogo({super.key});
+/// Aajhee wordmark: "Go" lands first, brief pause, then "luto" flows in beside it.
+class AajheeSplashLogo extends StatefulWidget {
+  const AajheeSplashLogo({super.key});
 
   static const duration = Duration(milliseconds: 2500);
 
   @override
-  State<GolutoSplashLogo> createState() => _GolutoSplashLogoState();
+  State<AajheeSplashLogo> createState() => _AajheeSplashLogoState();
 }
 
-class _GolutoSplashLogoState extends State<GolutoSplashLogo>
+class _AajheeSplashLogoState extends State<AajheeSplashLogo>
     with SingleTickerProviderStateMixin {
   static const _letters = ['G', 'o', 'l', 'u', 't', 'o'];
 
@@ -36,7 +36,7 @@ class _GolutoSplashLogoState extends State<GolutoSplashLogo>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: GolutoSplashLogo.duration,
+      duration: AajheeSplashLogo.duration,
     )..forward();
   }
 

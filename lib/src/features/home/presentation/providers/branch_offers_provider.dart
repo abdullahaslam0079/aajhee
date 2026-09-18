@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'branch_offers_provider.g.dart';

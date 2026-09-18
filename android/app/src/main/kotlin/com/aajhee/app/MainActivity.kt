@@ -1,4 +1,4 @@
-package com.goluto.app
+package com.aajhee.app
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -35,34 +35,45 @@ class AppEmptyState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 64, color: cs.onSurfaceVariant.withOpacity(0.5)),
-            const SizedBox(height: 20),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: AppBorders.xl,
+              ),
+              child: Icon(icon, size: 32, color: cs.primary.withValues(alpha: 0.85)),
+            ),
+            SizedBox(height: AppSpacing.lg.h),
             Text(
               title,
               style: tt.titleMedium?.copyWith(
                 color: cs.onSurface,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
               ),
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: AppSpacing.sm.h),
               Text(
                 subtitle!,
-                style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                style: tt.bodyMedium?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  height: 1.45,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 28),
+              SizedBox(height: AppSpacing.lg.h),
               AppButton(
                 label: actionLabel!,
                 onPressed: onAction,
-                variant: ButtonVariant.secondary,
               ),
             ],
           ],

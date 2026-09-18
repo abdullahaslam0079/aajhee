@@ -1,4 +1,4 @@
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'onboarding_provider.g.dart';

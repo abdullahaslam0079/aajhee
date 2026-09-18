@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/mapFeature/presentation/utils/map_camera_actions.dart';
-import 'package:goluto/src/imports/core_imports.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_camera_actions.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 mixin MapControllerMixin<T extends StatefulWidget> on State<T> {

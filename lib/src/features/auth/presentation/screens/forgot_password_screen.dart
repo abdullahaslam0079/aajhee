@@ -2,7 +2,7 @@
 library;
 
 import 'package:flutter/material.dart';
-import 'package:goluto/src/routing/app_routes.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 import 'package:go_router/go_router.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {

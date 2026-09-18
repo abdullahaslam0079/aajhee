@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/data/services/discovery_service.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/utils/logger.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/data/services/discovery_service.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'all_offers_provider.g.dart';

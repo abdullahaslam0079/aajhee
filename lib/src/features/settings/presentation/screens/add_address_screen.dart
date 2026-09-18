@@ -1,10 +1,10 @@
-import 'package:goluto/src/features/settings/data/services/address_geocoding_service.dart';
-import 'package:goluto/src/features/settings/domain/entities/address_suggestion.dart';
-import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/features/settings/presentation/widgets/address_search_field.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/settings/data/services/address_geocoding_service.dart';
+import 'package:aajhee/src/features/settings/domain/entities/address_suggestion.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/widgets/address_search_field.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class AddAddressScreen extends ConsumerStatefulWidget {
   const AddAddressScreen({

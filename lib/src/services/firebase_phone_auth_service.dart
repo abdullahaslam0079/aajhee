@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 /// Thin wrapper around Firebase Phone Auth.
 ///
 /// Returns a Firebase ID token after OTP confirmation; the backend exchanges
-/// that token for GoLuto JWTs.
+/// that token for Aajhee JWTs.
 class FirebasePhoneAuthService {
   FirebasePhoneAuthService._();
   static final FirebasePhoneAuthService instance = FirebasePhoneAuthService._();
@@ -19,7 +19,7 @@ class FirebasePhoneAuthService {
     Duration timeout = const Duration(seconds: 60),
   }) async {
     if (kDebugMode) {
-      debugPrint('[GoLuto] Sending phone OTP to $e164Phone');
+      debugPrint('[Aajhee] Sending phone OTP to $e164Phone');
     }
 
     final completer = Completer<PhoneVerificationSession>();
@@ -37,7 +37,7 @@ class FirebasePhoneAuthService {
           );
         } catch (error, stackTrace) {
           if (kDebugMode) {
-            debugPrint('[GoLuto] Phone auto-verify sign-in failed: $error');
+            debugPrint('[Aajhee] Phone auto-verify sign-in failed: $error');
             debugPrintStack(stackTrace: stackTrace);
           }
           completer.completeError(error, stackTrace);
@@ -46,10 +46,10 @@ class FirebasePhoneAuthService {
       verificationFailed: (error) {
         if (kDebugMode) {
           debugPrint(
-            '[GoLuto] Phone verification failed: ${error.code} — ${error.message}',
+            '[Aajhee] Phone verification failed: ${error.code} — ${error.message}',
           );
           debugPrint(
-            '[GoLuto] Phone AuthException details: '
+            '[Aajhee] Phone AuthException details: '
             'plugin=${error.plugin}, '
             'credential=${error.credential}, '
             'email=${error.email}, '
@@ -58,14 +58,14 @@ class FirebasePhoneAuthService {
             'stackTrace=${error.stackTrace}',
           );
           // Native SDKs sometimes bury BILLING_NOT_ENABLED / region errors here.
-          debugPrint('[GoLuto] Phone AuthException toString: $error');
+          debugPrint('[Aajhee] Phone AuthException toString: $error');
         }
         if (completer.isCompleted) return;
         completer.completeError(error);
       },
       codeSent: (verificationId, resendToken) {
         if (kDebugMode) {
-          debugPrint('[GoLuto] Phone OTP sent. verificationId=$verificationId');
+          debugPrint('[Aajhee] Phone OTP sent. verificationId=$verificationId');
         }
         if (completer.isCompleted) return;
         completer.complete(
@@ -80,7 +80,7 @@ class FirebasePhoneAuthService {
         // Session already completed via codeSent in normal flows.
         if (kDebugMode) {
           debugPrint(
-            '[GoLuto] Firebase phone auto-retrieval timed out: $verificationId',
+            '[Aajhee] Firebase phone auto-retrieval timed out: $verificationId',
           );
         }
       },
@@ -134,7 +134,7 @@ class FirebasePhoneAuthService {
           );
         } catch (error, stackTrace) {
           if (kDebugMode) {
-            debugPrint('[GoLuto] Phone resend auto-verify failed: $error');
+            debugPrint('[Aajhee] Phone resend auto-verify failed: $error');
             debugPrintStack(stackTrace: stackTrace);
           }
           completer.completeError(error, stackTrace);
@@ -143,7 +143,7 @@ class FirebasePhoneAuthService {
       verificationFailed: (error) {
         if (kDebugMode) {
           debugPrint(
-            '[GoLuto] Phone resend failed: ${error.code} — ${error.message}',
+            '[Aajhee] Phone resend failed: ${error.code} — ${error.message}',
           );
         }
         if (completer.isCompleted) return;
@@ -151,7 +151,7 @@ class FirebasePhoneAuthService {
       },
       codeSent: (verificationId, newResendToken) {
         if (kDebugMode) {
-          debugPrint('[GoLuto] Phone OTP resent. verificationId=$verificationId');
+          debugPrint('[Aajhee] Phone OTP resent. verificationId=$verificationId');
         }
         if (completer.isCompleted) return;
         completer.complete(

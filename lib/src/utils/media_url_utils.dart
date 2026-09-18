@@ -1,4 +1,4 @@
-import 'package:goluto/src/config/app_config.dart';
+import 'package:aajhee/src/config/app_config.dart';
 
 String? resolveMediaUrl(String? url) {
   if (url == null || url.trim().isEmpty) return null;

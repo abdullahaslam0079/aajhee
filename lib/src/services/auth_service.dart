@@ -46,7 +46,7 @@ class AuthService {
     }, requiresNetwork: true);
   }
 
-  /// Exchange a Firebase Auth ID token (phone/Google/Apple) for GoLuto JWTs.
+  /// Exchange a Firebase Auth ID token (phone/Google/Apple) for Aajhee JWTs.
   FutureEither<Map<String, dynamic>?> loginWithFirebase({
     required String idToken,
   }) async {

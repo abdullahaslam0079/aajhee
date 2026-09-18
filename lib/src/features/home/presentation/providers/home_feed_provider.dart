@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/home/data/models/category_model.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/data/services/discovery_service.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/utils/logger.dart';
+import 'package:aajhee/src/features/home/data/models/category_model.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/data/services/discovery_service.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'home_feed_provider.g.dart';
@@ -54,6 +54,33 @@ class HomeFeedState {
 
   /// Branches are already filtered server-side by [selectedCategoryIndex].
   List<MapBranchModel> get filteredBranches => branches;
+
+  String? addressForOffer({
+    int? featuredBranchId,
+    int? businessId,
+  }) {
+    if (featuredBranchId != null && featuredBranchId > 0) {
+      for (final branch in branches) {
+        if (branch.id != featuredBranchId) continue;
+        final address = branch.formattedAddress.trim();
+        if (address.isNotEmpty) return address;
+      }
+    }
+    if (businessId == null || businessId <= 0) return null;
+    MapBranchModel? nearest;
+    for (final branch in branches) {
+      if (branch.businessId != businessId) continue;
+      if (branch.formattedAddress.trim().isEmpty) continue;
+      if (nearest == null) {
+        nearest = branch;
+        continue;
+      }
+      final nextDistance = branch.distanceKm ?? double.infinity;
+      final currentDistance = nearest.distanceKm ?? double.infinity;
+      if (nextDistance < currentDistance) nearest = branch;
+    }
+    return nearest?.formattedAddress.trim();
+  }
 
   String? logoUrlForBusiness(int businessId) {
     if (businessId <= 0) return null;

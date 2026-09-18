@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:goluto/src/config/app_config.dart';
-import 'package:goluto/src/features/availedOffers/data/models/availed_offer_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_by_qr_result.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_qr_codec.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_result.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/config/app_config.dart';
+import 'package:aajhee/src/features/availedOffers/data/models/availed_offer_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_by_qr_result.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_payment_preview.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_qr_codec.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_result.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 class OfferAvailResult {
   const OfferAvailResult({

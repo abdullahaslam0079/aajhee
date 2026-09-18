@@ -1,15 +1,15 @@
-import 'package:goluto/src/features/businessStore/presentation/widgets/business_store_card.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/features/home/presentation/utils/category_icons.dart';
-import 'package:goluto/src/features/home/presentation/widgets/category_widget.dart';
-import 'package:goluto/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
-import 'package:goluto/src/features/home/presentation/widgets/home_header.dart';
-import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
-import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/businessStore/presentation/widgets/business_store_card.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/home/presentation/utils/category_icons.dart';
+import 'package:aajhee/src/features/home/presentation/widgets/category_widget.dart';
+import 'package:aajhee/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
+import 'package:aajhee/src/features/home/presentation/widgets/home_header.dart';
+import 'package:aajhee/src/features/location/presentation/providers/location_provider.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 /// Stores tab: nearby branches with category filters.
 class StoresTabScreen extends ConsumerWidget {
@@ -78,7 +78,7 @@ class StoresTabScreen extends ConsumerWidget {
                 if (homeFeedState.isLoading && homeFeedState.branches.isEmpty)
                   const SliverFillRemaining(
                     hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
+                    child: AppLoading(message: 'Loading stores...'),
                   )
                 else if (homeFeedState.errorMessage != null &&
                     homeFeedState.branches.isEmpty)
@@ -148,9 +148,7 @@ class StoresTabScreen extends ConsumerWidget {
                               padding: EdgeInsets.symmetric(
                                 vertical: AppSpacing.md.h,
                               ),
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
+                              child: const AppLoading(size: 22, strokeWidth: 2.5),
                             );
                           }
                           final branch = branches[index];
@@ -246,31 +244,11 @@ class _StoresFeedError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = context.theme.textTheme;
-    final colorScheme = context.theme.colorScheme;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.cloud_off_outlined,
-            size: 48,
-            color: colorScheme.onSurfaceVariant,
-          ),
-          SizedBox(height: AppSpacing.md.h),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: textTheme.bodyLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: AppSpacing.lg.h),
-          FilledButton(onPressed: onRetry, child: const Text('Retry')),
-        ],
-      ),
+    return AppErrorWidget(
+      icon: Icons.cloud_off_outlined,
+      title: 'Could not load stores',
+      message: message,
+      onRetry: onRetry,
     );
   }
 }
@@ -282,42 +260,12 @@ class _EmptyCategoryState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.storefront_outlined,
-            size: 40,
-            color: cs.onSurface.withValues(alpha: 0.35),
-          ),
-          SizedBox(height: AppSpacing.md.h),
-          Text(
-            'No stores here yet',
-            style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-          ),
-          SizedBox(height: AppSpacing.xs.h),
-          Text(
-            'Try another category or check back soon.',
-            textAlign: TextAlign.center,
-            style: tt.bodyMedium?.copyWith(
-              color: cs.onSurface.withValues(alpha: 0.5),
-              height: 1.35,
-            ),
-          ),
-          if (onClearFilter != null) ...[
-            SizedBox(height: AppSpacing.lg.h),
-            TextButton(
-              onPressed: onClearFilter,
-              child: const Text('Show all stores'),
-            ),
-          ],
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.storefront_outlined,
+      title: 'No stores here yet',
+      subtitle: 'Try another category or check back soon.',
+      actionLabel: onClearFilter != null ? 'Show all stores' : null,
+      onAction: onClearFilter,
     );
   }
 }
@@ -365,7 +313,7 @@ class _StoresCategoriesHeaderDelegate extends SliverPersistentHeaderDelegate {
           border: overlapsContent
               ? Border(
                   bottom: BorderSide(
-                    color: Colors.black.withValues(alpha: 0.06),
+                    color: Theme.of(context).colorScheme.outlineVariant,
                   ),
                 )
               : null,

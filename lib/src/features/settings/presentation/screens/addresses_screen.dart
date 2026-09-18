@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/settings/data/services/address_geocoding_service.dart';
-import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/settings/data/services/address_geocoding_service.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class AddressesScreen extends ConsumerWidget {
   const AddressesScreen({super.key});
@@ -29,10 +29,15 @@ class AddressesScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: addressesState.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading(message: 'Loading addresses...')
             : addresses.isEmpty
-                ? _EmptyAddresses(
-                    onAdd: () => context.push(AppRoutes.addAddress),
+                ? AppEmptyState(
+                    icon: Icons.location_off_outlined,
+                    title: 'No saved addresses',
+                    subtitle:
+                        'Add a delivery address so we can bring your orders to the right place.',
+                    actionLabel: 'Add address',
+                    onAction: () => context.push(AppRoutes.addAddress),
                   )
                 : ListView.separated(
                     padding: EdgeInsets.fromLTRB(
@@ -135,51 +140,6 @@ class AddressesScreen extends ConsumerWidget {
         );
       }
     }
-  }
-}
-
-class _EmptyAddresses extends StatelessWidget {
-  const _EmptyAddresses({required this.onAdd});
-
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.xl.w),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.location_off_outlined,
-              size: 64,
-              color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            SizedBox(height: AppSpacing.md.h),
-            Text(
-              'No saved addresses',
-              style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            SizedBox(height: AppSpacing.xs.h),
-            Text(
-              'Add a delivery address so we can bring your orders to the right place.',
-              textAlign: TextAlign.center,
-              style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-            ),
-            SizedBox(height: AppSpacing.lg.h),
-            AppButton(
-              label: 'Add address',
-              onPressed: onAdd,
-              prefixIcon: const Icon(Icons.add_rounded, size: 20),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

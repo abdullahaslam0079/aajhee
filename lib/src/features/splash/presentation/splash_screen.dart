@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
-import 'package:goluto/src/features/splash/presentation/widgets/goluto_splash_logo.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
-import 'package:goluto/src/routing/app_navigation.dart';
+import 'package:aajhee/src/features/location/presentation/providers/location_provider.dart';
+import 'package:aajhee/src/features/splash/presentation/widgets/aajhee_splash_logo.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_navigation.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -59,9 +59,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      backgroundColor: colorScheme.onPrimary,
+      backgroundColor: colorScheme.surfaceContainerLowest,
       body: const Center(
-        child: GolutoSplashLogo(),
+        child: AajheeSplashLogo(),
       ),
     );
   }

@@ -1,14 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:goluto/src/features/auth/domain/entities/user.dart';
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/settings/data/services/user_profile_service.dart';
-import 'package:goluto/src/features/settings/domain/entities/user_profile.dart'
+import 'package:aajhee/src/features/auth/domain/entities/user.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:aajhee/src/features/settings/data/services/user_profile_service.dart';
+import 'package:aajhee/src/features/settings/domain/entities/user_profile.dart'
     as entities;
-import 'package:goluto/src/imports/packages_imports.dart';
-import 'package:goluto/src/services/auth_service.dart';
-import 'package:goluto/src/utils/logger.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/services/auth_service.dart';
+import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'user_profile_provider.g.dart';

@@ -1,19 +1,19 @@
-import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
-import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
-import 'package:goluto/src/features/home/presentation/widgets/home_header.dart';
-import 'package:goluto/src/features/location/presentation/providers/location_provider.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
-import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:goluto/src/features/offers/presentation/providers/all_offers_provider.dart';
-import 'package:goluto/src/features/offers/presentation/providers/top_picks_provider.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/offer_list_card.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/offers_home_chrome.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/top_pick_offer_card.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
+import 'package:aajhee/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
+import 'package:aajhee/src/features/home/presentation/widgets/home_header.dart';
+import 'package:aajhee/src/features/location/presentation/providers/location_provider.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:aajhee/src/features/offers/presentation/providers/all_offers_provider.dart';
+import 'package:aajhee/src/features/offers/presentation/providers/top_picks_provider.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/offer_list_card.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/offers_home_chrome.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/top_pick_offer_card.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 /// Home tab: top picks + all offers with channel filters.
 ///
@@ -165,7 +165,7 @@ class _HomeOffersScreenState extends ConsumerState<HomeOffersScreen> {
               if (allOffersState.isLoading && allOffersState.offers.isEmpty)
                 const SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
+                  child: AppLoading(message: 'Loading offers...'),
                 )
               else if (allOffersState.errorMessage != null &&
                   allOffersState.offers.isEmpty)
@@ -217,7 +217,7 @@ class _HomeOffersScreenState extends ConsumerState<HomeOffersScreen> {
                       if (index >= visibleOffers.length) {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: 16),
-                          child: Center(child: CircularProgressIndicator()),
+                          child: AppLoading(size: 22, strokeWidth: 2.5),
                         );
                       }
                       final offer = visibleOffers[index];
@@ -487,7 +487,7 @@ class _TopPicksCarousel extends StatelessWidget {
     if (state.isLoading && state.offers.isEmpty) {
       return SizedBox(
         height: _carouselHeight.h,
-        child: const Center(child: CircularProgressIndicator()),
+        child: const AppLoading(),
       );
     }
 
@@ -570,45 +570,18 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
     final isFiltered = channelFilter != OfferChannelFilter.all;
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.local_offer_outlined,
-          size: 56,
-          color: cs.primary.withValues(alpha: 0.75),
-        ),
-        SizedBox(height: AppSpacing.md.h),
-        Text(
-          isFiltered
-              ? 'No ${channelFilter.label.toLowerCase()} offers'
-              : 'No offers yet',
-          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        SizedBox(height: AppSpacing.sm.h),
-        Text(
-          isFiltered
-              ? 'Try another filter or browse all deals.'
-              : 'Check back soon for deals nearby and online.',
-          textAlign: TextAlign.center,
-          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-        ),
-        SizedBox(height: AppSpacing.lg.h),
-        if (onClearFilter != null)
-          FilledButton(
-            onPressed: onClearFilter,
-            child: const Text('Show all offers'),
-          )
-        else
-          FilledButton(
-            onPressed: onBrowseStores,
-            child: const Text('Browse stores'),
-          ),
-      ],
+    return AppEmptyState(
+      icon: Icons.local_offer_outlined,
+      title: isFiltered
+          ? 'No ${channelFilter.label.toLowerCase()} offers'
+          : 'No offers yet',
+      subtitle: isFiltered
+          ? 'Try another filter or browse all deals.'
+          : 'Check back soon for deals nearby and online.',
+      actionLabel: onClearFilter != null ? 'Show all offers' : 'Browse stores',
+      onAction: onClearFilter ?? onBrowseStores,
     );
   }
 }
@@ -624,22 +597,10 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.error_outline_rounded, size: 56, color: cs.error),
-        SizedBox(height: AppSpacing.md.h),
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-        ),
-        SizedBox(height: AppSpacing.lg.h),
-        FilledButton(onPressed: onRetry, child: const Text('Retry')),
-      ],
+    return AppErrorWidget(
+      title: 'Could not load offers',
+      message: message,
+      onRetry: onRetry,
     );
   }
 }

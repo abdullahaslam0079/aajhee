@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:goluto/src/features/settings/domain/entities/address_suggestion.dart';
+import 'package:aajhee/src/features/settings/domain/entities/address_suggestion.dart';
 
 class AddressAutocompleteService {
   AddressAutocompleteService({Dio? dio}) : _dio = dio ?? Dio();
@@ -148,7 +148,7 @@ class AddressAutocompleteService {
         'dedupe': 1,
       },
       options: Options(
-        headers: {'User-Agent': 'GolutoApp/1.0'},
+        headers: {'User-Agent': 'AajheeApp/1.0'},
       ),
     );
 

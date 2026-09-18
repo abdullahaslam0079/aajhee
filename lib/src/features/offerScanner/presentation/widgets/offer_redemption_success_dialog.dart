@@ -1,10 +1,10 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_payment_preview.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_usage_status.dart';
-import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_payment_summary_card.dart';
-import 'package:goluto/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_payment_preview.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_usage_status.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/widgets/offer_payment_summary_card.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/widgets/offer_usage_status_banner.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class OfferRedemptionSuccessDialog extends StatefulWidget {
   const OfferRedemptionSuccessDialog({
@@ -59,6 +59,7 @@ class _OfferRedemptionSuccessDialogState
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final tt = context.theme.textTheme;
+    final appColors = context.appColors;
     final muted = cs.onSurface.withValues(alpha: 0.65);
     final offer = widget.offer;
 
@@ -75,12 +76,12 @@ class _OfferRedemptionSuccessDialogState
               width: 64.w,
               height: 64.w,
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
+                color: appColors.success.withValues(alpha: 0.12),
+                borderRadius: AppBorders.xl,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_circle_rounded,
-                color: Colors.green,
+                color: appColors.success,
                 size: 40,
               ),
             ),

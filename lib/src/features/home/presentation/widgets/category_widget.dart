@@ -1,5 +1,5 @@
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class CategoryWidget extends StatelessWidget {
   final int selectedCategoryIndex;
@@ -31,12 +31,10 @@ class CategoryWidget extends StatelessWidget {
         ? colorScheme.primary
         : isDark
             ? colorScheme.surfaceContainerHigh
-            : colorScheme.onSurface.withValues(alpha: 0.05);
+            : colorScheme.surfaceContainerLowest;
     final fg = _selected
         ? colorScheme.onPrimary
-        : isDark
-            ? colorScheme.onSurfaceVariant
-            : colorScheme.onSurface.withValues(alpha: 0.68);
+        : colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: EdgeInsets.only(right: 8.w),
@@ -46,11 +44,13 @@ class CategoryWidget extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: AppBorders.md,
           color: bg,
-          border: !_selected && isDark
-              ? Border.all(
-                  color: colorScheme.outline.withValues(alpha: 0.32),
-                )
-              : null,
+          border: _selected
+              ? null
+              : Border.all(
+                  color: isDark
+                      ? colorScheme.outline.withValues(alpha: 0.32)
+                      : colorScheme.outlineVariant,
+                ),
         ),
         child: Material(
           color: Colors.transparent,

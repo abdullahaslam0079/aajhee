@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/onboarding/presentation/providers/onboarding_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/routing/app_routes.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:aajhee/src/features/onboarding/presentation/providers/onboarding_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 void navigateAfterAuthentication(
   BuildContext context, {

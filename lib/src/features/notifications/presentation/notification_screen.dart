@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/notifications/data/models/app_notification.dart';
-import 'package:goluto/src/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/notifications/data/models/app_notification.dart';
+import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
@@ -94,7 +94,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: const [
           SizedBox(height: 160),
-          Center(child: CircularProgressIndicator()),
+          AppLoading(message: 'Loading notifications...'),
         ],
       );
     }
@@ -148,7 +148,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
         if (index >= state.notifications.length) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: Center(child: CircularProgressIndicator()),
+            child: AppLoading(size: 22, strokeWidth: 2.5),
           );
         }
 
@@ -180,8 +180,15 @@ class _NotificationTile extends StatelessWidget {
     return Material(
       color: unread
           ? colorScheme.primary.withValues(alpha: 0.06)
-          : colorScheme.onSurface.withValues(alpha: 0.03),
-      borderRadius: AppBorders.md,
+          : colorScheme.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppBorders.lg,
+        side: BorderSide(
+          color: unread
+              ? colorScheme.primary.withValues(alpha: 0.16)
+              : colorScheme.outlineVariant,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,

@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/settings/presentation/providers/theme_preferences_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/theme_preferences_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});
@@ -18,7 +18,7 @@ class App extends ConsumerWidget {
 
   Widget _buildMaterialApp(BuildContext context, ThemeMode themeMode) {
     return MaterialApp.router(
-      title: 'GoLuto',
+      title: 'Aajhee',
       debugShowCheckedModeBanner: false,
       theme: buildLightTheme(primaryColorHex: AppBrandColors.lightPrimaryHex),
       darkTheme: buildDarkTheme(primaryColorHex: AppBrandColors.darkPrimaryHex),

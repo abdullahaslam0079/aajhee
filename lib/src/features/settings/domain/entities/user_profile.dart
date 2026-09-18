@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:goluto/src/features/auth/domain/entities/user.dart';
+import 'package:aajhee/src/features/auth/domain/entities/user.dart';
 
 class UserProfile extends Equatable {
   const UserProfile({
@@ -21,7 +21,7 @@ class UserProfile extends Equatable {
   String get displayName {
     if (name.isNotEmpty) return name;
     if (phone != null && phone!.isNotEmpty) return phone!;
-    if (email.isNotEmpty && !email.endsWith('@phone.goluto.local')) {
+    if (email.isNotEmpty && !email.endsWith('@phone.aajhee.local')) {
       return email.split('@').first;
     }
     return 'Your profile';

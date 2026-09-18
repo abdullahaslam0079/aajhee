@@ -1,6 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 
 abstract final class MapCameraActions {
   static Future<void> focusStore(

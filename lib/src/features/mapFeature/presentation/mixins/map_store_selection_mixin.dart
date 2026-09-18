@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_marker_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/utils/map_branch_extensions.dart';
-import 'package:goluto/src/features/mapFeature/presentation/widgets/map_store_carousel.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_marker_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_branch_extensions.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_store_carousel.dart';
 
 mixin MapStoreSelectionMixin<T extends StatefulWidget>
     on State<T>, MapControllerMixin<T>, MapMarkerMixin<T> {

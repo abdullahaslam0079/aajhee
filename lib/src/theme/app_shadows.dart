@@ -20,8 +20,8 @@ abstract final class AppShadows {
   /// Use for: toggle surfaces, filled cards on white background.
   static const List<BoxShadow> subtle = [
     BoxShadow(
-      color: Color(0x0D000000), // 5% black
-      blurRadius: 2,
+      color: Color(0x0A18181B),
+      blurRadius: 4,
       offset: Offset(0, 1),
     ),
   ];
@@ -30,12 +30,12 @@ abstract final class AppShadows {
   /// Use for: cards, list items that are tappable, floating elements.
   static const List<BoxShadow> card = [
     BoxShadow(
-      color: Color(0x14000000), // 8% black
-      blurRadius: 8,
-      offset: Offset(0, 2),
+      color: Color(0x0D18181B),
+      blurRadius: 16,
+      offset: Offset(0, 4),
     ),
     BoxShadow(
-      color: Color(0x0A000000), // 4% black
+      color: Color(0x08000000),
       blurRadius: 2,
       offset: Offset(0, 1),
     ),
@@ -45,12 +45,12 @@ abstract final class AppShadows {
   /// Use for: FABs, dropdown menus, tooltips.
   static const List<BoxShadow> elevated = [
     BoxShadow(
-      color: Color(0x1F000000), // 12% black
-      blurRadius: 16,
-      offset: Offset(0, 6),
+      color: Color(0x1418181B),
+      blurRadius: 20,
+      offset: Offset(0, 8),
     ),
     BoxShadow(
-      color: Color(0x0F000000), // 6% black
+      color: Color(0x0A000000),
       blurRadius: 4,
       offset: Offset(0, 2),
     ),
@@ -60,12 +60,12 @@ abstract final class AppShadows {
   /// Use for: dialogs, modals, side sheets.
   static const List<BoxShadow> modal = [
     BoxShadow(
-      color: Color(0x29000000), // 16% black
+      color: Color(0x1F18181B),
       blurRadius: 32,
       offset: Offset(0, 12),
     ),
     BoxShadow(
-      color: Color(0x14000000), // 8% black
+      color: Color(0x0F000000),
       blurRadius: 8,
       offset: Offset(0, 4),
     ),

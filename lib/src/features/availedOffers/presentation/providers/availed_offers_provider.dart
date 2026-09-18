@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:goluto/src/features/availedOffers/data/models/availed_offer_model.dart';
-import 'package:goluto/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
+import 'package:aajhee/src/features/availedOffers/data/models/availed_offer_model.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/providers/offer_redemption_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'availed_offers_provider.g.dart';

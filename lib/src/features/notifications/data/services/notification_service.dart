@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:goluto/src/config/app_config.dart';
-import 'package:goluto/src/features/notifications/data/models/app_notification.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/config/app_config.dart';
+import 'package:aajhee/src/features/notifications/data/models/app_notification.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 class NotificationService {
   NotificationService._();

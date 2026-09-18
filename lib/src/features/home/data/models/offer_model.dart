@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/home/data/models/category_model.dart';
-import 'package:goluto/src/utils/api_value_parsers.dart';
-import 'package:goluto/src/utils/media_url_utils.dart';
+import 'package:aajhee/src/features/home/data/models/category_model.dart';
+import 'package:aajhee/src/utils/api_value_parsers.dart';
+import 'package:aajhee/src/utils/media_url_utils.dart';
 
 enum OfferType {
   percentageBill('percentage_bill'),
@@ -114,6 +114,7 @@ class OfferModel {
     this.businessLogoUrl,
     this.featuredBranchId,
     this.featuredBranchName,
+    this.featuredBranchAddress,
     this.nearestDistanceKm,
   });
 
@@ -162,6 +163,7 @@ class OfferModel {
   final String? businessLogoUrl;
   final int? featuredBranchId;
   final String? featuredBranchName;
+  final String? featuredBranchAddress;
   final double? nearestDistanceKm;
 
   String get subtitle {
@@ -338,6 +340,7 @@ class OfferModel {
       businessLogoUrl: _parseBusinessLogoUrl(json),
       featuredBranchId: featuredBranchId,
       featuredBranchName: _parseFeaturedBranchName(json['featured_branch']),
+      featuredBranchAddress: _parseFeaturedBranchAddress(json['featured_branch']),
       nearestDistanceKm: parseApiNullableDouble(json['nearest_distance_km']),
     );
   }
@@ -391,6 +394,15 @@ class OfferModel {
   static String? _parseFeaturedBranchName(dynamic branchJson) {
     if (branchJson is! Map<String, dynamic>) return null;
     return parseApiString(branchJson['name']);
+  }
+
+  static String? _parseFeaturedBranchAddress(dynamic branchJson) {
+    if (branchJson is! Map) return null;
+    return parseApiString(
+      branchJson['formatted_address'] ??
+          branchJson['formattedAddress'] ??
+          branchJson['address'],
+    );
   }
 
   static String? _parseBusinessLogoUrl(Map<String, dynamic> json) {
@@ -512,6 +524,7 @@ class OfferModel {
       businessLogoUrl: businessLogoUrl,
       featuredBranchId: featuredBranchId,
       featuredBranchName: featuredBranchName,
+      featuredBranchAddress: featuredBranchAddress,
       nearestDistanceKm: nearestDistanceKm,
     );
   }

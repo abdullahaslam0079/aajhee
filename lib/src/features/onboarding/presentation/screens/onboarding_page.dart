@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/onboarding/presentation/providers/onboarding_provider.dart';
-import 'package:goluto/src/features/onboarding/presentation/widgets/onboarding_illustration.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/onboarding/presentation/providers/onboarding_provider.dart';
+import 'package:aajhee/src/features/onboarding/presentation/widgets/onboarding_illustration.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class _OnboardingSlide {
   const _OnboardingSlide({
@@ -37,25 +37,25 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
       titleKey: 'onboarding.onboarding_title_1',
       subtitleKey: 'onboarding.onboarding_subtitle_1',
       illustration: OnboardingIllustrationType.discoverDeals,
-      accentColor: Color(0xFF1F1F21),
-      secondaryColor: Color(0xFF6366F1),
-      backgroundTint: Color(0xFF6366F1),
+      accentColor: AppBrandColors.lightPrimary,
+      secondaryColor: AppBrandColors.lightDeal,
+      backgroundTint: AppBrandColors.lightPrimary,
     ),
     _OnboardingSlide(
       titleKey: 'onboarding.onboarding_title_2',
       subtitleKey: 'onboarding.onboarding_subtitle_2',
       illustration: OnboardingIllustrationType.exploreMap,
-      accentColor: Color(0xFF0288D1),
-      secondaryColor: Color(0xFF1F1F21),
-      backgroundTint: Color(0xFF0288D1),
+      accentColor: AppBrandColors.lightSecondary,
+      secondaryColor: AppBrandColors.lightPrimary,
+      backgroundTint: AppBrandColors.lightSecondary,
     ),
     _OnboardingSlide(
       titleKey: 'onboarding.onboarding_title_3',
       subtitleKey: 'onboarding.onboarding_subtitle_3',
       illustration: OnboardingIllustrationType.scanOffers,
-      accentColor: Color(0xFF2E7D32),
-      secondaryColor: Color(0xFF1F1F21),
-      backgroundTint: Color(0xFF2E7D32),
+      accentColor: AppBrandColors.lightDeal,
+      secondaryColor: AppBrandColors.lightPrimary,
+      backgroundTint: AppBrandColors.lightDeal,
     ),
   ];
 
@@ -147,7 +147,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                   ),
                   child: Row(
                     children: [
-                      _GolutoWordmark(textTheme: textTheme, colorScheme: colorScheme),
+                      _AajheeWordmark(textTheme: textTheme, colorScheme: colorScheme),
                       const Spacer(),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 220),
@@ -265,8 +265,8 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 }
 
-class _GolutoWordmark extends StatelessWidget {
-  const _GolutoWordmark({
+class _AajheeWordmark extends StatelessWidget {
+  const _AajheeWordmark({
     required this.textTheme,
     required this.colorScheme,
   });

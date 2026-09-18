@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
-import 'package:goluto/src/config/app_config.dart';
-import 'package:goluto/src/features/auth/data/models/user_model.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/config/app_config.dart';
+import 'package:aajhee/src/features/auth/data/models/user_model.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 class UserProfileService {
   UserProfileService._();

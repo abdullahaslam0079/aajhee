@@ -1,4 +1,4 @@
-import 'package:goluto/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
 
 class MapActionButton extends StatelessWidget {
   const MapActionButton({
@@ -19,8 +19,9 @@ class MapActionButton extends StatelessWidget {
 
     return FloatingActionButton.small(
       heroTag: heroTag,
-      backgroundColor:
-          isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
+      backgroundColor: isDark
+          ? colorScheme.surfaceContainerHighest
+          : colorScheme.surfaceContainerLowest,
       foregroundColor: colorScheme.onSurface,
       elevation: isDark ? 4 : 3,
       shape: RoundedRectangleBorder(

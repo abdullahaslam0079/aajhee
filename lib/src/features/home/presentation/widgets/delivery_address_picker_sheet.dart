@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 Future<void> showDeliveryAddressPicker(BuildContext context, WidgetRef ref) {
   return context.showAppBottomSheet(
@@ -60,7 +60,7 @@ class DeliveryAddressPickerSheet extends ConsumerWidget {
               if (addressesState.isLoading)
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.xl.h),
-                  child: const Center(child: CircularProgressIndicator()),
+                  child: const AppLoading(message: 'Loading addresses...'),
                 )
               else if (addresses.isEmpty)
                 Padding(
@@ -70,38 +70,15 @@ class DeliveryAddressPickerSheet extends ConsumerWidget {
                     AppSpacing.pagePadding.w,
                     AppSpacing.lg.h,
                   ),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.location_off_outlined,
-                        size: 48,
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                      ),
-                      SizedBox(height: AppSpacing.sm.h),
-                      Text(
-                        'No saved addresses yet',
-                        style: tt.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.xs.h),
-                      Text(
-                        'Add a delivery address to get started.',
-                        textAlign: TextAlign.center,
-                        style: tt.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.lg.h),
-                      AppButton(
-                        label: 'Add address',
-                        onPressed: () {
-                          Navigator.pop(context);
-                          context.push(AppRoutes.addAddress);
-                        },
-                        isFullWidth: true,
-                      ),
-                    ],
+                  child: AppEmptyState(
+                    icon: Icons.location_off_outlined,
+                    title: 'No saved addresses yet',
+                    subtitle: 'Add a delivery address to get started.',
+                    actionLabel: 'Add address',
+                    onAction: () {
+                      Navigator.pop(context);
+                      context.push(AppRoutes.addAddress);
+                    },
                   ),
                 )
               else ...[

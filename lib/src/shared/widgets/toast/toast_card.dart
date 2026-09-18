@@ -23,22 +23,15 @@ class ToastCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
-        color: color ?? context.theme.dialogTheme.backgroundColor,
+        color: color ?? cs.surfaceContainerLowest,
         borderRadius: AppBorders.lg,
-        border: Border.all(
-          color: context.theme.indicatorColor,
-        ),
-        boxShadow: [
-          BoxShadow(
-            blurRadius: 10,
-            spreadRadius: 0,
-            offset: Offset.zero,
-            color: shadowColor ?? Colors.black.withValues(alpha: 0.05),
-          ),
-        ],
+        border: Border.all(color: cs.outlineVariant),
+        boxShadow: AppShadows.elevated,
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 8),
@@ -54,4 +47,3 @@ class ToastCard extends StatelessWidget {
     );
   }
 }
-

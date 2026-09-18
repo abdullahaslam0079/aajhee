@@ -1,5 +1,5 @@
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 enum OnboardingIllustrationType {
   discoverDeals,
@@ -228,7 +228,7 @@ class _DiscoverDealsScene extends StatelessWidget {
             ),
             _FloatingBadge(
               icon: Icons.favorite_rounded,
-              color: const Color(0xFFE53935),
+              color: AppBrandColors.lightDeal,
               size: 40,
               offset: Offset(-54.w, 58.h + (t - 0.5) * 5.h),
               rotation: -0.08,
@@ -408,7 +408,7 @@ class _ScanOffersScene extends StatelessWidget {
           builder: (context, _) {
             return _FloatingBadge(
               icon: Icons.check_circle_rounded,
-              color: const Color(0xFF2E7D32),
+              color: AppBrandColors.lightPrimary,
               size: 44,
               offset: Offset(58.w, -50.h + (drift.value - 0.5) * 6.h),
               rotation: 0,

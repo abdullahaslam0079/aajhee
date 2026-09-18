@@ -9,7 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 /// Google / Apple sign-in via Firebase Auth.
 ///
-/// Returns a Firebase ID token for exchange with GoLuto backend JWTs.
+/// Returns a Firebase ID token for exchange with Aajhee backend JWTs.
 class FirebaseSocialAuthService {
   FirebaseSocialAuthService._();
   static final FirebaseSocialAuthService instance = FirebaseSocialAuthService._();
@@ -58,7 +58,7 @@ class FirebaseSocialAuthService {
       return _requireIdToken(result.user);
     } catch (error, stackTrace) {
       if (kDebugMode) {
-        debugPrint('[GoLuto] Google sign-in failed: $error');
+        debugPrint('[Aajhee] Google sign-in failed: $error');
         debugPrintStack(stackTrace: stackTrace);
       }
       rethrow;

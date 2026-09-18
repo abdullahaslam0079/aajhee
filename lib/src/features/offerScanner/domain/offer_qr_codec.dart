@@ -15,10 +15,11 @@ class ScannedOfferPayload {
     final trimmed = raw.trim();
     if (trimmed.isEmpty) return null;
 
-    if (trimmed.startsWith('GOLUTO:')) {
+    if (trimmed.startsWith('AAJHEE:') || trimmed.startsWith('GOLUTO:')) {
+      final prefix = trimmed.startsWith('AAJHEE:') ? 'AAJHEE:' : 'GOLUTO:';
       try {
         final json =
-            jsonDecode(trimmed.substring('GOLUTO:'.length)) as Map<String, dynamic>;
+            jsonDecode(trimmed.substring(prefix.length)) as Map<String, dynamic>;
         final offerIdRaw = json['offerId'];
         final offerId = offerIdRaw is int
             ? offerIdRaw

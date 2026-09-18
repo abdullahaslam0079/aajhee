@@ -1,10 +1,10 @@
-import 'package:goluto/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/offers/presentation/providers/top_picks_provider.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/offer_list_card.dart';
-import 'package:goluto/src/features/offers/presentation/widgets/offers_home_chrome.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/businessStore/presentation/widgets/offer_detail_sheet.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/offers/presentation/providers/top_picks_provider.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/offer_list_card.dart';
+import 'package:aajhee/src/features/offers/presentation/widgets/offers_home_chrome.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 /// Full list of curated top picks, opened from Home via View all.
 class TopPicksScreen extends ConsumerStatefulWidget {
@@ -81,7 +81,7 @@ class _TopPicksScreenState extends ConsumerState<TopPicksScreen> {
             if (state.isLoading && state.offers.isEmpty)
               const SliverFillRemaining(
                 hasScrollBody: false,
-                child: Center(child: CircularProgressIndicator()),
+                child: AppLoading(message: 'Loading top picks...'),
               )
             else if (state.errorMessage != null && state.offers.isEmpty)
               SliverFillRemaining(
@@ -120,7 +120,7 @@ class _TopPicksScreenState extends ConsumerState<TopPicksScreen> {
                     if (index >= state.offers.length) {
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: 16),
-                        child: Center(child: CircularProgressIndicator()),
+                        child: AppLoading(size: 22, strokeWidth: 2.5),
                       );
                     }
                     final offer = state.offers[index];
@@ -151,29 +151,10 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.local_fire_department_outlined,
-          size: 56,
-          color: cs.primary.withValues(alpha: 0.75),
-        ),
-        SizedBox(height: AppSpacing.md.h),
-        Text(
-          'No top picks yet',
-          style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        SizedBox(height: AppSpacing.sm.h),
-        Text(
-          'Check back soon for standout deals nearby and online.',
-          textAlign: TextAlign.center,
-          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-        ),
-      ],
+    return const AppEmptyState(
+      icon: Icons.local_fire_department_outlined,
+      title: 'No top picks yet',
+      subtitle: 'Check back soon for standout deals nearby and online.',
     );
   }
 }
@@ -189,22 +170,10 @@ class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final tt = context.theme.textTheme;
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.error_outline_rounded, size: 56, color: cs.error),
-        SizedBox(height: AppSpacing.md.h),
-        Text(
-          message,
-          textAlign: TextAlign.center,
-          style: tt.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
-        ),
-        SizedBox(height: AppSpacing.lg.h),
-        FilledButton(onPressed: onRetry, child: const Text('Retry')),
-      ],
+    return AppErrorWidget(
+      title: 'Could not load top picks',
+      message: message,
+      onRetry: onRetry,
     );
   }
 }

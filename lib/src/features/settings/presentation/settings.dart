@@ -1,10 +1,10 @@
-import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
-import 'package:goluto/src/features/notifications/presentation/providers/notification_preferences_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/theme_preferences_provider.dart';
-import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:aajhee/src/features/notifications/presentation/providers/notification_preferences_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/theme_preferences_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/user_profile_provider.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -83,14 +83,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     _divider(context),
                     _SettingsTile(
-                      icon: Icons.lock_outline_rounded,
-                      iconColor: colorScheme.secondary,
-                      title: 'Security',
-                      subtitle: 'Password & 2FA',
-                      onTap: () {},
-                    ),
-                    _divider(context),
-                    _SettingsTile(
                       icon: Icons.location_on_outlined,
                       iconColor: colorScheme.secondary,
                       title: 'Addresses',
@@ -154,7 +146,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       iconColor: colorScheme.secondary,
                       title: 'Language',
                       subtitle: 'English (US)',
-                      onTap: () {},
+                      showChevron: false,
                     ),
                   ],
                 ),

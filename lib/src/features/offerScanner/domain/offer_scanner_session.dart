@@ -1,4 +1,4 @@
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
 
 class OfferScannerSession {
   const OfferScannerSession({

@@ -1,12 +1,12 @@
-// import 'package:goluto/src/features/offers/offer_feature_flags.dart';
-// import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
-import 'package:goluto/src/features/settings/presentation/settings.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
-import 'package:goluto/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
-import 'package:goluto/src/features/home/presentation/screens/stores_tab_screen.dart';
-import 'package:goluto/src/features/mapFeature/presentation/map_screen.dart';
+// import 'package:aajhee/src/features/offers/offer_feature_flags.dart';
+// import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/settings/presentation/settings.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
+import 'package:aajhee/src/features/home/presentation/screens/stores_tab_screen.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/map_screen.dart';
 
 class BottomNavigationBarScreen extends ConsumerWidget {
   const BottomNavigationBarScreen({super.key});
@@ -68,9 +68,10 @@ class BottomNavigationBarScreen extends ConsumerWidget {
       //   ),
       // ),
       bottomNavigationBar: BottomAppBar(
-        color: context.theme.colorScheme.surfaceContainerLow,
-        elevation: 18,
-        shadowColor: Colors.black.withValues(alpha: 0.28),
+        color: context.theme.colorScheme.surfaceContainerLowest,
+        elevation: 0,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         height: kBottomNavBarHeight,
         padding: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
@@ -80,7 +81,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
               top: Radius.circular(kBottomNavBarBorderRadius),
             ),
             side: BorderSide(
-              color: context.theme.colorScheme.outline.withValues(alpha: 0.28),
+              color: context.theme.colorScheme.outlineVariant,
             ),
           ),
         ),
@@ -166,15 +167,26 @@ class _BottomItem extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 23,
-            color: selected ? cs.primary : inactive,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: selected
+                  ? cs.primary.withValues(alpha: 0.1)
+                  : Colors.transparent,
+              borderRadius: AppBorders.full,
+            ),
+            child: Icon(
+              icon,
+              size: 22,
+              color: selected ? cs.primary : inactive,
+            ),
           ),
-          SizedBox(height: 3.h),
+          SizedBox(height: 2.h),
           Text(
             label,
-            style: context.theme.textTheme.labelMedium?.copyWith(
+            style: context.theme.textTheme.labelSmall?.copyWith(
               color: selected ? cs.onSurface : inactive,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),

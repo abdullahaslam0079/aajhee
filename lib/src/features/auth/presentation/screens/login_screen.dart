@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/auth/presentation/models/phone_otp_args.dart';
-import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
-import 'package:goluto/src/features/auth/presentation/widgets/country_code_picker.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/auth/presentation/models/phone_otp_args.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:aajhee/src/features/auth/presentation/widgets/country_code_picker.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 /// Paid Apple Developer Program + Sign In with Apple entitlement required on iOS.
 /// Free personal teams cannot provision `com.apple.developer.applesignin`.
@@ -124,7 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       );
     } catch (error, stackTrace) {
       if (!mounted) return;
-      debugPrint('[GoLuto] Send OTP failed: $error');
+      debugPrint('[Aajhee] Send OTP failed: $error');
       debugPrintStack(stackTrace: stackTrace);
       showToast(
         context,
@@ -148,7 +148,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
     } catch (error, stackTrace) {
       if (!mounted) return;
-      debugPrint('[GoLuto] Google sign-in failed: $error');
+      debugPrint('[Aajhee] Google sign-in failed: $error');
       debugPrintStack(stackTrace: stackTrace);
       showToast(
         context,
@@ -181,7 +181,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           );
     } catch (error, stackTrace) {
       if (!mounted) return;
-      debugPrint('[GoLuto] Apple sign-in failed: $error');
+      debugPrint('[Aajhee] Apple sign-in failed: $error');
       debugPrintStack(stackTrace: stackTrace);
       showToast(
         context,
@@ -214,8 +214,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   SizedBox(height: AppSpacing.xl.h),
                   Image.asset(
                     isDark ? AppAssets.logoOnDark : AppAssets.logo,
-                    height: 96.h,
+                    height: 80.h,
                     fit: BoxFit.contain,
+                  ),
+                  SizedBox(height: AppSpacing.lg.h),
+                  Text(
+                    'auth.log_in'.tr(),
+                    textAlign: TextAlign.center,
+                    style: tt.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.sm.h),
+                  Text(
+                    'auth.log_in_subtitle'.tr(),
+                    textAlign: TextAlign.center,
+                    style: tt.bodyMedium?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      height: 1.45,
+                    ),
                   ),
                   SizedBox(height: AppSpacing.xl.h),
                   Form(
@@ -280,6 +298,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           isLoading: _isSending || isAuthBusy,
                           onPressed: isLoading ? null : _sendCode,
                           isFullWidth: true,
+                        ),
+                        SizedBox(height: AppSpacing.sm.h),
+                        Text(
+                          'auth.phone_privacy_note'.tr(),
+                          textAlign: TextAlign.center,
+                          style: tt.bodySmall?.copyWith(
+                            color: cs.onSurfaceVariant,
+                            height: 1.4,
+                          ),
                         ),
                       ],
                     ),

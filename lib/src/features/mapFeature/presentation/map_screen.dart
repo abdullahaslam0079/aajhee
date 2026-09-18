@@ -1,17 +1,17 @@
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/presentation/providers/home_feed_provider.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_constants.dart';
-import 'package:goluto/src/features/mapFeature/presentation/constants/map_styles.dart';
-import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_location_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_marker_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_store_selection_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/widgets/map_action_button.dart';
-import 'package:goluto/src/features/mapFeature/presentation/widgets/map_store_carousel.dart';
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_styles.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_location_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_marker_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_store_selection_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_action_button.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_store_carousel.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
@@ -90,7 +90,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     });
 
     final colorScheme = context.theme.colorScheme;
-    final textTheme = context.theme.textTheme;
     final feedState = ref.watch(homeFeedProvider);
     final selectedAddress = ref.watch(savedAddressesProvider).selectedAddress;
     final carouselBottomOffset = MapConstants.carouselBottomOffset(context);
@@ -177,29 +176,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
           if (hasError)
             Positioned.fill(
               child: ColoredBox(
-                color: colorScheme.surface.withValues(alpha: 0.92),
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          feedState.errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        AppButton(
-                          label: 'Retry',
-                          onPressed: () =>
-                              ref.read(homeFeedProvider.notifier).load(),
-                        ),
-                      ],
-                    ),
-                  ),
+                color: colorScheme.surface.withValues(alpha: 0.94),
+                child: AppErrorWidget(
+                  icon: Icons.map_outlined,
+                  title: 'Could not load the map',
+                  message: feedState.errorMessage,
+                  onRetry: () => ref.read(homeFeedProvider.notifier).load(),
                 ),
               ),
             ),

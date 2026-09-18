@@ -1,7 +1,7 @@
-import 'package:goluto/src/features/offers/data/services/engagement_service.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/settings/presentation/providers/saved_addresses_provider.dart';
-import 'package:goluto/src/utils/logger.dart';
+import 'package:aajhee/src/features/offers/data/services/engagement_service.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'top_picks_provider.g.dart';

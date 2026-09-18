@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:goluto/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
-import 'package:goluto/src/features/mapFeature/presentation/utils/map_location_helper.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/mixins/map_controller_mixin.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_location_helper.dart';
 
 mixin MapLocationMixin<T extends StatefulWidget> on State<T>, MapControllerMixin<T> {
   Future<void> focusCurrentLocation() async {

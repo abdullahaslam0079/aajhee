@@ -1,6 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import 'package:goluto/src/features/auth/domain/entities/user.dart';
+import 'package:aajhee/src/features/auth/domain/entities/user.dart';
 
 part 'user_model.g.dart';
 

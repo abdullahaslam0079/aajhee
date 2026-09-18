@@ -1,6 +1,6 @@
-import 'package:goluto/src/features/auth/domain/entities/auth_session.dart';
-import 'package:goluto/src/features/auth/domain/entities/user.dart';
-import 'package:goluto/src/utils/utils.dart';
+import 'package:aajhee/src/features/auth/domain/entities/auth_session.dart';
+import 'package:aajhee/src/features/auth/domain/entities/user.dart';
+import 'package:aajhee/src/utils/utils.dart';
 
 abstract class AuthRepository {
   /// Stream of auth state changes. Emits AppUser when authenticated, null when not.

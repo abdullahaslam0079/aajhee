@@ -1,5 +1,5 @@
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class OtpCodeInput extends StatefulWidget {
   const OtpCodeInput({

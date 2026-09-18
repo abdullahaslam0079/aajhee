@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Renders Goluto brand assets using bundled Inter 800 — matches splash wordmark.
+/// Renders Aajhee brand assets using bundled Inter 800 — matches splash wordmark.
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -16,8 +16,8 @@ Future<void> main() async {
   const white = Color(0xFFFFFFFF);
 
   await _renderWordmark(
-    outputPath: 'assets/images/goluto_logo.png',
-    text: 'Goluto',
+    outputPath: 'assets/images/aajhee_logo.png',
+    text: 'Aajhee',
     fontSize: 280,
     color: brandColor,
     backgroundColor: white,
@@ -27,8 +27,8 @@ Future<void> main() async {
   );
 
   await _renderWordmark(
-    outputPath: 'assets/images/goluto_logo_white_bg.png',
-    text: 'Goluto',
+    outputPath: 'assets/images/aajhee_logo_white_bg.png',
+    text: 'Aajhee',
     fontSize: 280,
     color: brandColor,
     backgroundColor: white,
@@ -38,8 +38,8 @@ Future<void> main() async {
   );
 
   await _renderWordmark(
-    outputPath: 'assets/images/goluto_logo_dark_bg.png',
-    text: 'Goluto',
+    outputPath: 'assets/images/aajhee_logo_dark_bg.png',
+    text: 'Aajhee',
     fontSize: 280,
     color: white,
     backgroundColor: brandColor,

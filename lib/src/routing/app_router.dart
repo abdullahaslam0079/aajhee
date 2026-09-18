@@ -1,28 +1,28 @@
 import 'package:go_router/go_router.dart';
-import 'package:goluto/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
-import 'package:goluto/src/features/businessStore/presentation/business_store_screen.dart';
-import 'package:goluto/src/features/home/data/models/map_branch_model.dart';
-import 'package:goluto/src/features/home/data/models/offer_model.dart';
-import 'package:goluto/src/features/favorites/presentation/screens/favorites_screen.dart';
-import 'package:goluto/src/features/notifications/presentation/notification_screen.dart';
-import 'package:goluto/src/features/settings/domain/entities/saved_address.dart';
-import 'package:goluto/src/features/settings/presentation/screens/add_address_screen.dart';
-import 'package:goluto/src/features/settings/presentation/screens/addresses_screen.dart';
-import 'package:goluto/src/features/settings/presentation/screens/edit_profile_screen.dart';
-import 'package:goluto/src/features/offerScanner/domain/offer_scanner_session.dart';
-import 'package:goluto/src/features/offerScanner/presentation/offer_scanner_screen.dart';
-import 'package:goluto/src/routing/global_navigator.dart';
-import 'package:goluto/src/routing/app_routes.dart';
+import 'package:aajhee/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
+import 'package:aajhee/src/features/businessStore/presentation/business_store_screen.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/data/models/offer_model.dart';
+import 'package:aajhee/src/features/favorites/presentation/screens/favorites_screen.dart';
+import 'package:aajhee/src/features/notifications/presentation/notification_screen.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
+import 'package:aajhee/src/features/settings/presentation/screens/add_address_screen.dart';
+import 'package:aajhee/src/features/settings/presentation/screens/addresses_screen.dart';
+import 'package:aajhee/src/features/settings/presentation/screens/edit_profile_screen.dart';
+import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
+import 'package:aajhee/src/features/offerScanner/presentation/offer_scanner_screen.dart';
+import 'package:aajhee/src/routing/global_navigator.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
-import 'package:goluto/src/features/auth/presentation/models/phone_otp_args.dart';
-import 'package:goluto/src/features/auth/presentation/screens/login_screen.dart';
-import 'package:goluto/src/features/auth/presentation/screens/verify_otp_screen.dart';
+import 'package:aajhee/src/features/auth/presentation/models/phone_otp_args.dart';
+import 'package:aajhee/src/features/auth/presentation/screens/login_screen.dart';
+import 'package:aajhee/src/features/auth/presentation/screens/verify_otp_screen.dart';
 
-import 'package:goluto/src/features/offers/presentation/screens/home_offers_screen.dart';
-import 'package:goluto/src/features/offers/presentation/screens/top_picks_screen.dart';
-import 'package:goluto/src/features/onboarding/presentation/screens/onboarding_page.dart';
-import 'package:goluto/src/features/searchOffers/presentation/screens/search_offers_screen.dart';
-import 'package:goluto/src/features/splash/presentation/splash_screen.dart';
+import 'package:aajhee/src/features/offers/presentation/screens/home_offers_screen.dart';
+import 'package:aajhee/src/features/offers/presentation/screens/top_picks_screen.dart';
+import 'package:aajhee/src/features/onboarding/presentation/screens/onboarding_page.dart';
+import 'package:aajhee/src/features/searchOffers/presentation/screens/search_offers_screen.dart';
+import 'package:aajhee/src/features/splash/presentation/splash_screen.dart';
 
 /// Firebase Phone Auth reCAPTCHA redirects via a custom URL scheme.
 /// GoRouter must ignore those callbacks or it shows "Page Not Found".

@@ -1,5 +1,5 @@
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
@@ -147,8 +147,15 @@ class _HeaderIconButton extends StatelessWidget {
     return Material(
       color: cs.brightness == Brightness.dark
           ? cs.surfaceContainerHigh
-          : cs.onSurface.withValues(alpha: 0.05),
-      shape: AppBorders.shapeIconButton,
+          : cs.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppBorders.iconButton,
+        side: BorderSide(
+          color: cs.brightness == Brightness.dark
+              ? cs.outline.withValues(alpha: 0.32)
+              : cs.outlineVariant,
+        ),
+      ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onPressed,

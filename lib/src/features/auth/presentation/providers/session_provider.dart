@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:goluto/src/features/auth/domain/entities/user.dart';
-import 'package:goluto/src/features/auth/domain/repositories/auth_repository.dart';
-import 'package:goluto/src/features/auth/presentation/providers/auth_provider.dart';
+import 'package:aajhee/src/features/auth/domain/entities/user.dart';
+import 'package:aajhee/src/features/auth/domain/repositories/auth_repository.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'session_provider.g.dart';

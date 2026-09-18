@@ -1,8 +1,8 @@
-import 'package:goluto/src/features/settings/domain/entities/user_profile.dart';
-import 'package:goluto/src/features/settings/presentation/providers/user_profile_provider.dart'
+import 'package:aajhee/src/features/settings/domain/entities/user_profile.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/user_profile_provider.dart'
     hide UserProfile;
-import 'package:goluto/src/imports/core_imports.dart';
-import 'package:goluto/src/imports/packages_imports.dart';
+import 'package:aajhee/src/imports/core_imports.dart';
+import 'package:aajhee/src/imports/packages_imports.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -88,7 +88,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       ),
       body: SafeArea(
         child: profileState.isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? const AppLoading(message: 'Loading profile...')
             : SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
                   pagePadding,
