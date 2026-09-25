@@ -271,24 +271,18 @@ class _AajheeWordmark extends StatelessWidget {
     required this.colorScheme,
   });
 
+  // Kept for call-site consistency; wordmark is an image asset.
   final TextTheme textTheme;
   final ColorScheme colorScheme;
 
   @override
   Widget build(BuildContext context) {
-    final style = textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.w800,
-      fontSize: 24.sp,
-      letterSpacing: -0.5,
-      fontFamily: AppFonts.primary,
-    );
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('Go', style: style?.copyWith(color: colorScheme.primary)),
-        Text('luto', style: style?.copyWith(color: colorScheme.onSurface)),
-      ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Image.asset(
+      isDark ? AppAssets.logoOnDark : AppAssets.logo,
+      height: 28.h,
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
     );
   }
 }

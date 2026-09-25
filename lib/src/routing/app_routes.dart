@@ -21,4 +21,8 @@ abstract final class AppRoutes {
   static const String addAddress = '/addresses/add';
   static const String editAddress = '/addresses/edit';
   static const String editProfile = '/edit-profile';
+  static const String cart = '/cart';
+  static const String orders = '/orders';
+  static String orderDetail(String publicId) => '/orders/$publicId';
+  static String productDetail(String id) => '/products/$id';
 }

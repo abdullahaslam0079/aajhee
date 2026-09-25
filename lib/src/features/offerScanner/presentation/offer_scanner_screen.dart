@@ -359,27 +359,13 @@ class _OfferScannerScreenState extends ConsumerState<OfferScannerScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 30.w,
-                  height: 30.w,
-                  decoration: BoxDecoration(
-                    color: cs.primary.withValues(alpha: 0.14),
-                    borderRadius: AppBorders.full,
-                  ),
-                  child: Icon(
-                    Icons.local_offer_rounded,
-                    color: cs.primary,
-                    size: 18,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.xs.w),
-                Text(
-                  'Aajhee',
-                  style: tt.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: cs.primary,
-                    letterSpacing: 0.2,
-                  ),
+                Image.asset(
+                  Theme.of(context).brightness == Brightness.dark
+                      ? AppAssets.logoOnDark
+                      : AppAssets.logo,
+                  height: 18.h,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.high,
                 ),
               ],
             ),

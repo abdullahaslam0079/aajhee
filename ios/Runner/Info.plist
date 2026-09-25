@@ -91,15 +91,19 @@
 		</array>
 		<key>FirebaseAppDelegateProxyEnabled</key>
 		<true/>
-		<!-- Required for Google Sign-In + Firebase Phone Auth reCAPTCHA redirect. -->
+		<!-- Google Sign-In: must match GoogleService-Info.plist CLIENT_ID / REVERSED_CLIENT_ID. -->
+		<key>GIDClientID</key>
+		<string>135936817921-kdm8jvi60hdfnhsam4ehrjrsqlusmldn.apps.googleusercontent.com</string>
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
 				<key>CFBundleTypeRole</key>
 				<string>Editor</string>
+				<key>CFBundleURLName</key>
+				<string>com.aajhee.app.google-signin</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>com.googleusercontent.apps.860507972929-5idpj482c4u24h6gub43m2m8acvdg3p8</string>
+					<string>com.googleusercontent.apps.135936817921-kdm8jvi60hdfnhsam4ehrjrsqlusmldn</string>
 				</array>
 			</dict>
 		</array>

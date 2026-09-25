@@ -5,6 +5,7 @@ import 'package:aajhee/src/features/settings/presentation/settings.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/home_commerce_screen.dart';
 import 'package:aajhee/src/features/home/presentation/screens/stores_tab_screen.dart';
 import 'package:aajhee/src/features/mapFeature/presentation/map_screen.dart';
 
@@ -28,7 +29,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
         child: KeyedSubtree(
           key: ValueKey(selectedIndex),
           child: selectedIndex == 0
-              ? const HomeOffersScreen()
+              ? const HomeCommerceScreen()
               : selectedIndex == 1
               ? const MapScreen()
               : selectedIndex == 2

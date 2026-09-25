@@ -156,6 +156,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SectionTitle(label: 'Shopping'),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
+                child: _SettingsCard(
+                  children: [
+                    _SettingsTile(
+                      icon: Icons.shopping_bag_outlined,
+                      iconColor: colorScheme.primary,
+                      title: 'Cart',
+                      onTap: () => context.push(AppRoutes.cart),
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.receipt_long_outlined,
+                      iconColor: colorScheme.secondary,
+                      title: 'My orders',
+                      onTap: () => context.push(AppRoutes.orders),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(child: SizedBox(height: AppSpacing.ml.h)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: pagePadding),
                 child: _SectionTitle(label: 'Support'),
               ),
             ),

@@ -51,7 +51,7 @@ Future<void> main() async {
   await _renderAppIcon(
     outputPath: 'assets/images/app_icon_source.png',
     size: 1024,
-    text: 'Go',
+    text: 'a',
     foreground: brandColor,
     background: white,
   );
@@ -59,7 +59,7 @@ Future<void> main() async {
   await _renderAppIconLetter(
     outputPath: 'assets/images/app_icon_foreground.png',
     size: 1024,
-    text: 'Go',
+    text: 'a',
     foreground: brandColor,
   );
 

@@ -13,4 +13,11 @@ class AppAssets {
   static const String logo = '$_imagesPath/aajhee_logo.png';
   static const String logoOnLight = '$_imagesPath/aajhee_logo_white_bg.png';
   static const String logoOnDark = '$_imagesPath/aajhee_logo_dark_bg.png';
+  static const String logoSplash = '$_imagesPath/aajhee_logo_splash.png';
+  static const String logoSplashDark = '$_imagesPath/aajhee_logo_splash_dark.png';
+  static const String appIcon = '$_imagesPath/app_icon_source.png';
+
+  // Splash animation slices (exact brand typeface).
+  static const String splashAaj = '$_imagesPath/splash_aaj.png';
+  static const String splashHee = '$_imagesPath/splash_hee.png';
 }

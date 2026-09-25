@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:aajhee/src/imports/packages_imports.dart';
-import 'package:aajhee/src/theme/app_fonts.dart';
+import 'package:aajhee/src/shared/app_assets.dart';
 
-/// Aajhee wordmark: "Go" lands first, brief pause, then "luto" flows in beside it.
+/// Aajhee wordmark: "aaj" lands first, brief pause, then "hee" flows in.
+/// Uses cropped slices of the brand logo so the typeface matches exactly.
 class AajheeSplashLogo extends StatefulWidget {
   const AajheeSplashLogo({super.key});
 
@@ -14,18 +14,12 @@ class AajheeSplashLogo extends StatefulWidget {
 
 class _AajheeSplashLogoState extends State<AajheeSplashLogo>
     with SingleTickerProviderStateMixin {
-  static const _letters = ['G', 'o', 'l', 'u', 't', 'o'];
+  static const _aajStart = 0.06;
+  static const _aajDuration = 0.34;
 
-  // Go: ~0.06 → ~0.38
-  static const _goStart = 0.06;
-  static const _goStagger = 0.05;
-  static const _goLetterDuration = 0.26;
-
-  // Short beat, then luto: ~0.46 → ~0.86
-  static const _lutoStart = 0.46;
-  static const _lutoOpenDuration = 0.16;
-  static const _lutoStagger = 0.048;
-  static const _lutoLetterDuration = 0.24;
+  static const _heeStart = 0.48;
+  static const _heeOpenDuration = 0.18;
+  static const _heeFadeDuration = 0.28;
 
   static const _settleStart = 0.88;
 
@@ -53,156 +47,115 @@ class _AajheeSplashLogoState extends State<AajheeSplashLogo>
     Curve curve = Curves.easeOutCubic,
   }) {
     if (t <= start) return 0;
-    return curve.transform(((t - start) / duration).clamp(0, 1));
-  }
-
-  double _goLetterProgress(int index, double t) {
-    return _interval(
-      t,
-      _goStart + index * _goStagger,
-      _goLetterDuration,
-      curve: Curves.easeOutCubic,
-    );
-  }
-
-  double _goProgress(double t) => _goLetterProgress(1, t);
-
-  double _lutoOpen(double t) {
-    return _interval(
-      t,
-      _lutoStart,
-      _lutoOpenDuration,
-      curve: Curves.easeInOutCubic,
-    );
-  }
-
-  double _lutoLetterProgress(int index, double t) {
-    if (t < _lutoStart) return 0;
-
-    final start = _lutoStart + (index - 2) * _lutoStagger;
-    return _interval(
-      t,
-      start,
-      _lutoLetterDuration,
-      curve: Curves.easeOutQuart,
-    );
-  }
-
-  double _goScale(double t) {
-    if (t < _lutoStart) {
-      return 1 + _goProgress(t) * 0.03;
-    }
-    if (t >= _settleStart) return 1;
-
-    final p = Curves.easeInOutCubic.transform(
-      ((t - _lutoStart) / (_settleStart - _lutoStart)).clamp(0, 1),
-    );
-    return 1.03 - p * 0.03;
-  }
-
-  double _wordScale(double t) {
-    if (t < _settleStart) return 1;
-    final p = Curves.easeInOutCubic.transform(
-      ((t - _settleStart) / (1 - _settleStart)).clamp(0, 1),
-    );
-    return 1 + (1 - p) * 0.01;
+    return curve.transform(((t - start) / duration).clamp(0.0, 1.0));
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-    final baseStyle = textTheme.displaySmall?.copyWith(
-      fontSize: 54.sp,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.5,
-      height: 1,
-      color: colorScheme.primary,
-    ) ?? TextStyle(
-      fontFamily: AppFonts.primary,
-      fontSize: 54.sp,
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.5,
-      height: 1,
-      color: colorScheme.primary,
-    );
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final logoHeight = (screenWidth * 0.1).clamp(36.0, 56.0);
+    // Caps how large "aaj" grows alone (before "hee"); still bold, less huge.
+    final maxLogoWidth = screenWidth * 0.52;
 
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         final t = _controller.value;
-        final goScale = _goScale(t);
-        final lutoOpen = _lutoOpen(t);
 
-        return Transform.scale(
-          scale: _wordScale(t),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              for (var i = 0; i < 2; i++)
-                _AnimatedLetter(
-                  letter: _letters[i],
-                  progress: _goLetterProgress(i, t),
-                  style: baseStyle.copyWith(fontSize: 54.sp * goScale),
-                  offset: Offset(0, 14.h),
-                ),
-              SizedBox(width: 4.w * lutoOpen),
-              ClipRect(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: lutoOpen.clamp(0.001, 1),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      for (var i = 2; i < _letters.length; i++)
-                        _AnimatedLetter(
-                          letter: _letters[i],
-                          progress: _lutoLetterProgress(i, t),
-                          style: baseStyle,
-                          offset: Offset(16.w, 6.h),
+        final aajProgress = _interval(
+          t,
+          _aajStart,
+          _aajDuration,
+          curve: Curves.easeOutCubic,
+        );
+
+        final heeOpen = _interval(
+          t,
+          _heeStart,
+          _heeOpenDuration,
+          curve: Curves.easeInOutCubic,
+        );
+
+        final heeFade = _interval(
+          t,
+          _heeStart,
+          _heeFadeDuration,
+          curve: Curves.easeOutQuart,
+        );
+
+        var aajScale = 1.0;
+        if (t < _heeStart) {
+          aajScale = 1 + aajProgress * 0.02;
+        } else if (t < _settleStart) {
+          final p = Curves.easeInOutCubic.transform(
+            ((t - _heeStart) / (_settleStart - _heeStart)).clamp(0.0, 1.0),
+          );
+          aajScale = 1.02 - p * 0.02;
+        }
+
+        var wordScale = 1.0;
+        if (t >= _settleStart) {
+          final p = Curves.easeInOutCubic.transform(
+            ((t - _settleStart) / (1 - _settleStart)).clamp(0.0, 1.0),
+          );
+          wordScale = 1 + (1 - p) * 0.008;
+        }
+
+        final aajSlide = 10.0 * (1 - aajProgress);
+        final heeSlide = 12.0 * (1 - heeFade);
+
+        return SizedBox(
+          width: maxLogoWidth,
+          child: FittedBox(
+            fit: BoxFit.contain,
+            child: Transform.scale(
+              scale: wordScale,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Opacity(
+                    opacity: aajProgress,
+                    child: Transform.translate(
+                      offset: Offset(0, aajSlide),
+                      child: Transform.scale(
+                        scale: aajScale,
+                        alignment: Alignment.centerRight,
+                        child: Image.asset(
+                          AppAssets.splashAaj,
+                          height: logoHeight,
+                          fit: BoxFit.contain,
+                          filterQuality: FilterQuality.high,
+                          gaplessPlayback: true,
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                ),
+                  ClipRect(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: heeOpen.clamp(0.001, 1.0),
+                      child: Opacity(
+                        opacity: heeFade,
+                        child: Transform.translate(
+                          offset: Offset(heeSlide, heeSlide * 0.3),
+                          child: Image.asset(
+                            AppAssets.splashHee,
+                            height: logoHeight,
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                            gaplessPlayback: true,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         );
       },
-    );
-  }
-}
-
-class _AnimatedLetter extends StatelessWidget {
-  const _AnimatedLetter({
-    required this.letter,
-    required this.progress,
-    required this.style,
-    required this.offset,
-  });
-
-  final String letter;
-  final double progress;
-  final TextStyle style;
-  final Offset offset;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = progress.clamp(0.0, 1.0);
-
-    return Opacity(
-      opacity: p,
-      child: Transform.translate(
-        offset: Offset(
-          offset.dx * (1 - p),
-          offset.dy * (1 - p),
-        ),
-        child: Text(letter, style: style),
-      ),
     );
   }
 }

@@ -1,6 +1,11 @@
 flutter_native_splash:
-  color: "##6750A4"
-  # image: assets/images/splash.png
-  # android_12:
-  #   image: assets/images/splash.png
-  #   icon_background_color: "##6750A4"
+  color: "#FFFFFF"
+  color_dark: "#121212"
+  image: assets/images/aajhee_logo_splash.png
+  image_dark: assets/images/aajhee_logo_splash_dark.png
+  android_12:
+    color: "#FFFFFF"
+    color_dark: "#121212"
+    image: assets/images/app_icon_source.png
+    icon_background_color: "#FFFFFF"
+    icon_background_color_dark: "#121212"

@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:aajhee/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/store_catalog_screen.dart';
 import 'package:aajhee/src/features/businessStore/presentation/business_store_screen.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/home/data/models/offer_model.dart';
@@ -18,6 +19,10 @@ import 'package:aajhee/src/features/auth/presentation/models/phone_otp_args.dart
 import 'package:aajhee/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:aajhee/src/features/auth/presentation/screens/verify_otp_screen.dart';
 
+import 'package:aajhee/src/features/commerce/presentation/screens/cart_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/home_commerce_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/orders_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/product_detail_screen.dart';
 import 'package:aajhee/src/features/offers/presentation/screens/home_offers_screen.dart';
 import 'package:aajhee/src/features/offers/presentation/screens/top_picks_screen.dart';
 import 'package:aajhee/src/features/onboarding/presentation/screens/onboarding_page.dart';
@@ -83,11 +88,60 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      builder: (context, state) => const HomeOffersScreen(),
+      builder: (context, state) => const HomeCommerceScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.cart,
+      name: 'cart',
+      builder: (context, state) => const CartScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.orders,
+      name: 'orders',
+      builder: (context, state) => const OrdersScreen(),
+      routes: [
+        GoRoute(
+          path: ':publicId',
+          name: 'orderDetail',
+          builder: (context, state) {
+            final id = state.pathParameters['publicId']!;
+            return OrderDetailScreen(publicId: id);
+          },
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/products/:id',
+      name: 'productDetail',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        final extra = state.extra;
+        final initial =
+            extra is Map<String, dynamic> ? extra : null;
+        final branchId = state.uri.queryParameters['branch_id'];
+        return ProductDetailScreen(
+          productId: id,
+          initial: initial,
+          branchId: branchId != null ? int.tryParse(branchId) : null,
+        );
+      },
     ),
     GoRoute(
       path: AppRoutes.businessStore,
       name: 'businessStore',
+      builder: (context, state) {
+        final branch = state.extra is MapBranchModel
+            ? state.extra! as MapBranchModel
+            : null;
+        if (branch == null) {
+          throw StateError('BusinessStoreScreen requires a MapBranchModel extra.');
+        }
+        return StoreCatalogScreen(branch: branch);
+      },
+    ),
+    GoRoute(
+      path: '/legacy-business-store',
+      name: 'legacyBusinessStore',
       builder: (context, state) {
         final branch = state.extra is MapBranchModel
             ? state.extra! as MapBranchModel

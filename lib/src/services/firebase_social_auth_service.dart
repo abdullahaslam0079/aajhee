@@ -18,12 +18,12 @@ class FirebaseSocialAuthService {
 
   /// iOS OAuth client from `GoogleService-Info.plist` (`CLIENT_ID`).
   static const _googleIosClientId =
-      '860507972929-5idpj482c4u24h6gub43m2m8acvdg3p8.apps.googleusercontent.com';
+      '135936817921-kdm8jvi60hdfnhsam4ehrjrsqlusmldn.apps.googleusercontent.com';
 
   /// Web OAuth client from `google-services.json` (client_type 3).
-  /// Needed so Google returns an ID token usable by Firebase.
+  /// Needed so Google returns an ID token usable by Firebase Auth.
   static const _googleServerClientId =
-      '860507972929-b78dmgqil7d22nqkad9avm6akaf95pec.apps.googleusercontent.com';
+      '135936817921-762gl51be5miblmvpfv39ki007akksdu.apps.googleusercontent.com';
 
   bool _googleInitialized = false;
 
