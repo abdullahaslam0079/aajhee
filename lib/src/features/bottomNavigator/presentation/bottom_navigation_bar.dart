@@ -1,5 +1,3 @@
-// import 'package:aajhee/src/features/offers/offer_feature_flags.dart';
-// import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
 import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:aajhee/src/features/settings/presentation/settings.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
@@ -12,12 +10,9 @@ import 'package:aajhee/src/features/mapFeature/presentation/map_screen.dart';
 class BottomNavigationBarScreen extends ConsumerWidget {
   const BottomNavigationBarScreen({super.key});
 
-  // static const double _fabSize = 62;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(bottomNavBarControllerProvider);
-    // final colorScheme = context.theme.colorScheme;
 
     return Scaffold(
       backgroundColor: homeCanvasOf(context),
@@ -37,37 +32,6 @@ class BottomNavigationBarScreen extends ConsumerWidget {
               : const SettingsScreen(),
         ),
       ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      // floatingActionButton: SizedBox(
-      //   height: _fabSize,
-      //   width: _fabSize,
-      //   child: FloatingActionButton(
-      //     onPressed: () {
-      //       if (!kOfferScannerEnabled) {
-      //         showToast(
-      //           context,
-      //           message: 'Offer scanning is coming soon.',
-      //           status: 'info',
-      //         );
-      //         return;
-      //       }
-      //       context.push(
-      //         AppRoutes.offerScanner,
-      //         extra: const OfferScannerSession(
-      //           navigateToBranchOnSuccess: true,
-      //         ),
-      //       );
-      //     },
-      //     backgroundColor: colorScheme.primary,
-      //     foregroundColor: Colors.white,
-      //     elevation: 8,
-      //     highlightElevation: 10,
-      //     focusElevation: 10,
-      //     hoverElevation: 10,
-      //     shape: const CircleBorder(),
-      //     child: const Icon(Icons.qr_code_scanner_rounded, size: 28),
-      //   ),
-      // ),
       bottomNavigationBar: BottomAppBar(
         color: context.theme.colorScheme.surfaceContainerLowest,
         elevation: 0,
@@ -112,7 +76,6 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                     .setSelectedIndex(1),
               ),
             ),
-            // const SizedBox(width: 72), // Spacer for scanner FAB notch
             Expanded(
               child: _BottomItem(
                 icon: selectedIndex == 2
@@ -128,9 +91,9 @@ class BottomNavigationBarScreen extends ConsumerWidget {
             Expanded(
               child: _BottomItem(
                 icon: selectedIndex == 3
-                    ? Icons.tune_rounded
-                    : Icons.tune_outlined,
-                label: 'Settings',
+                    ? Icons.person_rounded
+                    : Icons.person_outline_rounded,
+                label: 'Profile',
                 selected: selectedIndex == 3,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
@@ -159,36 +122,20 @@ class _BottomItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = context.theme.colorScheme;
-    final inactive = cs.onSurfaceVariant;
+    final colorScheme = context.theme.colorScheme;
+    final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: AppBorders.md,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            curve: Curves.easeOutCubic,
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: selected
-                  ? cs.primary.withValues(alpha: 0.1)
-                  : Colors.transparent,
-              borderRadius: AppBorders.full,
-            ),
-            child: Icon(
-              icon,
-              size: 22,
-              color: selected ? cs.primary : inactive,
-            ),
-          ),
+          Icon(icon, color: color, size: 24),
           SizedBox(height: 2.h),
           Text(
             label,
             style: context.theme.textTheme.labelSmall?.copyWith(
-              color: selected ? cs.primary : inactive,
+              color: color,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

@@ -161,7 +161,7 @@ abstract final class DiscountMarkerIconRenderer {
 
     final iconPainter = TextPainter(
       text: TextSpan(
-        text: String.fromCharCode(Icons.local_offer.codePoint),
+        text: String.fromCharCode(Icons.sell.codePoint),
         style: iconStyle,
       ),
       textDirection: TextDirection.ltr,

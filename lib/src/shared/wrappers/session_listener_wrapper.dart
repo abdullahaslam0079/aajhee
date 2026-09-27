@@ -1,13 +1,10 @@
 import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:aajhee/src/features/availedOffers/presentation/providers/availed_offers_provider.dart';
-import 'package:aajhee/src/features/offers/presentation/providers/top_picks_provider.dart';
-import 'package:aajhee/src/features/offers/presentation/providers/all_offers_provider.dart';
+import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:aajhee/src/features/location/presentation/providers/location_provider.dart';
 import 'package:aajhee/src/features/notifications/presentation/providers/notification_preferences_provider.dart';
 import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:aajhee/src/features/searchOffers/presentation/providers/search_offers_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/theme_preferences_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/user_profile_provider.dart';
@@ -64,14 +61,11 @@ class SessionListenerWrapper extends ConsumerWidget {
     ref.invalidate(userProfileProvider);
     ref.invalidate(favoriteStoresProvider);
     ref.invalidate(homeFeedProvider);
-    ref.invalidate(topPicksFeedProvider);
-    ref.invalidate(allOffersFeedProvider);
     ref.invalidate(notificationsProvider);
     ref.invalidate(notificationPreferencesProvider);
     ref.invalidate(themePreferencesProvider);
-    ref.invalidate(searchOffersProvider);
-    ref.invalidate(availedOffersProvider);
     ref.invalidate(locationProvider);
+    ref.invalidate(cartProvider);
   }
 
   void _redirectToLogin({required bool showExpiredMessage}) {

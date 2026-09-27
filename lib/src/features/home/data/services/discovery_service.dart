@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:aajhee/src/config/app_config.dart';
 import 'package:aajhee/src/features/home/data/models/category_model.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
-import 'package:aajhee/src/features/home/data/models/offer_model.dart';
-import 'package:aajhee/src/features/searchOffers/data/models/offer_search_page.dart';
 import 'package:aajhee/src/utils/location_query_params.dart';
 import 'package:aajhee/src/utils/utils.dart';
 
@@ -77,73 +75,5 @@ class DiscoveryService {
       pageSize: 1,
     );
     return result.map((page) => page.results.isEmpty ? null : page.results.first);
-  }
-
-  FutureEither<PaginatedPage<OfferModel>> getOffers({
-    String? addressId,
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    return runTask(() async {
-      final params = <String, dynamic>{
-        'page': page,
-        'page_size': pageSize,
-        ...?LocationQueryParams.fromAddressId(addressId),
-      };
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/offers',
-        queryParameters: params,
-      );
-      final data = response.data;
-      if (data == null) {
-        return PaginatedPage.empty<OfferModel>(pageSize: pageSize);
-      }
-      return PaginatedPage.fromJson(data, OfferModel.fromJson);
-    }, requiresNetwork: true);
-  }
-
-  FutureEither<OfferSearchPage> searchOffers({
-    required String query,
-    String? addressId,
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    return runTask(() async {
-      final params = <String, dynamic>{
-        'q': query.trim(),
-        'page': page,
-        'page_size': pageSize,
-        ...?LocationQueryParams.fromAddressId(addressId),
-      };
-
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/offers/search',
-        queryParameters: params,
-      );
-      final data = response.data;
-      if (data == null) return OfferSearchPage.empty;
-      return OfferSearchPage.fromJson(data);
-    }, requiresNetwork: true);
-  }
-
-  FutureEither<PaginatedPage<OfferModel>> getBranchOffers(
-    int branchId, {
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    return runTask(() async {
-      final response = await _dio.get<Map<String, dynamic>>(
-        '/api/branch/$branchId/offers',
-        queryParameters: {
-          'page': page,
-          'page_size': pageSize,
-        },
-      );
-      final data = response.data;
-      if (data == null) {
-        return PaginatedPage.empty<OfferModel>(pageSize: pageSize);
-      }
-      return PaginatedPage.fromJson(data, OfferModel.fromJson);
-    }, requiresNetwork: true);
   }
 }

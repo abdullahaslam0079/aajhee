@@ -24,8 +24,11 @@ const double kHomeFeedBottomInset =
     kBottomNavBarHeight + kHomeFabProtrusion + 20;
 
 abstract final class MapConstants {
+  /// Default map center — Lahore, Pakistan.
+  static const LatLng defaultCenter = LatLng(31.5204, 74.3587);
+
   static const CameraPosition initialCameraPosition = CameraPosition(
-    target: LatLng(52.5200, 13.4050),
+    target: defaultCenter,
     zoom: 12.4746,
   );
 

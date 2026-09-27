@@ -27,4 +27,10 @@ class UserProfileService {
       return UserModel.fromJson(response.data ?? const {});
     }, requiresNetwork: true);
   }
+
+  FutureEither<void> deleteAccount() async {
+    return runTask(() async {
+      await _dio.delete<Map<String, dynamic>>('/api/user/profile');
+    }, requiresNetwork: true);
+  }
 }

@@ -181,7 +181,7 @@ class PushNotificationService {
       const AndroidNotificationChannel(
         _androidChannelId,
         _androidChannelName,
-        description: 'Offers and account updates',
+        description: 'Orders and account updates',
         importance: Importance.high,
       ),
     );
@@ -201,7 +201,7 @@ class PushNotificationService {
         android: AndroidNotificationDetails(
           _androidChannelId,
           _androidChannelName,
-          channelDescription: 'Offers and account updates',
+          channelDescription: 'Orders and account updates',
           importance: Importance.high,
           priority: Priority.high,
         ),

@@ -38,7 +38,11 @@
 			<string>http</string>
 		</array>
 		<key>NSCameraUsageDescription</key>
-		<string>We use the camera to scan offer QR codes.</string>
+		<string>We use the camera to photograph payment receipts for your orders.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>We use your photo library so you can upload payment receipts for your orders.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>We may save payment receipt images related to your orders.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 		<string>We use your location to center the map on your current position.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>

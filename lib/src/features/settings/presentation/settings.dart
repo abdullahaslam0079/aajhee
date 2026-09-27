@@ -1,6 +1,9 @@
+import 'package:aajhee/src/config/app_web_links.dart';
 import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.dart';
 import 'package:aajhee/src/features/notifications/presentation/providers/notification_preferences_provider.dart';
+import 'package:aajhee/src/features/settings/data/services/user_profile_service.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/theme_preferences_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
@@ -13,7 +16,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _emailUpdates = false;
+  bool _deletingAccount = false;
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +25,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final defaultAddress =
         ref.watch(savedAddressesProvider).selectedAddress?.shortLabel;
     final pushPrefs = ref.watch(notificationPreferencesProvider);
+    final themePrefs = ref.watch(themePreferencesProvider);
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
@@ -64,7 +68,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
-                child: _SectionTitle(label: 'Account'),
+                child: const _SectionTitle(label: 'Account'),
               ),
             ),
             SliverToBoxAdapter(
@@ -95,7 +99,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
-                child: _SectionTitle(label: 'Preferences'),
+                child: const _SectionTitle(label: 'Preferences'),
               ),
             ),
             SliverToBoxAdapter(
@@ -107,7 +111,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Icons.notifications_outlined,
                       iconColor: colorScheme.primary,
                       title: 'Push notifications',
-                      subtitle: 'Orders & offers',
+                      subtitle: 'Orders & shopping updates',
                       trailing: Switch.adaptive(
                         value: pushPrefs.pushEnabled,
                         onChanged: pushPrefs.isSaving
@@ -121,22 +125,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     _divider(context),
                     _SettingsTile(
-                      icon: Icons.mail_outline_rounded,
+                      icon: Icons.brightness_6_outlined,
                       iconColor: colorScheme.secondary,
-                      title: 'Email updates',
-                      subtitle: 'News & tips',
-                      trailing: Switch.adaptive(
-                        value: _emailUpdates,
-                        onChanged: (v) => setState(() => _emailUpdates = v),
-                      ),
-                    ),
-                    _divider(context),
-                    _SettingsTile(
-                      icon: Icons.language_rounded,
-                      iconColor: colorScheme.secondary,
-                      title: 'Language',
-                      subtitle: 'English (US)',
-                      showChevron: false,
+                      title: 'Appearance',
+                      subtitle: themePrefs.preference.label,
+                      onTap: () => _pickTheme(context),
                     ),
                   ],
                 ),
@@ -146,7 +139,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
-                child: _SectionTitle(label: 'Shopping'),
+                child: const _SectionTitle(label: 'Shopping'),
               ),
             ),
             SliverToBoxAdapter(
@@ -175,7 +168,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
-                child: _SectionTitle(label: 'Support'),
+                child: const _SectionTitle(label: 'Support'),
               ),
             ),
             SliverToBoxAdapter(
@@ -187,28 +180,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Icons.help_outline_rounded,
                       iconColor: colorScheme.primary,
                       title: 'Help center',
-                      onTap: () {},
+                      onTap: () => AppWebLinks.openHelp(),
                     ),
                     _divider(context),
                     _SettingsTile(
                       icon: Icons.chat_bubble_outline_rounded,
                       iconColor: colorScheme.secondary,
                       title: 'Contact us',
-                      onTap: () {},
+                      onTap: () => AppWebLinks.openContact(),
                     ),
                     _divider(context),
                     _SettingsTile(
                       icon: Icons.policy_outlined,
                       iconColor: colorScheme.secondary,
                       title: 'Privacy policy',
-                      onTap: () {},
+                      onTap: () => AppWebLinks.openPrivacy(),
                     ),
                     _divider(context),
                     _SettingsTile(
                       icon: Icons.description_outlined,
                       iconColor: colorScheme.onSurfaceVariant,
                       title: 'Terms of service',
-                      onTap: () {},
+                      onTap: () => AppWebLinks.openTerms(),
                     ),
                   ],
                 ),
@@ -226,7 +219,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       title: 'About',
                       subtitle: 'Version 1.0.0',
                       showChevron: false,
-                      onTap: () {},
                     ),
                     _divider(context),
                     _SettingsTile(
@@ -236,6 +228,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       titleColor: colorScheme.error,
                       showChevron: false,
                       onTap: () => _confirmLogout(context),
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.delete_forever_outlined,
+                      iconColor: colorScheme.error,
+                      title: _deletingAccount
+                          ? 'Deleting account…'
+                          : 'Delete account',
+                      titleColor: colorScheme.error,
+                      showChevron: false,
+                      onTap: _deletingAccount
+                          ? null
+                          : () => _confirmDeleteAccount(context),
                     ),
                   ],
                 ),
@@ -248,12 +253,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _pickTheme(BuildContext context) async {
+    final current = ref.read(themePreferencesProvider).preference;
+    final selected = await showModalBottomSheet<AppThemePreference>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final option in AppThemePreference.values)
+                ListTile(
+                  title: Text(option.label),
+                  trailing: option == current
+                      ? Icon(
+                          Icons.check_rounded,
+                          color: sheetContext.theme.colorScheme.primary,
+                        )
+                      : null,
+                  onTap: () => Navigator.pop(sheetContext, option),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+    if (selected == null || selected == current) return;
+    await ref.read(themePreferencesProvider.notifier).setPreference(selected);
+  }
+
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Log out?'),
-        content: const Text('You will need to sign in again to access your account.'),
+        content: const Text(
+          'You will need to sign in again to access your account.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -275,6 +312,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (!(confirmed ?? false) || !context.mounted) return;
 
     await ref.read(authControllerProvider.notifier).logout(context: context);
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently removes your profile and sign-in from Aajhee. '
+          'Past orders may be retained by shops for their records. '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: Text(
+              'Delete',
+              style: context.textTheme.labelLarge?.copyWith(
+                color: context.theme.colorScheme.error,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!(confirmed ?? false) || !context.mounted) return;
+
+    setState(() => _deletingAccount = true);
+    final result = await UserProfileService.instance.deleteAccount();
+    if (!mounted) return;
+
+    await result.fold(
+      (failure) async {
+        setState(() => _deletingAccount = false);
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(failure.message)),
+        );
+      },
+      (_) async {
+        await AuthService.instance.logout();
+        if (!mounted) return;
+        setState(() => _deletingAccount = false);
+        if (!context.mounted) return;
+        context.go(AppRoutes.login);
+      },
+    );
   }
 
   Widget _divider(BuildContext context) {

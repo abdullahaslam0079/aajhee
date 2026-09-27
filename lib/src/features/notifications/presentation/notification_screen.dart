@@ -50,7 +50,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
     showToast(
       context,
-      message: 'Could not open this offer right now.',
+      message: 'Could not open this store right now.',
       status: 'warning',
     );
   }
@@ -125,7 +125,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             icon: Icons.notifications_none_rounded,
             title: 'No notifications yet',
             subtitle:
-                'Updates about your offers and account will appear here.',
+                'Updates about your orders and account will appear here.',
           ),
         ],
       );
@@ -208,7 +208,7 @@ class _NotificationTile extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.local_offer_outlined,
+                  Icons.notifications_outlined,
                   size: 20,
                   color: colorScheme.primary,
                 ),

@@ -7,12 +7,12 @@
     "next": "Weiter",
     "step": "{current} von {total}",
     "nearby_label": "In der Nähe",
-    "onboarding_title_1": "Angebote in\ndeiner Nähe",
-    "onboarding_subtitle_1": "Entdecke Angebote in deiner Nähe und speichere Favoriten.",
+    "onboarding_title_1": "Shops in\ndeiner Nähe",
+    "onboarding_subtitle_1": "Entdecke Produkte lokaler Shops und speichere Favoriten.",
     "onboarding_title_2": "Entdecke auf\nder Karte",
-    "onboarding_subtitle_2": "Finde Filialen auf der Karte und vergleiche Rabatte.",
-    "onboarding_title_3": "Scannen &\neinlösen",
-    "onboarding_subtitle_3": "Scanne QR-Codes und löse Angebote sofort ein."
+    "onboarding_subtitle_2": "Finde Filialen auf der Karte und entdecke, was um dich herum ist.",
+    "onboarding_title_3": "Bestellen &\nliefern lassen",
+    "onboarding_subtitle_3": "Bestelle zur Abholung oder Lieferung und verfolge deine Orders."
   },
   "home": {
     "home_title": "Home",

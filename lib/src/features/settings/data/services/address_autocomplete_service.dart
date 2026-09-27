@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:aajhee/src/features/settings/domain/entities/address_suggestion.dart';
 
 class AddressAutocompleteService {
@@ -21,9 +22,10 @@ class AddressAutocompleteService {
 
     if (_googleApiKey.isNotEmpty) {
       try {
-        return await _searchGoogle(trimmed);
+        final googleResults = await _searchGoogle(trimmed);
+        if (googleResults.isNotEmpty) return googleResults;
       } catch (_) {
-        return _searchNominatim(trimmed);
+        // Fall through to Nominatim.
       }
     }
 
@@ -41,17 +43,24 @@ class AddressAutocompleteService {
   }
 
   Future<List<AddressSuggestion>> _searchGoogle(String query) async {
+    final lahore = MapConstants.defaultCenter;
     final response = await _dio.get<Map<String, dynamic>>(
       _googleAutocompleteUrl,
       queryParameters: {
         'input': query,
         'key': _googleApiKey,
-        'types': 'address',
+        'components': 'country:pk',
+        'location': '${lahore.latitude},${lahore.longitude}',
+        'radius': 50000,
+        'language': 'en',
       },
     );
 
     final data = response.data;
-    if (data == null || data['status'] != 'OK') return [];
+    final status = data?['status'] as String?;
+    // Only treat a successful Places response as authoritative. Any denial,
+    // quota, or zero-result status should fall back to Nominatim.
+    if (data == null || status != 'OK') return [];
 
     final predictions = data['predictions'] as List<dynamic>? ?? [];
     return predictions.map((prediction) {
@@ -85,6 +94,7 @@ class AddressAutocompleteService {
         'place_id': suggestion.id,
         'fields': 'address_component,geometry',
         'key': _googleApiKey,
+        'language': 'en',
       },
     );
 
@@ -137,6 +147,11 @@ class AddressAutocompleteService {
   }
 
   Future<List<AddressSuggestion>> _searchNominatim(String query) async {
+    final lahore = MapConstants.defaultCenter;
+    // Bias around Lahore (~0.4° ≈ 40 km).
+    final viewbox =
+        '${lahore.longitude - 0.4},${lahore.latitude + 0.4},${lahore.longitude + 0.4},${lahore.latitude - 0.4}';
+
     final response = await _dio.get<List<dynamic>>(
       _nominatimUrl,
       queryParameters: {
@@ -144,11 +159,16 @@ class AddressAutocompleteService {
         'format': 'json',
         'addressdetails': 1,
         'limit': 8,
-        'layer': 'address',
+        'countrycodes': 'pk',
+        'viewbox': viewbox,
+        'bounded': 0,
         'dedupe': 1,
       },
       options: Options(
-        headers: {'User-Agent': 'AajheeApp/1.0'},
+        headers: {
+          'User-Agent': 'AajheeApp/1.0 (address-search)',
+          'Accept-Language': 'en',
+        },
       ),
     );
 
@@ -157,11 +177,16 @@ class AddressAutocompleteService {
         .map((entry) {
           final map = entry as Map<String, dynamic>;
           final address = map['address'] as Map<String, dynamic>? ?? {};
+          final displayName = map['display_name']?.toString() ?? '';
 
           final street = _firstNonEmpty([
             address['road'],
             address['pedestrian'],
             address['footway'],
+            address['path'],
+            address['neighbourhood'],
+            address['suburb'],
+            address['quarter'],
           ]);
           final houseNumber = _firstNonEmpty([address['house_number']]);
           final postalCode = _firstNonEmpty([address['postcode']]);
@@ -170,11 +195,31 @@ class AddressAutocompleteService {
             address['town'],
             address['village'],
             address['municipality'],
+            address['county'],
+            address['state_district'],
           ]);
 
-          return _buildSuggestion(
+          final titleParts = <String>[
+            if (street.isNotEmpty) street,
+            if (houseNumber.isNotEmpty) houseNumber,
+          ];
+          final title = titleParts.isNotEmpty
+              ? titleParts.join(' ')
+              : displayName.split(',').first.trim();
+
+          final subtitleParts = <String>[
+            if (postalCode.isNotEmpty) postalCode,
+            if (city.isNotEmpty) city,
+          ];
+          final subtitle = subtitleParts.isNotEmpty
+              ? subtitleParts.join(' ')
+              : _secondaryFromDisplayName(displayName);
+
+          return AddressSuggestion(
             id: 'osm-${map['place_id']}',
-            street: street,
+            title: title,
+            subtitle: subtitle,
+            street: street.isNotEmpty ? street : title,
             houseNumber: houseNumber,
             postalCode: postalCode,
             city: city,
@@ -182,7 +227,7 @@ class AddressAutocompleteService {
             longitude: double.tryParse(map['lon']?.toString() ?? ''),
           );
         })
-        .where((s) => s.street.isNotEmpty || s.postalCode.isNotEmpty)
+        .where((s) => s.title.isNotEmpty)
         .take(6)
         .toList();
   }
@@ -232,6 +277,16 @@ class AddressAutocompleteService {
     if (parts.length <= 1) return text.trim();
 
     return parts.sublist(0, parts.length - 1).join(', ');
+  }
+
+  String? _secondaryFromDisplayName(String displayName) {
+    final parts = displayName
+        .split(',')
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .toList();
+    if (parts.length <= 1) return null;
+    return parts.skip(1).take(3).join(', ');
   }
 
   String _firstNonEmpty(List<dynamic> values) {

@@ -12,16 +12,14 @@ abstract final class AppRoutes {
   static const String verifyOtp = '/verify-otp';
   static const String bottomNavigator = '/bottom-navigator';
   static const String businessStore = '/business-store';
-  static const String offerScanner = '/offer-scanner';
   static const String notifications = '/notifications';
   static const String favorites = '/favorites';
-  static const String searchOffers = '/search-offers';
-  static const String topPicks = '/top-picks';
   static const String addresses = '/addresses';
   static const String addAddress = '/addresses/add';
   static const String editAddress = '/addresses/edit';
   static const String editProfile = '/edit-profile';
   static const String cart = '/cart';
+  static const String checkout = '/checkout';
   static const String orders = '/orders';
   static String orderDetail(String publicId) => '/orders/$publicId';
   static String productDetail(String id) => '/products/$id';

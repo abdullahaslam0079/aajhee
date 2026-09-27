@@ -55,33 +55,6 @@ class HomeFeedState {
   /// Branches are already filtered server-side by [selectedCategoryIndex].
   List<MapBranchModel> get filteredBranches => branches;
 
-  String? addressForOffer({
-    int? featuredBranchId,
-    int? businessId,
-  }) {
-    if (featuredBranchId != null && featuredBranchId > 0) {
-      for (final branch in branches) {
-        if (branch.id != featuredBranchId) continue;
-        final address = branch.formattedAddress.trim();
-        if (address.isNotEmpty) return address;
-      }
-    }
-    if (businessId == null || businessId <= 0) return null;
-    MapBranchModel? nearest;
-    for (final branch in branches) {
-      if (branch.businessId != businessId) continue;
-      if (branch.formattedAddress.trim().isEmpty) continue;
-      if (nearest == null) {
-        nearest = branch;
-        continue;
-      }
-      final nextDistance = branch.distanceKm ?? double.infinity;
-      final currentDistance = nearest.distanceKm ?? double.infinity;
-      if (nextDistance < currentDistance) nearest = branch;
-    }
-    return nearest?.formattedAddress.trim();
-  }
-
   String? logoUrlForBusiness(int businessId) {
     if (businessId <= 0) return null;
     for (final branch in branches) {
@@ -120,13 +93,8 @@ class HomeFeed extends _$HomeFeed {
   @override
   HomeFeedState build() {
     ref.listen(savedAddressesProvider, (previous, next) {
-      if (next.isLoading) return;
-      if (previous == null || previous.isLoading) return;
-
-      final nextAddressId = next.selectedAddress?.id;
-      if (previous.selectedAddress != next.selectedAddress) {
-        _scheduleLoad(nextAddressId);
-      }
+      if (!next.selectedLocationChangedFrom(previous)) return;
+      _scheduleLoad(next.selectedAddress?.id);
     });
 
     _scheduleLoad(null);
@@ -226,7 +194,7 @@ class HomeFeed extends _$HomeFeed {
       state = state.copyWith(
         isLoading: false,
         isLoadingMore: false,
-        errorMessage: 'Could not load offers. Please try again.',
+        errorMessage: 'Could not load stores. Please try again.',
       );
     }
   }

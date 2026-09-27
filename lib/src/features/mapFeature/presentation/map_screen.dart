@@ -77,15 +77,12 @@ class _MapScreenState extends ConsumerState<MapScreen>
   @override
   Widget build(BuildContext context) {
     ref.listen(savedAddressesProvider, (previous, next) {
-      if (next.isLoading) return;
+      if (!next.selectedLocationChangedFrom(previous)) return;
 
       final address = next.selectedAddress;
       if (address == null) return;
 
-      final addressChanged = previous?.selectedAddress?.id != address.id;
-      final addressesLoaded = previous?.isLoading ?? false;
-      if (!addressChanged && !addressesLoaded) return;
-
+      _focusedAddressId = null;
       _focusSelectedAddress(address);
     });
 

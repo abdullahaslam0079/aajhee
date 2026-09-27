@@ -23,7 +23,7 @@ class AppNotification {
 
   int? get businessId => _asInt(data['business_id']);
   int? get branchId => _asInt(data['branch_id']);
-  int? get offerId => _asInt(data['offer_id']);
+  int? get orderId => _asInt(data['order_id'] ?? data['public_id']);
 
   AppNotification copyWith({
     bool? isRead,

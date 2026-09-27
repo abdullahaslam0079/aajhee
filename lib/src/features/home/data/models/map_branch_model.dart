@@ -1,4 +1,4 @@
-import 'package:aajhee/src/features/home/data/models/branch_top_offer_model.dart';
+import 'package:aajhee/src/features/home/data/models/branch_discount_summary.dart';
 import 'package:aajhee/src/features/home/data/models/category_model.dart';
 import 'package:aajhee/src/utils/api_value_parsers.dart';
 import 'package:aajhee/src/utils/media_url_utils.dart';
@@ -17,8 +17,8 @@ class MapBranchModel {
     required this.formattedAddress,
     required this.highestDiscountPercent,
     this.businessLogoUrl,
-    this.highestDiscountOfferImageUrl,
-    this.highestDiscountOffer,
+    this.highestDiscountImageUrl,
+    this.discountSummary,
     this.distanceKm,
   });
 
@@ -34,8 +34,8 @@ class MapBranchModel {
   final String formattedAddress;
   final double highestDiscountPercent;
   final String? businessLogoUrl;
-  final String? highestDiscountOfferImageUrl;
-  final BranchTopOfferModel? highestDiscountOffer;
+  final String? highestDiscountImageUrl;
+  final BranchDiscountSummary? discountSummary;
   final double? distanceKm;
 
   String get displayName => businessName.isNotEmpty ? businessName : name;
@@ -43,7 +43,7 @@ class MapBranchModel {
   String? get logoUrl => businessLogoUrl;
 
   String? get coverImageUrl =>
-      highestDiscountOfferImageUrl ?? highestDiscountOffer?.imageUrl;
+      highestDiscountImageUrl ?? discountSummary?.imageUrl;
 
   MapBranchModel copyWith({
     int? id,
@@ -58,8 +58,8 @@ class MapBranchModel {
     String? formattedAddress,
     double? highestDiscountPercent,
     String? businessLogoUrl,
-    String? highestDiscountOfferImageUrl,
-    BranchTopOfferModel? highestDiscountOffer,
+    String? highestDiscountImageUrl,
+    BranchDiscountSummary? discountSummary,
     double? distanceKm,
   }) {
     return MapBranchModel(
@@ -76,17 +76,17 @@ class MapBranchModel {
       highestDiscountPercent:
           highestDiscountPercent ?? this.highestDiscountPercent,
       businessLogoUrl: businessLogoUrl ?? this.businessLogoUrl,
-      highestDiscountOfferImageUrl:
-          highestDiscountOfferImageUrl ?? this.highestDiscountOfferImageUrl,
-      highestDiscountOffer: highestDiscountOffer ?? this.highestDiscountOffer,
+      highestDiscountImageUrl:
+          highestDiscountImageUrl ?? this.highestDiscountImageUrl,
+      discountSummary: discountSummary ?? this.discountSummary,
       distanceKm: distanceKm ?? this.distanceKm,
     );
   }
 
   factory MapBranchModel.fromJson(Map<String, dynamic> json) {
-    final topOfferJson = json['highest_discount_offer'] as Map<String, dynamic>?;
-    final topOffer = topOfferJson != null
-        ? BranchTopOfferModel.fromJson(topOfferJson)
+    final discountJson = json['highest_discount_offer'] as Map<String, dynamic>?;
+    final discount = discountJson != null
+        ? BranchDiscountSummary.fromJson(discountJson)
         : null;
 
     return MapBranchModel(
@@ -104,7 +104,7 @@ class MapBranchModel {
       formattedAddress: parseApiString(json['formattedAddress']) ?? '',
       highestDiscountPercent: parseApiDouble(
         json['highest_discount_percent'],
-        fallback: topOffer?.discountPercent ?? 0,
+        fallback: discount?.discountPercent ?? 0,
       ),
       businessLogoUrl: resolveMediaUrl(
         parseApiString(
@@ -114,10 +114,10 @@ class MapBranchModel {
               json['logo'],
         ),
       ),
-      highestDiscountOfferImageUrl: resolveMediaUrl(
+      highestDiscountImageUrl: resolveMediaUrl(
         parseApiString(json['highest_discount_offer_image_url']),
       ),
-      highestDiscountOffer: topOffer,
+      discountSummary: discount,
       distanceKm: parseApiNullableDouble(json['distance_km']),
     );
   }

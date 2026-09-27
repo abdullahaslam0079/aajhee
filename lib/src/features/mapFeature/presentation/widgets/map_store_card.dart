@@ -137,7 +137,7 @@ class MapStoreCard extends ConsumerWidget {
                                   label: '$discountPercent% off',
                                   background: appColors.deal,
                                   foreground: appColors.onDeal,
-                                  icon: Icons.local_offer_rounded,
+                                  icon: Icons.sell_rounded,
                                 ),
                             ],
                           ),
@@ -254,7 +254,12 @@ class MapStoreCard extends ConsumerWidget {
       return _haversineKm(userLat, userLng, branch.latitude, branch.longitude);
     }
 
-    return _haversineKm(52.52, 13.405, branch.latitude, branch.longitude);
+    return _haversineKm(
+      MapConstants.defaultCenter.latitude,
+      MapConstants.defaultCenter.longitude,
+      branch.latitude,
+      branch.longitude,
+    );
   }
 
   double _haversineKm(double lat1, double lng1, double lat2, double lng2) {

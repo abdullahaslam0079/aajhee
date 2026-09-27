@@ -34,6 +34,21 @@ class SavedAddressesState {
     }
     return addresses.first;
   }
+
+  /// Whether the active delivery location changed enough to refetch location
+  /// scoped feeds (new default address, or same address moved on the map).
+  bool selectedLocationChangedFrom(SavedAddressesState? previous) {
+    if (isLoading) return false;
+    if (previous == null || previous.isLoading) return false;
+
+    final prev = previous.selectedAddress;
+    final curr = selectedAddress;
+    if (prev?.id != curr?.id) return true;
+    if (prev == null || curr == null) return false;
+
+    return (prev.latitude - curr.latitude).abs() > 0.00001 ||
+        (prev.longitude - curr.longitude).abs() > 0.00001;
+  }
 }
 
 @Riverpod(keepAlive: true)

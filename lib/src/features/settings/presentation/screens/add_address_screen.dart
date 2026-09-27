@@ -483,7 +483,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
                     controller: _cityController,
                     enabled: !_isBusy,
                     label: 'City',
-                    hint: 'e.g. Berlin',
+                    hint: 'e.g. Lahore',
                     prefixIcon: const Icon(Icons.location_city_outlined),
                     textInputAction: TextInputAction.next,
                     validator: (v) =>

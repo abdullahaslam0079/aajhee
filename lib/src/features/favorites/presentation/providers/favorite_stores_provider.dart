@@ -1,11 +1,9 @@
-import 'dart:async';
-
-import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
-import 'package:aajhee/src/features/offers/data/services/engagement_service.dart';
+import 'package:aajhee/src/features/favorites/data/services/favorites_service.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
 
 part 'favorite_stores_provider.g.dart';
 
@@ -70,10 +68,9 @@ class FavoriteStores extends _$FavoriteStores {
     });
 
     ref.listen(savedAddressesProvider, (previous, next) {
-      if (next.isLoading) return;
       final session = ref.read(sessionProvider);
       if (session.status != SessionStatus.authenticated) return;
-      if (previous?.selectedAddress?.id == next.selectedAddress?.id) return;
+      if (!next.selectedLocationChangedFrom(previous)) return;
       _scheduleRefresh();
     });
 
@@ -129,7 +126,7 @@ class FavoriteStores extends _$FavoriteStores {
 
       final addressId =
           ref.read(savedAddressesProvider).selectedAddress?.id.toString();
-      final result = await EngagementService.instance.getFavoriteBranches(
+      final result = await FavoritesService.instance.getFavoriteBranches(
         addressId: addressId,
         page: nextPage,
         pageSize: _pageSize,
@@ -207,7 +204,7 @@ class FavoriteStores extends _$FavoriteStores {
       clearError: true,
     );
 
-    final result = await EngagementService.instance.setBranchLike(
+    final result = await FavoritesService.instance.setBranchLike(
       branchId,
       liked: liked,
     );

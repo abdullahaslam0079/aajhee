@@ -1,17 +1,13 @@
 import 'package:go_router/go_router.dart';
 import 'package:aajhee/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/store_catalog_screen.dart';
-import 'package:aajhee/src/features/businessStore/presentation/business_store_screen.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
-import 'package:aajhee/src/features/home/data/models/offer_model.dart';
 import 'package:aajhee/src/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:aajhee/src/features/notifications/presentation/notification_screen.dart';
 import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
 import 'package:aajhee/src/features/settings/presentation/screens/add_address_screen.dart';
 import 'package:aajhee/src/features/settings/presentation/screens/addresses_screen.dart';
 import 'package:aajhee/src/features/settings/presentation/screens/edit_profile_screen.dart';
-import 'package:aajhee/src/features/offerScanner/domain/offer_scanner_session.dart';
-import 'package:aajhee/src/features/offerScanner/presentation/offer_scanner_screen.dart';
 import 'package:aajhee/src/routing/global_navigator.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
 
@@ -20,13 +16,11 @@ import 'package:aajhee/src/features/auth/presentation/screens/login_screen.dart'
 import 'package:aajhee/src/features/auth/presentation/screens/verify_otp_screen.dart';
 
 import 'package:aajhee/src/features/commerce/presentation/screens/cart_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/checkout_screen.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/home_commerce_screen.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/orders_screen.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/product_detail_screen.dart';
-import 'package:aajhee/src/features/offers/presentation/screens/home_offers_screen.dart';
-import 'package:aajhee/src/features/offers/presentation/screens/top_picks_screen.dart';
 import 'package:aajhee/src/features/onboarding/presentation/screens/onboarding_page.dart';
-import 'package:aajhee/src/features/searchOffers/presentation/screens/search_offers_screen.dart';
 import 'package:aajhee/src/features/splash/presentation/splash_screen.dart';
 
 /// Firebase Phone Auth reCAPTCHA redirects via a custom URL scheme.
@@ -96,6 +90,11 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const CartScreen(),
     ),
     GoRoute(
+      path: AppRoutes.checkout,
+      name: 'checkout',
+      builder: (context, state) => const CheckoutScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.orders,
       name: 'orders',
       builder: (context, state) => const OrdersScreen(),
@@ -130,44 +129,18 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.businessStore,
       name: 'businessStore',
       builder: (context, state) {
-        final branch = state.extra is MapBranchModel
-            ? state.extra! as MapBranchModel
-            : null;
-        if (branch == null) {
-          throw StateError('BusinessStoreScreen requires a MapBranchModel extra.');
+        final extra = state.extra;
+        if (extra is StoreCatalogArgs) {
+          return StoreCatalogScreen(args: extra);
         }
-        return StoreCatalogScreen(branch: branch);
-      },
-    ),
-    GoRoute(
-      path: '/legacy-business-store',
-      name: 'legacyBusinessStore',
-      builder: (context, state) {
-        final branch = state.extra is MapBranchModel
-            ? state.extra! as MapBranchModel
-            : null;
-        if (branch == null) {
-          throw StateError('BusinessStoreScreen requires a MapBranchModel extra.');
-        }
-        return BusinessStoreScreen(branch: branch);
-      },
-    ),
-    GoRoute(
-      path: AppRoutes.offerScanner,
-      name: 'offerScanner',
-      builder: (context, state) {
-        if (state.extra is OfferScannerSession) {
-          final session = state.extra! as OfferScannerSession;
-          return OfferScannerScreen(
-            offer: session.offer,
-            branchId: session.branchId,
-            navigateToBranchOnSuccess: session.navigateToBranchOnSuccess,
+        if (extra is MapBranchModel) {
+          return StoreCatalogScreen(
+            args: StoreCatalogArgs.fromBranch(extra),
           );
         }
-
-        final offer =
-            state.extra is OfferModel ? state.extra! as OfferModel : null;
-        return OfferScannerScreen(offer: offer);
+        throw StateError(
+          'StoreCatalogScreen requires StoreCatalogArgs or MapBranchModel.',
+        );
       },
     ),
     GoRoute(
@@ -179,16 +152,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.favorites,
       name: 'favorites',
       builder: (context, state) => const FavoritesScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.searchOffers,
-      name: 'searchOffers',
-      builder: (context, state) => const SearchOffersScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.topPicks,
-      name: 'topPicks',
-      builder: (context, state) => const TopPicksScreen(),
     ),
     GoRoute(
       path: AppRoutes.addresses,

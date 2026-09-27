@@ -1,4 +1,7 @@
 import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_camera_actions.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/utils/map_location_helper.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_action_button.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:flutter/gestures.dart';
@@ -31,9 +34,10 @@ class AddressLocationMapPicker extends StatefulWidget {
 
 class _AddressLocationMapPickerState extends State<AddressLocationMapPicker> {
   GoogleMapController? _controller;
-  LatLng _center = const LatLng(52.52, 13.405);
+  LatLng _center = MapConstants.defaultCenter;
   bool _moving = false;
   bool _ignoreNextIdle = false;
+  bool _locating = false;
 
   /// Claim map gestures so a parent [ScrollView] does not steal pans.
   final Set<Factory<OneSequenceGestureRecognizer>> _gestureRecognizers = {
@@ -82,6 +86,41 @@ class _AddressLocationMapPickerState extends State<AddressLocationMapPicker> {
     widget.onLocationSelected(_center);
   }
 
+  Future<void> _zoomIn() async {
+    final controller = _controller;
+    if (controller == null || !widget.enabled) return;
+    await MapCameraActions.zoomIn(controller);
+  }
+
+  Future<void> _zoomOut() async {
+    final controller = _controller;
+    if (controller == null || !widget.enabled) return;
+    await MapCameraActions.zoomOut(controller);
+  }
+
+  Future<void> _goToCurrentLocation() async {
+    if (!widget.enabled || _locating) return;
+
+    setState(() => _locating = true);
+    final result = await MapLocationHelper.getCurrentPosition();
+    if (!mounted) return;
+    setState(() => _locating = false);
+
+    if (!result.isSuccess) {
+      showToast(context, message: result.errorMessage!, status: 'error');
+      return;
+    }
+
+    final position = result.position!;
+    _center = position;
+    _ignoreNextIdle = true;
+    await _controller?.animateCamera(
+      CameraUpdate.newLatLngZoom(position, MapConstants.currentLocationZoom),
+    );
+    if (!mounted) return;
+    widget.onLocationSelected(position);
+  }
+
   Widget _mapStack(ColorScheme cs) {
     return Stack(
       alignment: Alignment.center,
@@ -96,6 +135,7 @@ class _AddressLocationMapPickerState extends State<AddressLocationMapPicker> {
           onCameraIdle: _onCameraIdle,
           markers: const {},
           gestureRecognizers: _gestureRecognizers,
+          myLocationEnabled: true,
           myLocationButtonEnabled: false,
           zoomControlsEnabled: false,
           compassEnabled: false,
@@ -141,6 +181,34 @@ class _AddressLocationMapPickerState extends State<AddressLocationMapPicker> {
             ),
           ),
         ),
+        Positioned(
+          right: AppSpacing.sm.w,
+          bottom: AppSpacing.sm.h,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              MapActionButton(
+                heroTag: 'addressMapZoomIn',
+                icon: Icons.add,
+                onPressed: widget.enabled ? _zoomIn : () {},
+              ),
+              SizedBox(height: AppSpacing.xs.h),
+              MapActionButton(
+                heroTag: 'addressMapZoomOut',
+                icon: Icons.remove,
+                onPressed: widget.enabled ? _zoomOut : () {},
+              ),
+              SizedBox(height: AppSpacing.xs.h),
+              MapActionButton(
+                heroTag: 'addressMapMyLocation',
+                icon: _locating ? Icons.hourglass_top : Icons.my_location,
+                onPressed: widget.enabled && !_locating
+                    ? _goToCurrentLocation
+                    : () {},
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -161,7 +229,7 @@ class _AddressLocationMapPickerState extends State<AddressLocationMapPicker> {
         if (widget.expand) Expanded(child: map) else map,
         SizedBox(height: AppSpacing.xs.h),
         Text(
-          'Slide the map with your finger. The pin stays in the center — stop moving to update the location.',
+          'Slide or zoom the map. The pin stays in the center — stop moving to update the location.',
           style: context.theme.textTheme.bodySmall?.copyWith(
             color: cs.onSurfaceVariant,
           ),

@@ -344,25 +344,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: isLoading ? null : _signInWithGoogle,
                     isFullWidth: true,
                   ),
-                  SizedBox(height: AppSpacing.sm.h),
-                  AppButton(
-                    label: 'auth.continue_with_apple'.tr(),
-                    variant: ButtonVariant.outline,
-                    prefixIcon: SizedBox(
-                      width: 22.r,
-                      height: 22.r,
-                      child: SvgPicture.asset(
-                        AppAssets.appleIcon,
-                        fit: BoxFit.contain,
-                        colorFilter: ColorFilter.mode(
-                          cs.onSurface,
-                          BlendMode.srcIn,
+                  if (kAppleSignInEnabledOnApplePlatforms &&
+                      (defaultTargetPlatform == TargetPlatform.iOS ||
+                          defaultTargetPlatform == TargetPlatform.macOS)) ...[
+                    SizedBox(height: AppSpacing.sm.h),
+                    AppButton(
+                      label: 'auth.continue_with_apple'.tr(),
+                      variant: ButtonVariant.outline,
+                      prefixIcon: SizedBox(
+                        width: 22.r,
+                        height: 22.r,
+                        child: SvgPicture.asset(
+                          AppAssets.appleIcon,
+                          fit: BoxFit.contain,
+                          colorFilter: ColorFilter.mode(
+                            cs.onSurface,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
+                      onPressed: isLoading ? null : _signInWithApple,
+                      isFullWidth: true,
                     ),
-                    onPressed: isLoading ? null : _signInWithApple,
-                    isFullWidth: true,
-                  ),
+                  ],
                   SizedBox(height: AppSpacing.xl.h),
                 ],
               ),

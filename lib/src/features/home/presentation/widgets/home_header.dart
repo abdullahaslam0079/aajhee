@@ -8,14 +8,18 @@ class HomeHeader extends StatelessWidget {
     required this.onLocationTap,
     required this.onFavoritesTap,
     required this.onNotificationsTap,
+    this.onCartTap,
     this.notificationUnreadCount = 0,
+    this.cartItemCount = 0,
   });
 
   final String locationText;
   final VoidCallback onLocationTap;
   final VoidCallback onFavoritesTap;
   final VoidCallback onNotificationsTap;
+  final VoidCallback? onCartTap;
   final int notificationUnreadCount;
+  final int cartItemCount;
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +53,14 @@ class HomeHeader extends StatelessWidget {
             onPressed: onNotificationsTap,
             badgeCount: notificationUnreadCount,
           ),
+          if (onCartTap != null) ...[
+            SizedBox(width: 6.w),
+            _HeaderIconButton(
+              icon: Icons.shopping_bag_outlined,
+              onPressed: onCartTap!,
+              badgeCount: cartItemCount,
+            ),
+          ],
         ],
       ),
     );

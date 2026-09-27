@@ -18,5 +18,4 @@ export '../shared/shared.dart';
 
 export '../features/auth/presentation/screens/login_screen.dart';
 export '../features/auth/presentation/screens/verify_otp_screen.dart';
-export '../features/offers/presentation/screens/home_offers_screen.dart';
 export '../features/onboarding/presentation/screens/onboarding_page.dart';

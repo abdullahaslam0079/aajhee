@@ -26,6 +26,25 @@ class CommerceApiService {
     );
   }
 
+  FutureEither<Map<String, dynamic>> listProducts({
+    int page = 1,
+    int pageSize = 20,
+    String? query,
+  }) async {
+    final result = await _dio.get(
+      '/api/products',
+      queryParameters: {
+        'page': page,
+        'page_size': pageSize,
+        if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+      },
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
   FutureEither<Map<String, dynamic>> getBranchCatalog(
     int branchId, {
     String? addressId,
@@ -36,6 +55,14 @@ class CommerceApiService {
         if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
       },
     );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> getBusinessCatalog(int businessId) async {
+    final result = await _dio.get('/api/stores/business/$businessId/catalog');
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),

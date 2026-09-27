@@ -110,7 +110,7 @@ class BusinessStoreCard extends ConsumerWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                Icons.local_offer_rounded,
+                                Icons.sell_rounded,
                                 size: 13,
                                 color: appColors.onDeal,
                               ),

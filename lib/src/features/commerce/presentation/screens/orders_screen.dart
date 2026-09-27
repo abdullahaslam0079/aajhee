@@ -2,9 +2,6 @@ import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
-import 'package:aajhee/src/routing/app_routes.dart';
-import 'package:aajhee/src/services/dio_service.dart';
-import 'package:dio/dio.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -15,138 +12,262 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   final _api = CommerceApiService(DioService.instance);
-  late Future<List<Map<String, dynamic>>> _future;
+  List<Map<String, dynamic>> _orders = const [];
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _future = _load();
+    _load();
   }
 
-  Future<List<Map<String, dynamic>>> _load() async {
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     final result = await _api.getOrders();
-    return result.fold((f) => throw Exception(f.message), (items) => items);
+    if (!mounted) return;
+    result.fold(
+      (f) => setState(() {
+        _loading = false;
+        _error = f.message;
+      }),
+      (items) => setState(() {
+        _orders = items;
+        _loading = false;
+      }),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final canvas = homeCanvasOf(context);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('My orders')),
-      body: FutureBuilder(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('${snapshot.error}'));
-          }
-          final items = snapshot.data ?? [];
-          if (items.isEmpty) {
-            return const Center(child: Text('No orders yet'));
-          }
-          return ListView.separated(
-            padding: const EdgeInsets.all(16),
-            itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final o = items[index];
-              final status = o['status']?.toString();
-              final cs = Theme.of(context).colorScheme;
-              final appColors = context.appColors;
-              final (statusColor, statusBg) = switch (status) {
-                'completed' => (
-                    appColors.success,
-                    appColors.successContainer ??
-                        appColors.success.withValues(alpha: 0.12),
-                  ),
-                'cancelled' => (
-                    cs.error,
-                    cs.errorContainer,
-                  ),
-                'pending' ||
-                'accepted' ||
-                'awaiting_payment' ||
-                'payment_submitted' ||
-                'paid_confirmed' ||
-                'preparing' ||
-                'ready_for_pickup' ||
-                'out_for_delivery' => (
-                    appColors.warning,
-                    appColors.warningContainer ??
-                        appColors.warning.withValues(alpha: 0.12),
-                  ),
-                _ => (
-                    cs.onSurfaceVariant,
-                    cs.surfaceContainerHighest,
-                  ),
-              };
-              return Material(
-                color: cs.surfaceContainerLowest,
-                shape: RoundedRectangleBorder(
-                  borderRadius: AppBorders.card,
-                  side: BorderSide(color: cs.outlineVariant),
-                ),
-                child: InkWell(
-                  borderRadius: AppBorders.card,
-                  onTap: () => context.push(
-                    AppRoutes.orderDetail(o['public_id'].toString()),
-                  ),
+      backgroundColor: canvas,
+      appBar: AppBar(
+        backgroundColor: canvas,
+        title: const Text('My orders'),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          '${o['business_name']} · Rs ${o['total']}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: statusBg,
-                                borderRadius: AppBorders.sm,
-                              ),
-                              child: Text(
-                                labelStatus(status),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .labelMedium
-                                    ?.copyWith(
-                                      color: statusColor,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              labelFulfillment(
-                                o['fulfillment_type']?.toString(),
-                              ),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: cs.onSurfaceVariant),
-                            ),
-                          ],
+                        Text(_error!, textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        FilledButton(
+                          onPressed: _load,
+                          child: const Text('Retry'),
                         ),
                       ],
                     ),
                   ),
+                )
+              : _orders.isEmpty
+                  ? AppEmptyState(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'No orders yet',
+                      subtitle: 'When you place an order, it will show up here.',
+                      actionLabel: 'Continue shopping',
+                      onAction: () => context.pop(),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(
+                          parent: BouncingScrollPhysics(),
+                        ),
+                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
+                        itemCount: _orders.length,
+                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
+                        itemBuilder: (context, index) {
+                          final order = _orders[index];
+                          return _OrderListCard(
+                            order: order,
+                            onTap: () async {
+                              await context.push(
+                                AppRoutes.orderDetail(
+                                  order['public_id'].toString(),
+                                ),
+                              );
+                              if (mounted) _load();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+    );
+  }
+}
+
+class _OrderListCard extends StatelessWidget {
+  const _OrderListCard({
+    required this.order,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> order;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final status = order['status']?.toString();
+    final (statusColor, statusBg) = _statusColors(context, status);
+    final items = (order['items'] as List? ?? const []);
+    final itemCount = items.fold<int>(0, (sum, item) {
+      if (item is! Map) return sum + 1;
+      final qty = item['quantity'];
+      if (qty is int) return sum + qty;
+      if (qty is num) return sum + qty.toInt();
+      return sum + 1;
+    });
+    final firstName = items.isNotEmpty && items.first is Map
+        ? (items.first as Map)['product_name']?.toString()
+        : null;
+    final itemSummary = itemCount <= 0
+        ? 'No items'
+        : itemCount == 1
+            ? ((firstName?.isNotEmpty ?? false) ? firstName! : '1 item')
+            : (firstName?.isNotEmpty ?? false)
+                ? '$firstName + ${itemCount - 1} more'
+                : '$itemCount items';
+    final placedAt = formatCommerceDateTime(order['placed_at']?.toString());
+    final orderNumber = formatOrderNumber(order['public_id']?.toString());
+
+    return Material(
+      color: cs.surfaceContainerLowest,
+      borderRadius: AppBorders.card,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppBorders.card,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: AppBorders.card,
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(14.r),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        order['business_name']?.toString() ?? 'Order',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Rs ${order['total']}',
+                      style: tt.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            },
-          );
-        },
+                SizedBox(height: 6.h),
+                Text(
+                  itemSummary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: tt.bodyMedium?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.75),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 10.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusBg,
+                        borderRadius: AppBorders.sm,
+                      ),
+                      child: Text(
+                        labelStatus(status),
+                        style: tt.labelMedium?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        [
+                          labelFulfillment(
+                            order['fulfillment_type']?.toString(),
+                          ),
+                          labelPayment(order['payment_method']?.toString()),
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.bodySmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 10.h),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.schedule_rounded,
+                      size: 14,
+                      color: cs.onSurfaceVariant,
+                    ),
+                    SizedBox(width: 4.w),
+                    Expanded(
+                      child: Text(
+                        placedAt == '—' ? 'Recently placed' : placedAt,
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (orderNumber.isNotEmpty)
+                      Text(
+                        orderNumber,
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    SizedBox(width: 4.w),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: cs.primary,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -164,6 +285,7 @@ class OrderDetailScreen extends StatefulWidget {
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
   final _api = CommerceApiService(DioService.instance);
   Map<String, dynamic>? _order;
+  final Map<int, String> _productImages = {};
   bool _loading = true;
   bool _cancelling = false;
 
@@ -174,20 +296,85 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _load() async {
+    setState(() => _loading = true);
     final result = await _api.getOrder(widget.publicId);
     if (!mounted) return;
-    result.fold(
-      (f) => setState(() {
-        _loading = false;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(f.message)),
-        );
-      }),
-      (order) => setState(() {
-        _order = order;
-        _loading = false;
-      }),
+    await result.fold(
+      (f) async {
+        setState(() {
+          _loading = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(f.message)),
+          );
+        });
+      },
+      (order) async {
+        setState(() {
+          _order = order;
+          _loading = false;
+        });
+        await _loadProductImages(order);
+      },
     );
+  }
+
+  Future<void> _loadProductImages(Map<String, dynamic> order) async {
+    final items = ((order['items'] as List?) ?? const [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((i) => Map<String, dynamic>.from(i));
+
+    final pendingIds = <int>{};
+    for (final item in items) {
+      final embedded = _imageFromItem(item);
+      final productId = _asInt(item['product_id']);
+      if (embedded != null && productId != null) {
+        _productImages[productId] = embedded;
+        continue;
+      }
+      if (productId != null && !_productImages.containsKey(productId)) {
+        pendingIds.add(productId);
+      }
+    }
+    if (pendingIds.isEmpty) {
+      if (mounted) setState(() {});
+      return;
+    }
+
+    await Future.wait(pendingIds.map((id) async {
+      final result = await _api.getProduct(id);
+      result.fold((_) {}, (product) {
+        final url = product['image_url']?.toString().trim();
+        if (url != null && url.isNotEmpty) {
+          _productImages[id] = url;
+        }
+      });
+    }));
+    if (mounted) setState(() {});
+  }
+
+  static int? _asInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
+  static String? _imageFromItem(Map<String, dynamic> item) {
+    for (final key in [
+      'image_url',
+      'product_image_url',
+      'thumbnail_url',
+      'product_image',
+    ]) {
+      final value = item[key]?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    final product = item['product'];
+    if (product is Map) {
+      final value = product['image_url']?.toString().trim();
+      if (value != null && value.isNotEmpty) return value;
+    }
+    return null;
   }
 
   Future<void> _cancelOrder() async {
@@ -232,16 +419,60 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _uploadProof() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () => Navigator.pop(context, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () => Navigator.pop(context, ImageSource.camera),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (source == null || !mounted) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: source,
+      imageQuality: 85,
+      maxWidth: 2000,
+    );
+    if (picked == null || !mounted) return;
+
     final noteController = TextEditingController();
     final note = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Payment receipt'),
-        content: TextField(
-          controller: noteController,
-          decoration: const InputDecoration(
-            labelText: 'Transaction reference / note',
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              picked.name,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(
+                labelText: 'Transaction reference / note (optional)',
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -250,16 +481,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, noteController.text),
-            child: const Text('Submit note'),
+            child: const Text('Upload'),
           ),
         ],
       ),
     );
-    if (note == null) return;
-    // Minimal placeholder image bytes for receipt note submission until image_picker is added.
-    final multipart = MultipartFile.fromBytes(
-      List<int>.generate(16, (i) => i),
-      filename: 'receipt-note.txt',
+    if (note == null || !mounted) return;
+
+    final multipart = await MultipartFile.fromFile(
+      picked.path,
+      filename: picked.name,
     );
     final result = await _api.uploadPaymentProof(
       publicId: widget.publicId,
@@ -289,8 +520,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return parsed == null ? true : parsed > 0;
   }
 
-  /// Short explanation for why a pending order cannot be cancelled by the
-  /// customer. Mirrors `customer_can_cancel` in the backend.
   String _pendingCancelBlockedReason(Map<String, dynamic> order) {
     if (order['customer_cancel_allowed'] == false) {
       return 'This shop does not allow customers to cancel orders. '
@@ -306,23 +535,746 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         'Contact the shop if you need help.';
   }
 
-  Widget _cancelSection(BuildContext context, Map<String, dynamic> order) {
+  @override
+  Widget build(BuildContext context) {
+    final order = _order;
+    final canvas = homeCanvasOf(context);
+    return Scaffold(
+      backgroundColor: canvas,
+      appBar: AppBar(
+        backgroundColor: canvas,
+        title: const Text('Order details'),
+      ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : order == null
+              ? AppEmptyState(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Order not found',
+                  subtitle: 'This order may have been removed.',
+                  actionLabel: 'Back to orders',
+                  onAction: () => context.pop(),
+                )
+              : RefreshIndicator(
+                  onRefresh: _load,
+                  child: _buildDetail(context, order),
+                ),
+    );
+  }
+
+  Widget _buildDetail(BuildContext context, Map<String, dynamic> order) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final status = _text(order, 'status');
+    final fulfillment = _text(order, 'fulfillment_type');
+    final paymentMethod = _text(order, 'payment_method');
+    final isPickup = isPickupFulfillment(fulfillment);
+    final branchName = _text(order, 'branch_name');
+    final customerNotes = _text(order, 'customer_notes');
+    final deliveryFee = _text(order, 'delivery_fee');
+    final addressText = _text(order, 'delivery_address_text');
+    final bankInstructions = _text(order, 'payment_instructions').isNotEmpty
+        ? _text(order, 'payment_instructions')
+        : _text(order, 'bank_transfer_instructions');
+    final placedAt = formatCommerceDateTime(_text(order, 'placed_at'));
+    final orderNumber = formatOrderNumber(_text(order, 'public_id'));
+    final (statusColor, statusBg) = _statusColors(context, status);
+    final items = ((order['items'] as List?) ?? const [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((i) => Map<String, dynamic>.from(i))
+        .toList();
+    final proofs = ((order['payment_proofs'] as List?) ?? const [])
+        .whereType<Map<dynamic, dynamic>>()
+        .map((p) => Map<String, dynamic>.from(p))
+        .toList();
+    final canUploadProof = requiresPaymentProof(paymentMethod) &&
+        (status == 'awaiting_payment' ||
+            status == 'accepted' ||
+            status == 'payment_submitted');
+
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      ),
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 28.h),
+      children: [
+        _SectionCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                decoration: BoxDecoration(
+                  color: statusBg,
+                  borderRadius: AppBorders.sm,
+                ),
+                child: Text(
+                  labelStatus(status),
+                  style: tt.titleSmall?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              SizedBox(height: 12.h),
+              Text(
+                order['business_name']?.toString() ?? 'Store',
+                style: tt.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: cs.onSurface,
+                ),
+              ),
+              if (branchName.isNotEmpty) ...[
+                SizedBox(height: 4.h),
+                Text(
+                  branchName,
+                  style: tt.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+              SizedBox(height: 10.h),
+              _MetaLine(
+                icon: Icons.tag_rounded,
+                label: orderNumber.isEmpty
+                    ? 'Order'
+                    : 'Order $orderNumber',
+              ),
+              if (placedAt != '—') ...[
+                SizedBox(height: 6.h),
+                _MetaLine(
+                  icon: Icons.schedule_rounded,
+                  label: 'Placed $placedAt',
+                ),
+              ],
+            ],
+          ),
+        ),
+        SizedBox(height: 12.h),
+        _SectionCard(
+          title: isPickup ? 'Pickup' : 'Delivery',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(
+                label: 'Method',
+                value: labelFulfillment(fulfillment),
+              ),
+              if (!isPickup && addressText.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                _InfoRow(
+                  label: 'Address',
+                  value: addressText,
+                  multiline: true,
+                ),
+              ],
+              if (isPickup && branchName.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                _InfoRow(
+                  label: 'Pickup from',
+                  value: branchName,
+                ),
+              ],
+              if (customerNotes.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                _InfoRow(
+                  label: 'Your notes',
+                  value: customerNotes,
+                  multiline: true,
+                ),
+              ],
+            ],
+          ),
+        ),
+        SizedBox(height: 12.h),
+        _SectionCard(
+          title: 'Payment',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(
+                label: 'Method',
+                value: labelPayment(paymentMethod),
+              ),
+              if (bankInstructions.isNotEmpty) ...[
+                SizedBox(height: 12.h),
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.all(12.r),
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHigh.withValues(alpha: 0.7),
+                    borderRadius: AppBorders.md,
+                    border: Border.all(color: cs.outlineVariant),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        switch (paymentMethod) {
+                          'stripe' => 'Card payment details',
+                          'jazzcash' => 'JazzCash details',
+                          _ => 'Bank transfer details',
+                        },
+                        style: tt.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: cs.onSurface,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Text(
+                        bankInstructions,
+                        style: tt.bodyMedium?.copyWith(
+                          color: cs.onSurface,
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        SizedBox(height: 12.h),
+        _SectionCard(
+          title: items.length == 1 ? '1 item' : '${items.length} items',
+          child: Column(
+            children: [
+              for (var i = 0; i < items.length; i++) ...[
+                _OrderItemTile(
+                  item: items[i],
+                  imageUrl: _productImages[_asInt(items[i]['product_id'])] ??
+                      _imageFromItem(items[i]),
+                ),
+                if (i != items.length - 1)
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10.h),
+                    child: Divider(height: 1, color: cs.outlineVariant),
+                  ),
+              ],
+            ],
+          ),
+        ),
+        SizedBox(height: 12.h),
+        _SectionCard(
+          title: 'Order summary',
+          child: Column(
+            children: [
+              _SummaryRow(
+                label: 'Subtotal',
+                value: 'Rs ${order['subtotal']}',
+              ),
+              if (_hasFee(deliveryFee)) ...[
+                SizedBox(height: 8.h),
+                _SummaryRow(
+                  label: 'Delivery fee',
+                  value: 'Rs $deliveryFee',
+                ),
+              ],
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                child: Divider(height: 1, color: cs.outlineVariant),
+              ),
+              _SummaryRow(
+                label: 'Total',
+                value: 'Rs ${order['total']}',
+                emphasize: true,
+              ),
+            ],
+          ),
+        ),
+        if (status == 'cancelled') ...[
+          SizedBox(height: 12.h),
+          _CancelledInfoCard(order: order),
+        ],
+        if (proofs.isNotEmpty) ...[
+          SizedBox(height: 12.h),
+          _SectionCard(
+            title: 'Payment receipts',
+            child: Column(
+              children: [
+                for (var i = 0; i < proofs.length; i++) ...[
+                  _PaymentProofTile(proof: proofs[i]),
+                  if (i != proofs.length - 1) SizedBox(height: 10.h),
+                ],
+              ],
+            ),
+          ),
+        ],
+        SizedBox(height: 16.h),
+        _CancelSection(
+          order: order,
+          cancelling: _cancelling,
+          onCancel: _cancelOrder,
+          pendingBlockedReason: _pendingCancelBlockedReason(order),
+        ),
+        if (canUploadProof) ...[
+          SizedBox(height: 8.h),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: _uploadProof,
+              child: const Text('Upload payment receipt'),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.child,
+    this.title,
+  });
+
+  final String? title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Material(
+      color: cs.surfaceContainerLowest,
+      borderRadius: AppBorders.card,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: AppBorders.card,
+          border: Border.all(color: cs.outlineVariant),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(14.r),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (title != null) ...[
+                Text(
+                  title!,
+                  style: tt.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: cs.onSurface,
+                  ),
+                ),
+                SizedBox(height: 12.h),
+              ],
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaLine extends StatelessWidget {
+  const _MetaLine({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: cs.onSurfaceVariant),
+        SizedBox(width: 6.w),
+        Expanded(
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: cs.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.multiline = false,
+  });
+
+  final String label;
+  final String value;
+  final bool multiline;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    if (multiline) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: tt.labelMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            value,
+            style: tt.bodyMedium?.copyWith(
+              color: cs.onSurface,
+              fontWeight: FontWeight.w600,
+              height: 1.35,
+            ),
+          ),
+        ],
+      );
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 100.w,
+          child: Text(
+            label,
+            style: tt.labelMedium?.copyWith(
+              color: cs.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: tt.bodyMedium?.copyWith(
+              color: cs.onSurface,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OrderItemTile extends StatelessWidget {
+  const _OrderItemTile({
+    required this.item,
+    this.imageUrl,
+  });
+
+  final Map<String, dynamic> item;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final name = (item['product_name']?.toString().trim().isNotEmpty ?? false)
+        ? item['product_name'].toString()
+        : 'Product';
+    final qty = item['quantity'] ?? 1;
+    final lineTotal = item['line_total'];
+    final productId = item['product_id'];
+    final initial = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+    final resolvedImage = (imageUrl ?? '').trim();
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: productId == null
+            ? null
+            : () => context.push(
+                  AppRoutes.productDetail('$productId'),
+                ),
+        borderRadius: AppBorders.md,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 2.h),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: AppBorders.md,
+                child: SizedBox(
+                  width: 56.w,
+                  height: 56.w,
+                  child: resolvedImage.isNotEmpty
+                      ? Image.network(
+                          resolvedImage,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _ItemImageFallback(
+                            initial: initial,
+                            colorScheme: cs,
+                            textTheme: tt,
+                          ),
+                        )
+                      : _ItemImageFallback(
+                          initial: initial,
+                          colorScheme: cs,
+                          textTheme: tt,
+                        ),
+                ),
+              ),
+              SizedBox(width: 12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: tt.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      'Qty $qty · Rs $lineTotal',
+                      style: tt.bodySmall?.copyWith(
+                        color: cs.onSurface.withValues(alpha: 0.72),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (productId != null) ...[
+                      SizedBox(height: 4.h),
+                      Text(
+                        'View product',
+                        style: tt.labelMedium?.copyWith(
+                          color: cs.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              if (productId != null)
+                Icon(Icons.chevron_right_rounded, color: cs.primary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ItemImageFallback extends StatelessWidget {
+  const _ItemImageFallback({
+    required this.initial,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  final String initial;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: colorScheme.primary.withValues(alpha: 0.1),
+      child: Center(
+        child: Text(
+          initial,
+          style: textTheme.titleMedium?.copyWith(
+            color: colorScheme.primary,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Row(
+      children: [
+        Text(
+          label,
+          style: (emphasize ? tt.titleSmall : tt.bodyMedium)?.copyWith(
+            fontWeight: emphasize ? FontWeight.w800 : FontWeight.w600,
+            color: cs.onSurface,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: (emphasize ? tt.titleSmall : tt.bodyMedium)?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: cs.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CancelledInfoCard extends StatelessWidget {
+  const _CancelledInfoCard({required this.order});
+
+  final Map<String, dynamic> order;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final by = (order['cancelled_by'] ?? '').toString().trim();
+    final reason = (order['cancel_reason'] ?? '').toString().trim();
+    final at = (order['cancelled_at'] ?? '').toString().trim();
+    final lines = <String>[
+      if (by.isNotEmpty) 'Cancelled by ${labelCancelledBy(by)}',
+      if (at.isNotEmpty) 'On ${formatCommerceDateTime(at)}',
+      if (reason.isNotEmpty) 'Reason: $reason',
+    ];
+    if (lines.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.r),
+      decoration: BoxDecoration(
+        color: cs.errorContainer.withValues(alpha: 0.45),
+        borderRadius: AppBorders.card,
+        border: Border.all(color: cs.error.withValues(alpha: 0.25)),
+      ),
+      child: Text(
+        lines.join('\n'),
+        style: tt.bodyMedium?.copyWith(
+          color: cs.onErrorContainer,
+          fontWeight: FontWeight.w600,
+          height: 1.35,
+        ),
+      ),
+    );
+  }
+}
+
+class _PaymentProofTile extends StatelessWidget {
+  const _PaymentProofTile({required this.proof});
+
+  final Map<String, dynamic> proof;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final status = (proof['review_status'] ?? '').toString();
+    final note = (proof['note'] ?? '').toString().trim();
+    final reviewNote = (proof['review_note'] ?? '').toString().trim();
+    final submittedAt = (proof['submitted_at'] ?? '').toString().trim();
+    final fileUrl = resolveMediaUrl(proof['file_url']?.toString());
+    final statusColor = switch (status) {
+      'accepted' => context.appColors.success,
+      'rejected' => cs.error,
+      _ => cs.onSurfaceVariant,
+    };
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        IconButton(
+          onPressed: fileUrl == null
+              ? null
+              : () => launchUrl(
+                    Uri.parse(fileUrl),
+                    mode: LaunchMode.externalApplication,
+                  ),
+          icon: Icon(Icons.receipt_long_outlined, color: cs.primary),
+        ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                labelPaymentProofReview(status),
+                style: tt.titleSmall?.copyWith(
+                  color: statusColor,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              if (submittedAt.isNotEmpty)
+                Text(
+                  'Submitted ${formatCommerceDateTime(submittedAt)}',
+                  style: tt.bodySmall?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (note.isNotEmpty)
+                Text(
+                  'Note: $note',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurface),
+                ),
+              if (reviewNote.isNotEmpty)
+                Text(
+                  'Shop: $reviewNote',
+                  style: tt.bodySmall?.copyWith(color: cs.onSurface),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CancelSection extends StatelessWidget {
+  const _CancelSection({
+    required this.order,
+    required this.cancelling,
+    required this.onCancel,
+    required this.pendingBlockedReason,
+  });
+
+  final Map<String, dynamic> order;
+  final bool cancelling;
+  final VoidCallback onCancel;
+  final String pendingBlockedReason;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = (order['status'] ?? '').toString();
     final canCancel = order['can_customer_cancel'] == true;
-    final small = Theme.of(context).textTheme.bodySmall;
+    final small = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        );
 
     if (canCancel) {
-      final until = _text(order, 'customer_cancel_until');
+      final until = (order['customer_cancel_until'] ?? '').toString().trim();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           OutlinedButton(
-            onPressed: _cancelling ? null : _cancelOrder,
-            child: Text(_cancelling ? 'Cancelling…' : 'Cancel order'),
+            onPressed: cancelling ? null : onCancel,
+            child: Text(cancelling ? 'Cancelling…' : 'Cancel order'),
           ),
           if (until.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 6),
+              padding: EdgeInsets.only(top: 6.h),
               child: Text(
                 'Cancel until ${formatCommerceDateTime(until)}',
                 textAlign: TextAlign.center,
@@ -334,7 +1286,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
 
     if (status == 'pending') {
-      return Text(_pendingCancelBlockedReason(order), style: small);
+      return Text(pendingBlockedReason, style: small);
     }
     if (status == 'cancelled' || status == 'completed') {
       return const SizedBox.shrink();
@@ -344,188 +1296,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       style: small,
     );
   }
+}
 
-  Widget _cancelledInfo(BuildContext context, Map<String, dynamic> order) {
-    final by = _text(order, 'cancelled_by');
-    final reason = _text(order, 'cancel_reason');
-    final at = _text(order, 'cancelled_at');
-    final scheme = Theme.of(context).colorScheme;
-    final lines = <String>[
-      if (by.isNotEmpty) 'Cancelled by: ${labelCancelledBy(by)}',
-      if (at.isNotEmpty) 'Cancelled on: ${formatCommerceDateTime(at)}',
-      if (reason.isNotEmpty) 'Reason: $reason',
-    ];
-    if (lines.isEmpty) return const SizedBox.shrink();
-    return Container(
-      margin: const EdgeInsets.only(top: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: scheme.errorContainer.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(12),
+(Color, Color) _statusColors(BuildContext context, String? status) {
+  final cs = Theme.of(context).colorScheme;
+  final appColors = context.appColors;
+  return switch (status) {
+    'completed' => (
+        appColors.success,
+        appColors.successContainer ??
+            appColors.success.withValues(alpha: 0.12),
       ),
-      child: Text(lines.join('\n')),
-    );
-  }
-
-  Widget _paymentProofs(
-      BuildContext context, List<Map<String, dynamic>> proofs) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 16),
-        Text('Payment receipts', style: theme.textTheme.titleMedium),
-        ...proofs.map((p) {
-          final status = _text(p, 'review_status');
-          final note = _text(p, 'note');
-          final reviewNote = _text(p, 'review_note');
-          final submittedAt = _text(p, 'submitted_at');
-          final fileUrl = resolveMediaUrl(p['file_url']?.toString());
-          final Color statusColor = switch (status) {
-            'accepted' => context.appColors.success,
-            'rejected' => theme.colorScheme.error,
-            _ => theme.colorScheme.onSurfaceVariant,
-          };
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: fileUrl != null
-                ? IconButton(
-                    icon: const Icon(Icons.receipt_long_outlined),
-                    tooltip: 'Open receipt',
-                    onPressed: () => launchUrl(
-                      Uri.parse(fileUrl),
-                      mode: LaunchMode.externalApplication,
-                    ),
-                  )
-                : const Icon(Icons.receipt_long_outlined),
-            title: Text(
-              labelPaymentProofReview(status),
-              style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
-            ),
-            subtitle: Text(
-              [
-                if (submittedAt.isNotEmpty)
-                  'Submitted ${formatCommerceDateTime(submittedAt)}',
-                if (note.isNotEmpty) 'Note: $note',
-                if (reviewNote.isNotEmpty) 'Shop: $reviewNote',
-              ].join('\n'),
-            ),
-            isThreeLine: note.isNotEmpty || reviewNote.isNotEmpty,
-          );
-        }),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final order = _order;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Order')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : order == null
-              ? const Center(child: Text('Not found'))
-              : _buildDetail(context, order),
-    );
-  }
-
-  Widget _buildDetail(BuildContext context, Map<String, dynamic> order) {
-    final status = _text(order, 'status');
-    final fulfillment = _text(order, 'fulfillment_type');
-    final paymentMethod = _text(order, 'payment_method');
-    final isPickup = isPickupFulfillment(fulfillment);
-    final branchName = _text(order, 'branch_name');
-    final customerNotes = _text(order, 'customer_notes');
-    final deliveryFee = _text(order, 'delivery_fee');
-    final addressText = _text(order, 'delivery_address_text');
-    final bankInstructions = _text(order, 'bank_transfer_instructions');
-    final proofs = ((order['payment_proofs'] as List?) ?? const [])
-        .whereType<Map<dynamic, dynamic>>()
-        .map((p) => Map<String, dynamic>.from(p))
-        .toList();
-    final canUploadProof = paymentMethod == 'bank_transfer' &&
-        (status == 'awaiting_payment' ||
-            status == 'accepted' ||
-            status == 'payment_submitted');
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          labelStatus(status),
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: switch (status) {
-                  'completed' => context.appColors.success,
-                  'cancelled' => Theme.of(context).colorScheme.error,
-                  'pending' ||
-                  'accepted' ||
-                  'awaiting_payment' ||
-                  'payment_submitted' ||
-                  'paid_confirmed' ||
-                  'preparing' ||
-                  'ready_for_pickup' ||
-                  'out_for_delivery' =>
-                    context.appColors.warning,
-                  _ => Theme.of(context).colorScheme.onSurface,
-                },
-              ),
-        ),
-        if (branchName.isNotEmpty)
-          Text('${order['business_name']} · $branchName')
-        else
-          Text('${order['business_name']}'),
-        const SizedBox(height: 8),
-        Text('Fulfillment: ${labelFulfillment(fulfillment)}'),
-        Text('Payment: ${labelPayment(paymentMethod)}'),
-        if (_hasFee(deliveryFee))
-          Text(
-              'Subtotal: Rs ${order['subtotal']} · Delivery fee: Rs $deliveryFee'),
-        Text('Total: Rs ${order['total']}'),
-        if (!isPickup && addressText.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text('Deliver to:\n$addressText'),
-          ),
-        if (isPickup && branchName.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text('Pick up from: $branchName'),
-          ),
-        if (customerNotes.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text('Your notes:\n$customerNotes'),
-          ),
-        if (bankInstructions.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text('Bank details:\n$bankInstructions'),
-          ),
-        if (status == 'cancelled') _cancelledInfo(context, order),
-        const SizedBox(height: 16),
-        ...((order['items'] as List?) ?? const [])
-            .whereType<Map<dynamic, dynamic>>()
-            .map((i) {
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text('${i['product_name']}'),
-            subtitle: Text('x${i['quantity']} · Rs ${i['line_total']}'),
-          );
-        }),
-        if (proofs.isNotEmpty) _paymentProofs(context, proofs),
-        const SizedBox(height: 16),
-        _cancelSection(context, order),
-        if (canUploadProof)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: FilledButton(
-              onPressed: _uploadProof,
-              child: const Text('Upload payment receipt'),
-            ),
-          ),
-      ],
-    );
-  }
+    'cancelled' => (cs.error, cs.errorContainer),
+    'pending' ||
+    'accepted' ||
+    'awaiting_payment' ||
+    'payment_submitted' ||
+    'paid_confirmed' ||
+    'preparing' ||
+    'ready_for_pickup' ||
+    'out_for_delivery' => (
+        appColors.warning,
+        appColors.warningContainer ??
+            appColors.warning.withValues(alpha: 0.12),
+      ),
+    _ => (cs.onSurfaceVariant, cs.surfaceContainerHighest),
+  };
 }

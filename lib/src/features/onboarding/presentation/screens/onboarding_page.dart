@@ -52,7 +52,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _OnboardingSlide(
       titleKey: 'onboarding.onboarding_title_3',
       subtitleKey: 'onboarding.onboarding_subtitle_3',
-      illustration: OnboardingIllustrationType.scanOffers,
+      illustration: OnboardingIllustrationType.orderDelivery,
       accentColor: AppBrandColors.lightDeal,
       secondaryColor: AppBrandColors.lightPrimary,
       backgroundTint: AppBrandColors.lightDeal,

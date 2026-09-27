@@ -4,7 +4,7 @@ import 'package:aajhee/src/imports/packages_imports.dart';
 enum OnboardingIllustrationType {
   discoverDeals,
   exploreMap,
-  scanOffers,
+  orderDelivery,
 }
 
 class OnboardingIllustration extends StatefulWidget {
@@ -129,7 +129,7 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
         secondaryColor: widget.secondaryColor,
         drift: _floatController,
       ),
-      OnboardingIllustrationType.scanOffers => _ScanOffersScene(
+      OnboardingIllustrationType.orderDelivery => _OrderDeliveryScene(
         accentColor: widget.accentColor,
         secondaryColor: widget.secondaryColor,
         drift: _floatController,
@@ -193,7 +193,7 @@ class _DiscoverDealsScene extends StatelessWidget {
           clipBehavior: Clip.none,
           children: [
             _FloatingBadge(
-              icon: Icons.local_offer_rounded,
+              icon: Icons.storefront_rounded,
               color: accentColor,
               size: 52,
               offset: Offset(-58.w, -52.h + (t - 0.5) * 8.h),
@@ -334,8 +334,8 @@ class _ExploreMapScene extends StatelessWidget {
   }
 }
 
-class _ScanOffersScene extends StatelessWidget {
-  const _ScanOffersScene({
+class _OrderDeliveryScene extends StatelessWidget {
+  const _OrderDeliveryScene({
     required this.accentColor,
     required this.secondaryColor,
     required this.drift,
@@ -347,135 +347,59 @@ class _ScanOffersScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 110.w,
-          height: 110.w,
-          decoration: BoxDecoration(
-            border: Border.all(color: accentColor, width: 3),
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(17.r),
-            child: Stack(
-              children: [
-                Positioned(
-                  top: 8.h,
-                  left: 8.w,
-                  child: _QrCorner(color: accentColor),
-                ),
-                Positioned(
-                  top: 8.h,
-                  right: 8.w,
-                  child: Transform.rotate(
-                    angle: 1.5708,
-                    child: _QrCorner(color: accentColor),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8.h,
-                  left: 8.w,
-                  child: Transform.rotate(
-                    angle: -1.5708,
-                    child: _QrCorner(color: accentColor),
-                  ),
-                ),
-                Positioned(
-                  bottom: 8.h,
-                  right: 8.w,
-                  child: Transform.rotate(
-                    angle: 3.14159,
-                    child: _QrCorner(color: accentColor),
-                  ),
-                ),
-                Center(
-                  child: Icon(
-                    Icons.qr_code_2_rounded,
-                    size: 52.sp,
-                    color: accentColor.withValues(alpha: 0.85),
-                  ),
-                ),
-                _AnimatedScanLine(color: secondaryColor),
-              ],
-            ),
-          ),
-        ),
-        AnimatedBuilder(
-          animation: drift,
-          builder: (context, _) {
-            return _FloatingBadge(
-              icon: Icons.check_circle_rounded,
-              color: AppBrandColors.lightPrimary,
-              size: 44,
-              offset: Offset(58.w, -50.h + (drift.value - 0.5) * 6.h),
-              rotation: 0,
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-class _AnimatedScanLine extends StatefulWidget {
-  const _AnimatedScanLine({required this.color});
-
-  final Color color;
-
-  @override
-  State<_AnimatedScanLine> createState() => _AnimatedScanLineState();
-}
-
-class _AnimatedScanLineState extends State<_AnimatedScanLine>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: drift,
       builder: (context, _) {
-        return Positioned(
-          left: 10.w,
-          right: 10.w,
-          top: 12.h + _controller.value * 74.h,
-          child: Container(
-            height: 3.h,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  widget.color.withValues(alpha: 0),
-                  widget.color,
-                  widget.color.withValues(alpha: 0),
+        final t = drift.value;
+        return Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            _FloatingBadge(
+              icon: Icons.shopping_bag_rounded,
+              color: accentColor,
+              size: 48,
+              offset: Offset(-62.w, -48.h + (t - 0.5) * 8.h),
+              rotation: -0.12,
+            ),
+            _FloatingBadge(
+              icon: Icons.local_shipping_rounded,
+              color: secondaryColor,
+              size: 46,
+              offset: Offset(60.w, -40.h + (0.5 - t) * 7.h),
+              rotation: 0.1,
+            ),
+            Container(
+              width: 96.w,
+              height: 96.w,
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: BorderRadius.circular(28.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.35),
+                    blurRadius: 20,
+                    offset: Offset(0, 10.h),
+                  ),
                 ],
               ),
-              borderRadius: BorderRadius.circular(2.r),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.color.withValues(alpha: 0.45),
-                  blurRadius: 8,
-                ),
-              ],
+              child: Icon(
+                Icons.receipt_long_rounded,
+                size: 46.sp,
+                color: Colors.white,
+              ),
             ),
-          ),
+            _DealChip(
+              label: 'Pickup',
+              color: secondaryColor,
+              offset: Offset(-70.w, 52.h + (t - 0.5) * 4.h),
+            ),
+            _DealChip(
+              label: 'Delivery',
+              color: accentColor,
+              offset: Offset(58.w, 56.h + (0.5 - t) * 4.h),
+            ),
+          ],
         );
       },
     );
@@ -608,21 +532,6 @@ class _MapPin extends StatelessWidget {
   }
 }
 
-class _QrCorner extends StatelessWidget {
-  const _QrCorner({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 18.w,
-      height: 18.w,
-      child: CustomPaint(painter: _QrCornerPainter(color: color)),
-    );
-  }
-}
-
 class _MapGridPainter extends CustomPainter {
   _MapGridPainter({required this.color});
 
@@ -647,27 +556,3 @@ class _MapGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _QrCornerPainter extends CustomPainter {
-  _QrCornerPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path()
-      ..moveTo(0, size.height * 0.55)
-      ..lineTo(0, 0)
-      ..lineTo(size.width * 0.55, 0);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

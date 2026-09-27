@@ -28,6 +28,7 @@ class _AddressSearchFieldState extends State<AddressSearchField> {
   List<AddressSuggestion> _suggestions = [];
   bool _isSearching = false;
   bool _isResolving = false;
+  bool _searchedEmpty = false;
   String? _errorMessage;
 
   @override
@@ -56,12 +57,14 @@ class _AddressSearchFieldState extends State<AddressSearchField> {
     setState(() {});
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 400), () async {
-      if (value.trim().length < 3) {
+      final query = value.trim();
+      if (query.length < 3) {
         if (mounted) {
           setState(() {
             _suggestions = [];
             _isSearching = false;
             _errorMessage = null;
+            _searchedEmpty = false;
           });
         }
         return;
@@ -71,21 +74,26 @@ class _AddressSearchFieldState extends State<AddressSearchField> {
         setState(() {
           _isSearching = true;
           _errorMessage = null;
+          _searchedEmpty = false;
         });
       }
 
       try {
-        final results = await _autocompleteService.search(value);
+        final results = await _autocompleteService.search(query);
         if (!mounted) return;
+        // Ignore stale responses if the user kept typing.
+        if (_controller.text.trim() != query) return;
         setState(() {
           _suggestions = results;
           _isSearching = false;
+          _searchedEmpty = results.isEmpty;
         });
       } catch (_) {
         if (!mounted) return;
         setState(() {
           _suggestions = [];
           _isSearching = false;
+          _searchedEmpty = false;
           _errorMessage = 'Could not load suggestions. Try again.';
         });
       }
@@ -154,6 +162,7 @@ class _AddressSearchFieldState extends State<AddressSearchField> {
                               setState(() {
                                 _suggestions = [];
                                 _errorMessage = null;
+                                _searchedEmpty = false;
                               });
                             }
                           : null,
@@ -167,6 +176,12 @@ class _AddressSearchFieldState extends State<AddressSearchField> {
           Text(
             _errorMessage!,
             style: tt.bodySmall?.copyWith(color: cs.error),
+          ),
+        ] else if (_searchedEmpty && !_isSearching) ...[
+          SizedBox(height: AppSpacing.xs.h),
+          Text(
+            'No addresses found. Try a street name in Lahore.',
+            style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],
         if (showSuggestions) ...[
