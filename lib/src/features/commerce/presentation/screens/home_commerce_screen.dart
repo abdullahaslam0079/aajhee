@@ -104,6 +104,8 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         'Aajhee',
                         style: tt.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800,
+                          letterSpacing: -0.8,
+                          color: cs.onSurface,
                         ),
                       ),
                       SizedBox(height: 4.h),
@@ -111,6 +113,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         'Discover local picks, offers, and trending products.',
                         style: tt.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
+                          height: 1.35,
                         ),
                       ),
                     ],
@@ -256,7 +259,9 @@ class _ProductCard extends StatelessWidget {
                   ? 'Rs ${product['effective_price']} · ${product['effective_discount_percent']}% off'
                   : 'Rs ${product['effective_price'] ?? product['base_price']}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: hasDiscount ? cs.primary : cs.onSurfaceVariant,
+                    color: hasDiscount
+                        ? context.appColors.deal
+                        : cs.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
             ),

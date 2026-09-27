@@ -1,4 +1,3 @@
-import 'package:aajhee/src/features/settings/presentation/providers/theme_preferences_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 
@@ -7,22 +6,20 @@ class App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(
-      themePreferencesProvider.select((state) => state.themeMode),
-    );
-
-    Widget current = _buildMaterialApp(context, themeMode);
+    Widget current = _buildMaterialApp(context);
     current = ScreenUtilWrapper(child: current);
     return current;
   }
 
-  Widget _buildMaterialApp(BuildContext context, ThemeMode themeMode) {
+  Widget _buildMaterialApp(BuildContext context) {
+    final theme = buildAppTheme();
     return MaterialApp.router(
       title: 'Aajhee',
       debugShowCheckedModeBanner: false,
-      theme: buildLightTheme(primaryColorHex: AppBrandColors.lightPrimaryHex),
-      darkTheme: buildDarkTheme(primaryColorHex: AppBrandColors.darkPrimaryHex),
-      themeMode: themeMode,
+      theme: theme,
+      // Single brand theme — light/dark system preference is ignored.
+      darkTheme: theme,
+      themeMode: ThemeMode.light,
       routerConfig: appRouter,
       localizationsDelegates: context.localizationDelegates,
       supportedLocales: context.supportedLocales,

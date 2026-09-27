@@ -85,10 +85,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: FilledButton(
             onPressed: _adding || product == null ? null : _addToCart,
             child: _adding
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
                   )
                 : const Text('Add to cart'),
           ),
@@ -131,7 +134,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           ? 'Rs ${product['effective_price']}  (${product['effective_discount_percent']}% off · was Rs ${product['base_price']})'
                           : 'Rs ${product['base_price']}',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
+                            color: hasDiscount
+                                ? context.appColors.deal
+                                : Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
                           ),
                     ),

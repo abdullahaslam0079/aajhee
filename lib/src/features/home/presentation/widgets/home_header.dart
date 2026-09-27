@@ -145,16 +145,10 @@ class _HeaderIconButton extends StatelessWidget {
     final label = badgeCount > 99 ? '99+' : '$badgeCount';
 
     return Material(
-      color: cs.brightness == Brightness.dark
-          ? cs.surfaceContainerHigh
-          : cs.surfaceContainerLowest,
+      color: cs.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: AppBorders.iconButton,
-        side: BorderSide(
-          color: cs.brightness == Brightness.dark
-              ? cs.outline.withValues(alpha: 0.32)
-              : cs.outlineVariant,
-        ),
+        side: BorderSide(color: cs.outlineVariant),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

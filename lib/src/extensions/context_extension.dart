@@ -15,7 +15,7 @@ extension ContextExtension on BuildContext {
 
   /// Semantic/custom colors (deal, success, warning, info).
   AppColorsExtension get appColors =>
-      theme.extension<AppColorsExtension>() ?? (isDarkMode ? AppPalettes.dark : AppPalettes.light);
+      theme.extension<AppColorsExtension>() ?? AppPalettes.brand;
 
   /// Design tokens (spacing, border radii, elevation defaults).
   AppDesignTokens get designTokens =>

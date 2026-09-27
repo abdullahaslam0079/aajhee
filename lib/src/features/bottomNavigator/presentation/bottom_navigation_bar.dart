@@ -188,7 +188,7 @@ class _BottomItem extends StatelessWidget {
           Text(
             label,
             style: context.theme.textTheme.labelSmall?.copyWith(
-              color: selected ? cs.onSurface : inactive,
+              color: selected ? cs.primary : inactive,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),

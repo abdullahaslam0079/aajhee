@@ -48,23 +48,100 @@ class _OrdersScreenState extends State<OrdersScreen> {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final o = items[index];
-              return ListTile(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.4),
+              final status = o['status']?.toString();
+              final cs = Theme.of(context).colorScheme;
+              final appColors = context.appColors;
+              final (statusColor, statusBg) = switch (status) {
+                'completed' => (
+                    appColors.success,
+                    appColors.successContainer ??
+                        appColors.success.withValues(alpha: 0.12),
                   ),
+                'cancelled' => (
+                    cs.error,
+                    cs.errorContainer,
+                  ),
+                'pending' ||
+                'accepted' ||
+                'awaiting_payment' ||
+                'payment_submitted' ||
+                'paid_confirmed' ||
+                'preparing' ||
+                'ready_for_pickup' ||
+                'out_for_delivery' => (
+                    appColors.warning,
+                    appColors.warningContainer ??
+                        appColors.warning.withValues(alpha: 0.12),
+                  ),
+                _ => (
+                    cs.onSurfaceVariant,
+                    cs.surfaceContainerHighest,
+                  ),
+              };
+              return Material(
+                color: cs.surfaceContainerLowest,
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppBorders.card,
+                  side: BorderSide(color: cs.outlineVariant),
                 ),
-                title: Text('${o['business_name']} · Rs ${o['total']}'),
-                subtitle: Text(
-                  '${labelStatus(o['status']?.toString())} · ${labelFulfillment(o['fulfillment_type']?.toString())}',
-                ),
-                onTap: () => context.push(
-                  AppRoutes.orderDetail(o['public_id'].toString()),
+                child: InkWell(
+                  borderRadius: AppBorders.card,
+                  onTap: () => context.push(
+                    AppRoutes.orderDetail(o['public_id'].toString()),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${o['business_name']} · Rs ${o['total']}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: statusBg,
+                                borderRadius: AppBorders.sm,
+                              ),
+                              child: Text(
+                                labelStatus(status),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: statusColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              labelFulfillment(
+                                o['fulfillment_type']?.toString(),
+                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
@@ -305,7 +382,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           final submittedAt = _text(p, 'submitted_at');
           final fileUrl = resolveMediaUrl(p['file_url']?.toString());
           final Color statusColor = switch (status) {
-            'accepted' => Colors.green,
+            'accepted' => context.appColors.success,
             'rejected' => theme.colorScheme.error,
             _ => theme.colorScheme.onSurfaceVariant,
           };
@@ -377,7 +454,23 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       children: [
         Text(
           labelStatus(status),
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: switch (status) {
+                  'completed' => context.appColors.success,
+                  'cancelled' => Theme.of(context).colorScheme.error,
+                  'pending' ||
+                  'accepted' ||
+                  'awaiting_payment' ||
+                  'payment_submitted' ||
+                  'paid_confirmed' ||
+                  'preparing' ||
+                  'ready_for_pickup' ||
+                  'out_for_delivery' =>
+                    context.appColors.warning,
+                  _ => Theme.of(context).colorScheme.onSurface,
+                },
+              ),
         ),
         if (branchName.isNotEmpty)
           Text('${order['business_name']} · $branchName')

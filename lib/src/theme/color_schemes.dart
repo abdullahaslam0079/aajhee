@@ -2,34 +2,65 @@ import 'package:flutter/material.dart';
 
 /// Single place to retheme the app.
 ///
-/// Change these values and deal badges, favorites, primary CTAs, and
-/// toast accents update everywhere via [AppPalettes] + [ColorScheme.primary].
+/// Brand identity comes from the Aajhee wordmark:
+/// charcoal letterforms + burgundy j-dot (`#783038`).
+/// Change these values and CTAs, deals, favorites, and nav accents
+/// update everywhere via [AppPalettes] + [ColorScheme.primary].
 abstract final class AppBrandColors {
   AppBrandColors._();
 
-  // ── Primary (nav, selected chips, CTAs) ───────────────────────────────────
-  // Charcoal. Dark mode uses the same hue, inverted for contrast.
+  // ── Primary (CTAs, nav selection, links) ──────────────────────────────────
+  // Logo j-dot burgundy — the only chromatic brand color.
 
-  static const Color lightPrimary = Color(0xFF1A1A1A);
-  static const Color darkPrimary = Color(0xFFF2F2F2);
-  static const String lightPrimaryHex = '#1A1A1A';
-  static const String darkPrimaryHex = '#F2F2F2';
+  static const Color primary = Color(0xFF783038);
+  static const Color onPrimary = Color(0xFFFFFFFF);
+  static const String primaryHex = '#783038';
 
-  static const Color lightSecondary = Color(0xFF525252);
-  static const Color darkSecondary = Color(0xFFA3A3A3);
+  /// Soft blush behind selected chips / primary containers.
+  static const Color primaryContainer = Color(0xFFF4E8E9);
+  static const Color onPrimaryContainer = Color(0xFF4A1E22);
+
+  // ── Secondary (supporting actions, icons) ─────────────────────────────────
+  // Warm slate that sits next to burgundy without competing.
+
+  static const Color secondary = Color(0xFF5C4F51);
+  static const Color onSecondary = Color(0xFFFFFFFF);
+  static const Color secondaryContainer = Color(0xFFEFE8E8);
+  static const Color onSecondaryContainer = Color(0xFF2E2627);
+
+  // ── Surfaces (single light theme) ─────────────────────────────────────────
+  // Clean off-white canvas — readable and friendly, not flat black/white.
+
+  static const Color canvas = Color(0xFFF7F5F4);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color onSurface = Color(0xFF1F1B1C);
+  static const Color onSurfaceVariant = Color(0xFF6E6466);
+  static const Color outline = Color(0xFFD9D0D1);
+  static const Color outlineVariant = Color(0xFFECE6E6);
 
   // ── Deal accent (% Off, sale prices, favorited hearts) ────────────────────
-  // Wine — same hue in both modes. The only chromatic color.
+  // Same hue as primary so deals feel on-brand.
 
-  static const Color lightDeal = Color(0xFF7A3038);
-  static const Color lightOnDeal = Color(0xFFFFFFFF);
-  static const Color lightDealContainer = Color(0xFFF4E8E9);
-  static const Color lightOnDealContainer = Color(0xFF4A1E22);
+  static const Color deal = Color(0xFF783038);
+  static const Color onDeal = Color(0xFFFFFFFF);
+  static const Color dealContainer = Color(0xFFF4E8E9);
+  static const Color onDealContainer = Color(0xFF4A1E22);
 
-  static const Color darkDeal = Color(0xFFD08A90);
-  static const Color darkOnDeal = Color(0xFF1A1A1A);
-  static const Color darkDealContainer = Color(0xFF3A2428);
-  static const Color darkOnDealContainer = Color(0xFFF0D6D8);
+  // Legacy aliases kept so older call sites keep compiling.
+  static const Color lightPrimary = primary;
+  static const Color darkPrimary = primary;
+  static const String lightPrimaryHex = primaryHex;
+  static const String darkPrimaryHex = primaryHex;
+  static const Color lightSecondary = secondary;
+  static const Color darkSecondary = secondary;
+  static const Color lightDeal = deal;
+  static const Color lightOnDeal = onDeal;
+  static const Color lightDealContainer = dealContainer;
+  static const Color lightOnDealContainer = onDealContainer;
+  static const Color darkDeal = deal;
+  static const Color darkOnDeal = onDeal;
+  static const Color darkDealContainer = dealContainer;
+  static const Color darkOnDealContainer = onDealContainer;
 }
 
 /// App-specific colors that aren't part of the standard [ColorScheme].
@@ -152,45 +183,30 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
   }
 }
 
-/// Wired palettes — values come from [AppBrandColors] so one edit rethemes.
+/// Wired palette — single light brand theme.
 class AppPalettes {
   AppPalettes._();
 
-  static const light = AppColorsExtension(
-    deal: AppBrandColors.lightDeal,
-    onDeal: AppBrandColors.lightOnDeal,
-    dealContainer: AppBrandColors.lightDealContainer,
-    onDealContainer: AppBrandColors.lightOnDealContainer,
-    success: Color(0xFF3F6B54),
+  static const brand = AppColorsExtension(
+    deal: AppBrandColors.deal,
+    onDeal: AppBrandColors.onDeal,
+    dealContainer: AppBrandColors.dealContainer,
+    onDealContainer: AppBrandColors.onDealContainer,
+    success: Color(0xFF2F6B4F),
     onSuccess: Colors.white,
-    successContainer: Color(0xFFDCE8E1),
-    onSuccessContainer: Color(0xFF1F3D2E),
-    warning: Color(0xFF8F6A32),
+    successContainer: Color(0xFFDCEEE4),
+    onSuccessContainer: Color(0xFF163D2A),
+    warning: Color(0xFFB07A2E),
     onWarning: Colors.white,
-    warningContainer: Color(0xFFF3E8D4),
-    onWarningContainer: Color(0xFF4A3718),
-    info: Color(0xFF525252),
+    warningContainer: Color(0xFFF6E9D4),
+    onWarningContainer: Color(0xFF4A3414),
+    info: Color(0xFF4A6B8A),
     onInfo: Colors.white,
-    infoContainer: Color(0xFFECECEC),
-    onInfoContainer: Color(0xFF1A1A1A),
+    infoContainer: Color(0xFFE3ECF4),
+    onInfoContainer: Color(0xFF1E3348),
   );
 
-  static const dark = AppColorsExtension(
-    deal: AppBrandColors.darkDeal,
-    onDeal: AppBrandColors.darkOnDeal,
-    dealContainer: AppBrandColors.darkDealContainer,
-    onDealContainer: AppBrandColors.darkOnDealContainer,
-    success: Color(0xFF8FBB9C),
-    onSuccess: Color(0xFF102016),
-    successContainer: Color(0xFF1C2A22),
-    onSuccessContainer: Color(0xFFC5D8CC),
-    warning: Color(0xFFC4A36A),
-    onWarning: Color(0xFF1C160C),
-    warningContainer: Color(0xFF2E2818),
-    onWarningContainer: Color(0xFFE8D6B0),
-    info: Color(0xFFA3A3A3),
-    onInfo: Color(0xFF121212),
-    infoContainer: Color(0xFF2A2A2A),
-    onInfoContainer: Color(0xFFE8E8E8),
-  );
+  /// Kept for call sites that still reference light/dark names.
+  static const light = brand;
+  static const dark = brand;
 }

@@ -11,16 +11,10 @@ Color _colorFromHex(String hex) {
   return Color(int.parse('ff$cleaned', radix: 16));
 }
 
-/// Soft canvas for home feed and shell backgrounds.
-/// Light: warm grey. Dark: true charcoal. Neutral — no blue cast.
-const Color kHomeCanvasColor = Color(0xFFF5F5F5);
-const Color kHomeCanvasColorDark = Color(0xFF121212);
+/// Soft canvas for home feed and shell backgrounds (single light brand theme).
+const Color kHomeCanvasColor = AppBrandColors.canvas;
 
-Color homeCanvasOf(BuildContext context) {
-  return Theme.of(context).brightness == Brightness.dark
-      ? kHomeCanvasColorDark
-      : kHomeCanvasColor;
-}
+Color homeCanvasOf(BuildContext context) => kHomeCanvasColor;
 
 /// Custom theme extension for spacing and other design tokens
 class AppDesignTokens extends ThemeExtension<AppDesignTokens> {
@@ -123,6 +117,10 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     iconTheme: IconThemeData(
       color: colorScheme.onSurface,
       size: 24,
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: colorScheme.primary,
+      circularTrackColor: colorScheme.primary.withValues(alpha: 0.15),
     ),
     
     // --- Widget Themes ---
@@ -233,7 +231,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     // Navigation Bar Theme
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: colorScheme.surfaceContainerLowest,
-      indicatorColor: colorScheme.primary.withValues(alpha: 0.1),
+      indicatorColor: colorScheme.primary.withValues(alpha: 0.12),
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -242,7 +240,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
           return textTheme.labelSmall?.copyWith(
-            color: colorScheme.onSurface,
+            color: colorScheme.primary,
             fontWeight: FontWeight.w700,
           );
         }
@@ -381,79 +379,63 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
   );
 }
 
-ThemeData buildLightTheme({required String primaryColorHex}) {
+/// The one Aajhee brand theme — light canvas + logo burgundy primary + Inter.
+ThemeData buildAppTheme({String primaryColorHex = AppBrandColors.primaryHex}) {
   final accent = _colorFromHex(
-    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.lightPrimaryHex,
+    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.primaryHex,
   );
   final colorScheme = ColorScheme.fromSeed(
     seedColor: accent,
     brightness: Brightness.light,
   ).copyWith(
     primary: accent,
-    onPrimary: Colors.white,
-    primaryContainer: const Color(0xFFECECEC),
-    onPrimaryContainer: const Color(0xFF1A1A1A),
-    secondary: AppBrandColors.lightSecondary,
-    onSecondary: Colors.white,
-    secondaryContainer: const Color(0xFFE8E8E8),
-    onSecondaryContainer: const Color(0xFF1A1A1A),
-    surface: kHomeCanvasColor,
-    onSurface: const Color(0xFF1A1A1A),
-    surfaceContainerLowest: Colors.white,
-    surfaceContainerLow: Colors.white,
-    surfaceContainer: const Color(0xFFF5F5F5),
-    surfaceContainerHigh: const Color(0xFFECECEC),
-    surfaceContainerHighest: const Color(0xFFE0E0E0),
-    onSurfaceVariant: const Color(0xFF6B6B6B),
-    outline: const Color(0xFFD4D4D4),
-    outlineVariant: const Color(0xFFE5E5E5),
-    shadow: Colors.black.withValues(alpha: 0.12),
-    scrim: Colors.black.withValues(alpha: 0.46),
-    inverseSurface: const Color(0xFF1A1A1A),
-    onInverseSurface: const Color(0xFFF5F5F5),
-    inversePrimary: const Color(0xFFF2F2F2),
+    onPrimary: AppBrandColors.onPrimary,
+    primaryContainer: AppBrandColors.primaryContainer,
+    onPrimaryContainer: AppBrandColors.onPrimaryContainer,
+    secondary: AppBrandColors.secondary,
+    onSecondary: AppBrandColors.onSecondary,
+    secondaryContainer: AppBrandColors.secondaryContainer,
+    onSecondaryContainer: AppBrandColors.onSecondaryContainer,
+    tertiary: const Color(0xFF8A5A3A),
+    onTertiary: Colors.white,
+    tertiaryContainer: const Color(0xFFF3E6DC),
+    onTertiaryContainer: const Color(0xFF3D2618),
+    error: const Color(0xFFB3261E),
+    onError: Colors.white,
+    errorContainer: const Color(0xFFF9DEDC),
+    onErrorContainer: const Color(0xFF410E0B),
+    surface: AppBrandColors.canvas,
+    onSurface: AppBrandColors.onSurface,
+    surfaceContainerLowest: AppBrandColors.surface,
+    surfaceContainerLow: const Color(0xFFFCFBFB),
+    surfaceContainer: const Color(0xFFF3F0EF),
+    surfaceContainerHigh: const Color(0xFFECE7E7),
+    surfaceContainerHighest: const Color(0xFFE5DFDF),
+    onSurfaceVariant: AppBrandColors.onSurfaceVariant,
+    outline: AppBrandColors.outline,
+    outlineVariant: AppBrandColors.outlineVariant,
+    shadow: Colors.black.withValues(alpha: 0.1),
+    scrim: Colors.black.withValues(alpha: 0.42),
+    inverseSurface: const Color(0xFF322B2C),
+    onInverseSurface: const Color(0xFFF7F5F4),
+    inversePrimary: const Color(0xFFE8B4B8),
   );
-  return _buildTheme(colorScheme, AppPalettes.light);
+  return _buildTheme(colorScheme, AppPalettes.brand);
 }
 
-ThemeData buildDarkTheme({required String primaryColorHex}) {
-  final accent = _colorFromHex(
-    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.darkPrimaryHex,
-  );
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: accent,
-    brightness: Brightness.dark,
-  ).copyWith(
-    primary: accent,
-    onPrimary: const Color(0xFF1A1A1A),
-    primaryContainer: const Color(0xFF2A2A2A),
-    onPrimaryContainer: const Color(0xFFF2F2F2),
-    secondary: AppBrandColors.darkSecondary,
-    onSecondary: const Color(0xFF121212),
-    secondaryContainer: const Color(0xFF2A2A2A),
-    onSecondaryContainer: const Color(0xFFE8E8E8),
-    surface: kHomeCanvasColorDark,
-    onSurface: const Color(0xFFF2F2F2),
-    surfaceContainerLowest: const Color(0xFF1C1C1C),
-    surfaceContainerLow: const Color(0xFF1C1C1C),
-    surfaceContainer: const Color(0xFF242424),
-    surfaceContainerHigh: const Color(0xFF2E2E2E),
-    surfaceContainerHighest: const Color(0xFF3A3A3A),
-    onSurfaceVariant: const Color(0xFFA3A3A3),
-    outline: const Color(0xFF4A4A4A),
-    outlineVariant: const Color(0xFF2E2E2E),
-    shadow: Colors.black.withValues(alpha: 0.55),
-    scrim: Colors.black.withValues(alpha: 0.72),
-    inverseSurface: const Color(0xFFF2F2F2),
-    onInverseSurface: const Color(0xFF121212),
-    inversePrimary: const Color(0xFF1A1A1A),
-  );
-  return _buildTheme(colorScheme, AppPalettes.dark);
-}
+/// @deprecated Use [buildAppTheme]. Kept for older call sites.
+ThemeData buildLightTheme({required String primaryColorHex}) =>
+    buildAppTheme(primaryColorHex: primaryColorHex);
 
-CupertinoThemeData buildCupertinoTheme({required String primaryColorHex}) {
+/// Single theme app — dark mode is intentionally the same brand theme.
+ThemeData buildDarkTheme({required String primaryColorHex}) =>
+    buildAppTheme(primaryColorHex: primaryColorHex);
+
+CupertinoThemeData buildCupertinoTheme({
+  String primaryColorHex = AppBrandColors.primaryHex,
+}) {
   final seed = _colorFromHex(
-    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.lightPrimaryHex,
+    primaryColorHex.isNotEmpty ? primaryColorHex : AppBrandColors.primaryHex,
   );
   const fontFamily = AppFonts.primary;
 
@@ -461,9 +443,9 @@ CupertinoThemeData buildCupertinoTheme({required String primaryColorHex}) {
     applyThemeToAll: true,
     primaryColor: seed,
     primaryContrastingColor: CupertinoColors.white,
-    brightness: null, // Allow system-wide dark mode support
-    scaffoldBackgroundColor: CupertinoColors.systemBackground,
-    barBackgroundColor: CupertinoColors.systemGrey6,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: const Color(0xFFF7F5F4),
+    barBackgroundColor: CupertinoColors.white,
     textTheme: CupertinoTextThemeData(
       primaryColor: seed,
       textStyle: const TextStyle(
