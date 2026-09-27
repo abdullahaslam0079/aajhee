@@ -123,6 +123,7 @@ class SavedAddresses extends _$SavedAddresses {
     required String postalCode,
     required String city,
     required GeocodedAddress geocoded,
+    String deliveryInstructions = '',
   }) async {
     final isFirst = state.addresses.isEmpty;
     final result = await _addressService.createAddress(
@@ -135,6 +136,7 @@ class SavedAddresses extends _$SavedAddresses {
       formattedAddress: geocoded.formattedAddress,
       isDefault: isFirst,
       county: geocoded.county,
+      deliveryInstructions: deliveryInstructions.trim(),
     );
 
     await result.fold(
@@ -152,6 +154,7 @@ class SavedAddresses extends _$SavedAddresses {
     required String postalCode,
     required String city,
     required GeocodedAddress geocoded,
+    String deliveryInstructions = '',
   }) async {
     final existing = state.addresses.firstWhere((a) => a.id == id);
     final result = await _addressService.updateAddress(
@@ -165,6 +168,7 @@ class SavedAddresses extends _$SavedAddresses {
       formattedAddress: geocoded.formattedAddress,
       isDefault: existing.isDefault,
       county: geocoded.county,
+      deliveryInstructions: deliveryInstructions.trim(),
     );
 
     await result.fold(

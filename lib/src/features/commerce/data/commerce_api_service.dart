@@ -15,7 +15,7 @@ class CommerceApiService {
     String? addressId,
   }) async {
     final result = await _dio.get(
-      '/feeds/home',
+      '/api/feeds/home',
       queryParameters: {
         if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
       },
@@ -31,7 +31,7 @@ class CommerceApiService {
     String? addressId,
   }) async {
     final result = await _dio.get(
-      '/stores/branch/$branchId/catalog',
+      '/api/stores/branch/$branchId/catalog',
       queryParameters: {
         if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
       },
@@ -43,7 +43,7 @@ class CommerceApiService {
   }
 
   FutureEither<Map<String, dynamic>> getProduct(int productId) async {
-    final result = await _dio.get('/products/$productId');
+    final result = await _dio.get('/api/products/$productId');
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),
@@ -51,12 +51,12 @@ class CommerceApiService {
   }
 
   FutureEither<void> viewProduct(int productId) async {
-    final result = await _dio.post('/products/$productId/view');
+    final result = await _dio.post('/api/products/$productId/view');
     return result.map((_) {});
   }
 
   FutureEither<Map<String, dynamic>> getCart() async {
-    final result = await _dio.get('/cart');
+    final result = await _dio.get('/api/cart');
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),
@@ -69,7 +69,7 @@ class CommerceApiService {
     int? branchId,
   }) async {
     final result = await _dio.post(
-      '/cart/items',
+      '/api/cart/items',
       data: {
         'product_id': productId,
         'quantity': quantity,
@@ -84,11 +84,11 @@ class CommerceApiService {
 
   FutureEither<void> updateCartItem(int itemId, int quantity) async {
     if (quantity < 1) {
-      final result = await _dio.delete('/cart/items/$itemId');
+      final result = await _dio.delete('/api/cart/items/$itemId');
       return result.map((_) {});
     }
     final result = await _dio.patch(
-      '/cart/items/$itemId',
+      '/api/cart/items/$itemId',
       data: {'quantity': quantity},
     );
     return result.map((_) {});
@@ -100,7 +100,7 @@ class CommerceApiService {
     String? addressId,
   }) async {
     final result = await _dio.post(
-      '/checkout/preview',
+      '/api/checkout/preview',
       data: {'branch_id': branchId, 'item_ids': itemIds},
       queryParameters: {
         if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
@@ -117,7 +117,7 @@ class CommerceApiService {
     String? addressId,
   }) async {
     final result = await _dio.post(
-      '/checkout/place',
+      '/api/checkout/place',
       data: {'groups': groups},
       queryParameters: {
         if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
@@ -131,7 +131,7 @@ class CommerceApiService {
   }
 
   FutureEither<List<Map<String, dynamic>>> getOrders() async {
-    final result = await _dio.get('/orders');
+    final result = await _dio.get('/api/orders');
     return result.fold(left, (r) {
       final data = r.data;
       if (data is List) return right(data.cast<Map<String, dynamic>>());
@@ -143,7 +143,7 @@ class CommerceApiService {
   }
 
   FutureEither<Map<String, dynamic>> getOrder(String publicId) async {
-    final result = await _dio.get('/orders/$publicId');
+    final result = await _dio.get('/api/orders/$publicId');
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),
@@ -151,7 +151,7 @@ class CommerceApiService {
   }
 
   FutureEither<Map<String, dynamic>> cancelOrder(String publicId) async {
-    final result = await _dio.post('/orders/$publicId/cancel');
+    final result = await _dio.post('/api/orders/$publicId/cancel');
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),
@@ -169,7 +169,7 @@ class CommerceApiService {
     });
     final result = await runTask(
       () => AppConfig.dio.post(
-        '/orders/$publicId/payment-proof',
+        '/api/orders/$publicId/payment-proof',
         data: form,
         options: Options(
           contentType: 'multipart/form-data',

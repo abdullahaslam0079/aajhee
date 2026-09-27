@@ -26,17 +26,19 @@ class UserAddressService {
     required String formattedAddress,
     required bool isDefault,
     String? county,
+    String deliveryInstructions = '',
   }) {
     return {
       'street': street,
       'houseNumber': houseNumber,
       'postalCode': postalCode,
       'city': city,
-      if (county != null && county.isNotEmpty) 'county': county,
+      'county': county ?? '',
       'latitude': latitude,
       'longitude': longitude,
       'isDefault': isDefault,
       'formattedAddress': formattedAddress,
+      'deliveryInstructions': deliveryInstructions,
     };
   }
 
@@ -50,6 +52,7 @@ class UserAddressService {
     required String formattedAddress,
     required bool isDefault,
     String? county,
+    String deliveryInstructions = '',
   }) async {
     return runTask(() async {
       final response = await _dio.post<Map<String, dynamic>>(
@@ -64,6 +67,7 @@ class UserAddressService {
           formattedAddress: formattedAddress,
           isDefault: isDefault,
           county: county,
+          deliveryInstructions: deliveryInstructions,
         ),
       );
 
@@ -82,6 +86,7 @@ class UserAddressService {
     required String formattedAddress,
     required bool isDefault,
     String? county,
+    String deliveryInstructions = '',
   }) async {
     return runTask(() async {
       final response = await _dio.put<Map<String, dynamic>>(
@@ -96,6 +101,7 @@ class UserAddressService {
           formattedAddress: formattedAddress,
           isDefault: isDefault,
           county: county,
+          deliveryInstructions: deliveryInstructions,
         ),
       );
 

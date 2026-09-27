@@ -1,4 +1,5 @@
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
+import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
@@ -76,7 +77,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       groups.putIfAbsent(branchId, () => []).add(item['id'] as int);
     }
 
-    final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
+    final selectedAddress = ref.read(savedAddressesProvider).selectedAddress;
+    final addressId = selectedAddress?.id;
     final checkoutGroups = <Map<String, dynamic>>[];
 
     for (final entry in groups.entries) {
@@ -116,7 +118,10 @@ class _CartScreenState extends ConsumerState<CartScreen> {
               const ListTile(title: Text('Choose fulfillment')),
               ...options.map(
                 (o) => ListTile(
-                  title: Text(o['label']?.toString() ?? o['fulfillment_type']),
+                  title: Text(
+                    o['label']?.toString() ??
+                        labelFulfillment(o['fulfillment_type']?.toString()),
+                  ),
                   subtitle: Text('Fee: Rs ${o['fee']}'),
                   onTap: () =>
                       Navigator.pop(context, o['fulfillment_type']?.toString()),
@@ -154,9 +159,11 @@ class _CartScreenState extends ConsumerState<CartScreen> {
               const ListTile(title: Text('Payment method')),
               ...methods.map(
                 (m) => ListTile(
-                  title: Text(m.replaceAll('_', ' ')),
+                  title: Text(labelPayment(m)),
                   subtitle: m == 'bank_transfer'
-                      ? Text(payments['bank_transfer_instructions']?.toString() ?? '')
+                      ? Text(
+                          payments['bank_transfer_instructions']?.toString() ??
+                              '')
                       : null,
                   onTap: () => Navigator.pop(context, m),
                 ),
@@ -167,14 +174,18 @@ class _CartScreenState extends ConsumerState<CartScreen> {
       );
       if (paymentMethod == null) return;
 
+      final isDelivery = isDeliveryFulfillment(fulfillment);
       checkoutGroups.add({
         'branch_id': entry.key,
         'item_ids': entry.value,
         'fulfillment_type': fulfillment,
         'payment_method': paymentMethod,
-        'delivery_address_text':
-            ref.read(savedAddressesProvider).selectedAddress?.formattedAddress ??
-                '',
+        'delivery_address_text': selectedAddress?.formattedAddress ?? '',
+        // Address-level delivery instructions become the order's customer
+        // notes so the merchant sees them on the order.
+        'customer_notes': isDelivery
+            ? (selectedAddress?.deliveryInstructions.trim() ?? '')
+            : '',
       });
     }
 
@@ -219,8 +230,8 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                   separatorBuilder: (_, __) => const Divider(),
                   itemBuilder: (context, index) {
                     final item = _items[index];
-                    final product =
-                        Map<String, dynamic>.from(item['product'] as Map? ?? {});
+                    final product = Map<String, dynamic>.from(
+                        item['product'] as Map? ?? {});
                     return ListTile(
                       title: Text(product['name']?.toString() ?? 'Item'),
                       subtitle: Text(

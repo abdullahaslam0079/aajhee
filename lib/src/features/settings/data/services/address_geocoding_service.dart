@@ -15,12 +15,20 @@ class GeocodedAddress {
     required this.longitude,
     required this.formattedAddress,
     this.county,
+    this.street,
+    this.houseNumber,
+    this.postalCode,
+    this.city,
   });
 
   final double latitude;
   final double longitude;
   final String formattedAddress;
   final String? county;
+  final String? street;
+  final String? houseNumber;
+  final String? postalCode;
+  final String? city;
 }
 
 class AddressGeocodingService {
@@ -82,6 +90,51 @@ class AddressGeocodingService {
       longitude: location.longitude,
       formattedAddress: _formatPlacemark(place),
       county: place.country?.trim(),
+      street: normalizedStreet,
+      houseNumber: normalizedHouseNumber,
+      postalCode: normalizedPostalCode,
+      city: normalizedCity,
+    );
+  }
+
+  Future<GeocodedAddress> reverseGeocode({
+    required double latitude,
+    required double longitude,
+  }) async {
+    List<Placemark> placemarks;
+    try {
+      placemarks = await placemarkFromCoordinates(latitude, longitude);
+    } catch (_) {
+      throw AddressValidationException(
+        'Could not resolve this map location. Try another pin position.',
+      );
+    }
+
+    if (placemarks.isEmpty) {
+      throw AddressValidationException(
+        'Could not resolve this map location. Try another pin position.',
+      );
+    }
+
+    final place = placemarks.first;
+    final street = (place.thoroughfare ?? place.street ?? '').trim();
+    final houseNumber = (place.subThoroughfare ?? '').trim();
+    final postalCode = _normalizePostalCode(place.postalCode ?? '');
+    final city = (place.locality ??
+            place.subLocality ??
+            place.subAdministrativeArea ??
+            '')
+        .trim();
+
+    return GeocodedAddress(
+      latitude: latitude,
+      longitude: longitude,
+      formattedAddress: _formatPlacemark(place),
+      county: place.country?.trim(),
+      street: street,
+      houseNumber: houseNumber,
+      postalCode: postalCode,
+      city: city,
     );
   }
 

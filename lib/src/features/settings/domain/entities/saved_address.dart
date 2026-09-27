@@ -11,6 +11,7 @@ class SavedAddress extends Equatable {
     required this.longitude,
     required this.formattedAddress,
     this.isDefault = false,
+    this.deliveryInstructions = '',
   });
 
   final String id;
@@ -22,6 +23,7 @@ class SavedAddress extends Equatable {
   final double longitude;
   final String formattedAddress;
   final bool isDefault;
+  final String deliveryInstructions;
 
   String get line1 => '$street $houseNumber'.trim();
 
@@ -44,6 +46,7 @@ class SavedAddress extends Equatable {
     double? longitude,
     String? formattedAddress,
     bool? isDefault,
+    String? deliveryInstructions,
   }) {
     return SavedAddress(
       id: id ?? this.id,
@@ -55,6 +58,8 @@ class SavedAddress extends Equatable {
       longitude: longitude ?? this.longitude,
       formattedAddress: formattedAddress ?? this.formattedAddress,
       isDefault: isDefault ?? this.isDefault,
+      deliveryInstructions:
+          deliveryInstructions ?? this.deliveryInstructions,
     );
   }
 
@@ -68,19 +73,25 @@ class SavedAddress extends Equatable {
         'longitude': longitude,
         'formattedAddress': formattedAddress,
         'isDefault': isDefault,
+        'deliveryInstructions': deliveryInstructions,
       };
 
   factory SavedAddress.fromJson(Map<String, dynamic> json) {
     return SavedAddress(
-      id: json['id'] as String,
-      street: json['street'] as String,
-      houseNumber: json['houseNumber'] as String,
-      postalCode: json['postalCode'] as String,
-      city: json['city'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      formattedAddress: json['formattedAddress'] as String,
-      isDefault: json['isDefault'] as bool? ?? false,
+      id: '${json['id']}',
+      street: json['street'] as String? ?? '',
+      houseNumber: (json['houseNumber'] ?? json['house_number']) as String? ?? '',
+      postalCode: (json['postalCode'] ?? json['postal_code']) as String? ?? '',
+      city: json['city'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0,
+      formattedAddress:
+          (json['formattedAddress'] ?? json['formatted_address']) as String? ??
+              '',
+      isDefault: (json['isDefault'] ?? json['is_default']) as bool? ?? false,
+      deliveryInstructions: (json['deliveryInstructions'] ??
+              json['delivery_instructions']) as String? ??
+          '',
     );
   }
 
@@ -95,5 +106,6 @@ class SavedAddress extends Equatable {
         longitude,
         formattedAddress,
         isDefault,
+        deliveryInstructions,
       ];
 }
