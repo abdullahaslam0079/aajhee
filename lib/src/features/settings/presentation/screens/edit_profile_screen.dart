@@ -14,7 +14,7 @@ class EditProfileScreen extends ConsumerStatefulWidget {
 class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _contactController = TextEditingController();
 
   bool _isSaving = false;
   String? _seedKey;
@@ -24,7 +24,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     if (_seedKey == seedKey) return;
 
     _nameController.text = profile.name;
-    _phoneController.text = profile.phone ?? '';
+    _contactController.text = profile.contactDisplay ?? '';
     _seedKey = seedKey;
   }
 
@@ -36,7 +36,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _phoneController.dispose();
+    _contactController.dispose();
     super.dispose();
   }
 
@@ -75,6 +75,8 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final tt = context.theme.textTheme;
     final pagePadding = AppSpacing.pagePadding.w;
     final profileState = ref.watch(userProfileProvider);
+    final profile = profileState.profile;
+    final isPhoneAccount = profile.isPhoneAccount;
 
     _initializeFields(profileState);
 
@@ -109,7 +111,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       SizedBox(height: AppSpacing.xs.h),
                       Text(
-                        'Update your name. Phone number cannot be changed here.',
+                        isPhoneAccount
+                            ? 'Update your name. Phone number cannot be changed here.'
+                            : 'Update your name. Email cannot be changed here.',
                         style: tt.bodyMedium?.copyWith(
                           color: cs.onSurfaceVariant,
                         ),
@@ -130,13 +134,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       ),
                       SizedBox(height: AppSpacing.md.h),
                       AppTextField(
-                        controller: _phoneController,
+                        controller: _contactController,
                         enabled: false,
                         readOnly: true,
-                        label: 'Phone number',
-                        hint: '+49 …',
-                        keyboardType: TextInputType.phone,
-                        prefixIcon: const Icon(Icons.phone_outlined),
+                        label: isPhoneAccount ? 'Phone number' : 'Email',
+                        hint: isPhoneAccount ? '+49 …' : 'you@email.com',
+                        keyboardType: isPhoneAccount
+                            ? TextInputType.phone
+                            : TextInputType.emailAddress,
+                        prefixIcon: Icon(
+                          isPhoneAccount
+                              ? Icons.phone_outlined
+                              : Icons.mail_outline_rounded,
+                        ),
                       ),
                       SizedBox(height: AppSpacing.xl.h),
                       AppButton(

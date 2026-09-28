@@ -8,19 +8,25 @@ const Map<String, String> orderStatusLabels = {
   'pending': 'Pending',
   'accepted': 'Accepted',
   'cancelled': 'Cancelled',
-  'awaiting_payment': 'Awaiting payment',
-  'payment_submitted': 'Payment submitted',
-  'paid_confirmed': 'Paid',
-  'preparing': 'Preparing',
+  'awaiting_payment': 'Accepted',
+  'payment_submitted': 'Accepted',
+  'paid_confirmed': 'Accepted',
+  'preparing': 'Accepted',
   'ready_for_pickup': 'Ready for pickup',
   'out_for_delivery': 'Out for delivery',
-  'completed': 'Completed',
+  'completed': 'Delivered',
+};
+
+const Map<String, String> paymentStatusLabels = {
+  'unpaid': 'Unpaid',
+  'awaiting_confirmation': 'Awaiting confirmation',
+  'paid': 'Paid',
 };
 
 const Map<String, String> fulfillmentLabels = {
-  'pickup': 'Pickup',
-  'local_same_day': 'Local delivery',
-  'nationwide': 'Nationwide',
+  'pickup': 'In-store pickup',
+  'local_same_day': 'Same-day delivery',
+  'nationwide': 'Nationwide / standard delivery',
 };
 
 const Map<String, String> paymentLabels = {
@@ -28,10 +34,10 @@ const Map<String, String> paymentLabels = {
   'cash_on_delivery': 'Cash on delivery',
   'bank_transfer': 'Bank transfer',
   'stripe': 'Card',
-  'jazzcash': 'JazzCash',
+  'jazzcash': 'Mobile wallet (JazzCash / Easypaisa)',
 };
 
-/// Methods where the customer uploads a transaction screenshot after accept.
+/// Methods where the customer uploads a transaction screenshot at checkout.
 const Set<String> paymentProofMethods = {
   'bank_transfer',
   'stripe',
@@ -61,8 +67,17 @@ String _fallback(String? value, {String empty = ''}) {
 String labelStatus(String? status) =>
     orderStatusLabels[status] ?? _fallback(status, empty: 'Unknown');
 
-String labelFulfillment(String? value) =>
-    fulfillmentLabels[value] ?? _fallback(value);
+String labelPaymentStatus(String? status) =>
+    paymentStatusLabels[status] ?? _fallback(status, empty: 'Unknown');
+
+String labelFulfillment(String? value, {String? city}) {
+  if (value == 'local_same_day') {
+    final cleaned = city?.trim() ?? '';
+    if (cleaned.isNotEmpty) return 'Same-day delivery in $cleaned';
+    return fulfillmentLabels[value]!;
+  }
+  return fulfillmentLabels[value] ?? _fallback(value);
+}
 
 String labelPayment(String? value) => paymentLabels[value] ?? _fallback(value);
 
@@ -76,6 +91,72 @@ bool isPickupFulfillment(String? value) => value == 'pickup';
 
 bool isDeliveryFulfillment(String? value) =>
     value == 'local_same_day' || value == 'nationwide';
+
+/// Customer-facing filter buckets for My orders.
+enum OrderStatusGroup {
+  active,
+  completed,
+  cancelled;
+
+  String get label => switch (this) {
+        active => 'Active',
+        completed => 'Completed',
+        cancelled => 'Cancelled',
+      };
+
+  String get apiValue => name;
+
+  bool matches(String? status) {
+    switch (this) {
+      case OrderStatusGroup.active:
+        return status != 'completed' && status != 'cancelled';
+      case OrderStatusGroup.completed:
+        return status == 'completed';
+      case OrderStatusGroup.cancelled:
+        return status == 'cancelled';
+    }
+  }
+}
+
+/// Timeline steps shown on order details (simplified customer journey).
+List<({String key, String label})> orderTimelineSteps({
+  required String? fulfillmentType,
+}) {
+  final third = isPickupFulfillment(fulfillmentType)
+      ? (key: 'ready_for_pickup', label: 'Ready for pickup')
+      : (key: 'out_for_delivery', label: 'Out for delivery');
+  return [
+    (key: 'pending', label: 'Pending'),
+    (key: 'accepted', label: 'Accepted'),
+    third,
+    (key: 'completed', label: 'Delivered'),
+  ];
+}
+
+/// Maps fine-grained backend status onto the customer timeline step index.
+int orderTimelineIndex(String? status, {required String? fulfillmentType}) {
+  switch (status) {
+    case null:
+    case '':
+    case 'pending':
+      return 0;
+    case 'accepted':
+    case 'awaiting_payment':
+    case 'payment_submitted':
+    case 'paid_confirmed':
+    case 'preparing':
+      return 1;
+    case 'ready_for_pickup':
+    case 'out_for_delivery':
+      return 2;
+    case 'completed':
+      return 3;
+    case 'cancelled':
+      return -1;
+    default:
+      return 0;
+  }
+}
 
 /// Short platform order number from `public_id` (last 8 chars, uppercase).
 ///

@@ -12,6 +12,7 @@ class SavedAddress extends Equatable {
     required this.formattedAddress,
     this.isDefault = false,
     this.deliveryInstructions = '',
+    this.landmark = '',
   });
 
   final String id;
@@ -24,6 +25,7 @@ class SavedAddress extends Equatable {
   final String formattedAddress;
   final bool isDefault;
   final String deliveryInstructions;
+  final String landmark;
 
   String get line1 => '$street $houseNumber'.trim();
 
@@ -47,6 +49,7 @@ class SavedAddress extends Equatable {
     String? formattedAddress,
     bool? isDefault,
     String? deliveryInstructions,
+    String? landmark,
   }) {
     return SavedAddress(
       id: id ?? this.id,
@@ -60,6 +63,7 @@ class SavedAddress extends Equatable {
       isDefault: isDefault ?? this.isDefault,
       deliveryInstructions:
           deliveryInstructions ?? this.deliveryInstructions,
+      landmark: landmark ?? this.landmark,
     );
   }
 
@@ -74,6 +78,7 @@ class SavedAddress extends Equatable {
         'formattedAddress': formattedAddress,
         'isDefault': isDefault,
         'deliveryInstructions': deliveryInstructions,
+        'landmark': landmark,
       };
 
   factory SavedAddress.fromJson(Map<String, dynamic> json) {
@@ -92,6 +97,7 @@ class SavedAddress extends Equatable {
       deliveryInstructions: (json['deliveryInstructions'] ??
               json['delivery_instructions']) as String? ??
           '',
+      landmark: (json['landmark'] as String?) ?? '',
     );
   }
 
@@ -107,5 +113,6 @@ class SavedAddress extends Equatable {
         formattedAddress,
         isDefault,
         deliveryInstructions,
+        landmark,
       ];
 }

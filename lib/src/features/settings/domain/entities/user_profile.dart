@@ -18,12 +18,31 @@ class UserProfile extends Equatable {
     email: '',
   );
 
+  static const phoneEmailDomain = '@phone.aajhee.local';
+
+  /// Phone-OTP accounts use a synthetic `*@phone.aajhee.local` email.
+  bool get isPhoneAccount => email.endsWith(phoneEmailDomain);
+
+  /// Contact line for profile UI: phone for phone login, email otherwise.
+  String? get contactDisplay {
+    if (isPhoneAccount) {
+      final storedPhone = phone?.trim();
+      if (storedPhone != null && storedPhone.isNotEmpty) return storedPhone;
+
+      final localPart = email.split('@').first.trim();
+      if (localPart.isEmpty) return null;
+      return localPart.startsWith('+') ? localPart : '+$localPart';
+    }
+
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.isEmpty) return null;
+    return trimmedEmail;
+  }
+
   String get displayName {
     if (name.isNotEmpty) return name;
-    if (phone != null && phone!.isNotEmpty) return phone!;
-    if (email.isNotEmpty && !email.endsWith('@phone.aajhee.local')) {
-      return email.split('@').first;
-    }
+    final contact = contactDisplay;
+    if (contact != null && contact.isNotEmpty) return contact;
     return 'Your profile';
   }
 

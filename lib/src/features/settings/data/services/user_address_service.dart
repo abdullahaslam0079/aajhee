@@ -27,6 +27,7 @@ class UserAddressService {
     required bool isDefault,
     String? county,
     String deliveryInstructions = '',
+    String landmark = '',
   }) {
     return {
       'street': street,
@@ -39,6 +40,7 @@ class UserAddressService {
       'isDefault': isDefault,
       'formattedAddress': formattedAddress,
       'deliveryInstructions': deliveryInstructions,
+      'landmark': landmark,
     };
   }
 
@@ -53,6 +55,7 @@ class UserAddressService {
     required bool isDefault,
     String? county,
     String deliveryInstructions = '',
+    String landmark = '',
   }) async {
     return runTask(() async {
       final response = await _dio.post<Map<String, dynamic>>(
@@ -68,6 +71,7 @@ class UserAddressService {
           isDefault: isDefault,
           county: county,
           deliveryInstructions: deliveryInstructions,
+          landmark: landmark,
         ),
       );
 
@@ -87,6 +91,7 @@ class UserAddressService {
     required bool isDefault,
     String? county,
     String deliveryInstructions = '',
+    String landmark = '',
   }) async {
     return runTask(() async {
       final response = await _dio.put<Map<String, dynamic>>(
@@ -102,6 +107,7 @@ class UserAddressService {
           isDefault: isDefault,
           county: county,
           deliveryInstructions: deliveryInstructions,
+          landmark: landmark,
         ),
       );
 

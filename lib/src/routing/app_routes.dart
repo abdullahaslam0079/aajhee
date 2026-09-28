@@ -10,6 +10,7 @@ abstract final class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String verifyOtp = '/verify-otp';
+  static const String completeProfile = '/complete-profile';
   static const String bottomNavigator = '/bottom-navigator';
   static const String businessStore = '/business-store';
   static const String notifications = '/notifications';

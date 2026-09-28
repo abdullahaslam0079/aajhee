@@ -58,7 +58,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 padding: EdgeInsets.symmetric(horizontal: pagePadding),
                 child: _ProfileHeader(
                   name: profile.displayName,
-                  email: profile.email,
+                  contact: profile.contactDisplay,
+                  isPhoneContact: profile.isPhoneAccount,
                   location: defaultAddress,
                   colorScheme: colorScheme,
                 ),
@@ -80,7 +81,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Icons.person_outline_rounded,
                       iconColor: colorScheme.primary,
                       title: 'Edit profile',
-                      subtitle: 'Name & email',
+                      subtitle: profile.isPhoneAccount
+                          ? 'Name & phone'
+                          : 'Name & email',
                       onTap: () => context.push(AppRoutes.editProfile),
                     ),
                     _divider(context),
@@ -381,13 +384,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.name,
-    required this.email,
+    required this.contact,
+    required this.isPhoneContact,
     required this.location,
     required this.colorScheme,
   });
 
   final String name;
-  final String email;
+  final String? contact;
+  final bool isPhoneContact;
   final String? location;
   final ColorScheme colorScheme;
 
@@ -395,6 +400,7 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = context.theme.textTheme;
     final muted = colorScheme.onSurfaceVariant;
+    final contactLabel = contact?.trim() ?? '';
 
     return Material(
       color: colorScheme.surfaceContainerLow,
@@ -417,11 +423,13 @@ class _ProfileHeader extends StatelessWidget {
                 height: 1.2,
               ),
             ),
-            if (email.isNotEmpty) ...[
+            if (contactLabel.isNotEmpty) ...[
               SizedBox(height: AppSpacing.sm.h),
               _ProfileMetaRow(
-                icon: Icons.mail_outline_rounded,
-                label: email,
+                icon: isPhoneContact
+                    ? Icons.phone_outlined
+                    : Icons.mail_outline_rounded,
+                label: contactLabel,
                 muted: muted,
                 textStyle: tt.bodyMedium,
               ),

@@ -15,6 +15,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   List<Map<String, dynamic>> _orders = const [];
   bool _loading = true;
   String? _error;
+  OrderStatusGroup _statusGroup = OrderStatusGroup.active;
 
   @override
   void initState() {
@@ -27,7 +28,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
       _loading = true;
       _error = null;
     });
-    final result = await _api.getOrders();
+    final result = await _api.getOrders(
+      statusGroup: _statusGroup.apiValue,
+    );
     if (!mounted) return;
     result.fold(
       (f) => setState(() {
@@ -41,9 +44,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
+  void _selectGroup(OrderStatusGroup group) {
+    if (group == _statusGroup) return;
+    setState(() => _statusGroup = group);
+    _load();
+  }
+
   @override
   Widget build(BuildContext context) {
     final canvas = homeCanvasOf(context);
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
 
     return Scaffold(
       backgroundColor: canvas,
@@ -51,58 +62,118 @@ class _OrdersScreenState extends State<OrdersScreen> {
         backgroundColor: canvas,
         title: const Text('My orders'),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: _load,
-                          child: const Text('Retry'),
+      body: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 8.h),
+            child: SizedBox(
+              height: 36.h,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: OrderStatusGroup.values.length,
+                separatorBuilder: (_, __) => SizedBox(width: 8.w),
+                itemBuilder: (context, index) {
+                  final group = OrderStatusGroup.values[index];
+                  final selected = group == _statusGroup;
+                  final bg = selected
+                      ? cs.primary
+                      : cs.surfaceContainerLowest;
+                  final fg =
+                      selected ? cs.onPrimary : cs.onSurfaceVariant;
+                  return Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => _selectGroup(group),
+                      borderRadius: AppBorders.md,
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          color: bg,
+                          borderRadius: AppBorders.md,
+                          border: selected
+                              ? null
+                              : Border.all(color: cs.outlineVariant),
                         ),
-                      ],
-                    ),
-                  ),
-                )
-              : _orders.isEmpty
-                  ? AppEmptyState(
-                      icon: Icons.receipt_long_outlined,
-                      title: 'No orders yet',
-                      subtitle: 'When you place an order, it will show up here.',
-                      actionLabel: 'Continue shopping',
-                      onAction: () => context.pop(),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _load,
-                      child: ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(
-                          parent: BouncingScrollPhysics(),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 14.w),
+                          child: Center(
+                            child: Text(
+                              group.label,
+                              style: tt.labelMedium?.copyWith(
+                                fontWeight: selected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                                color: fg,
+                              ),
+                            ),
+                          ),
                         ),
-                        padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 24.h),
-                        itemCount: _orders.length,
-                        separatorBuilder: (_, __) => SizedBox(height: 12.h),
-                        itemBuilder: (context, index) {
-                          final order = _orders[index];
-                          return _OrderListCard(
-                            order: order,
-                            onTap: () async {
-                              await context.push(
-                                AppRoutes.orderDetail(
-                                  order['public_id'].toString(),
-                                ),
-                              );
-                              if (mounted) _load();
-                            },
-                          );
-                        },
                       ),
                     ),
+                  );
+                },
+              ),
+            ),
+          ),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(_error!, textAlign: TextAlign.center),
+                              const SizedBox(height: 12),
+                              FilledButton(
+                                onPressed: _load,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : _orders.isEmpty
+                        ? AppEmptyState(
+                            icon: Icons.receipt_long_outlined,
+                            title: 'No ${_statusGroup.label.toLowerCase()} orders',
+                            subtitle:
+                                'When you place an order, it will show up here.',
+                            actionLabel: 'Continue shopping',
+                            onAction: () => context.pop(),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(
+                                parent: BouncingScrollPhysics(),
+                              ),
+                              padding:
+                                  EdgeInsets.fromLTRB(16.w, 0, 16.w, 24.h),
+                              itemCount: _orders.length,
+                              separatorBuilder: (_, __) =>
+                                  SizedBox(height: 12.h),
+                              itemBuilder: (context, index) {
+                                final order = _orders[index];
+                                return _OrderListCard(
+                                  order: order,
+                                  onTap: () async {
+                                    await context.push(
+                                      AppRoutes.orderDetail(
+                                        order['public_id'].toString(),
+                                      ),
+                                    );
+                                    if (mounted) _load();
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -288,6 +359,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   final Map<int, String> _productImages = {};
   bool _loading = true;
   bool _cancelling = false;
+  bool _reporting = false;
 
   @override
   void initState() {
@@ -378,28 +450,58 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _cancelOrder() async {
-    final confirmed = await showDialog<bool>(
+    final reasonController = TextEditingController();
+    final reason = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cancel order?'),
-        content: const Text(
-          'You can only cancel while the shop has not accepted yet.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep order'),
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancel order?'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'You can only cancel while the shop has not accepted yet.',
+                ),
+                SizedBox(height: 12.h),
+                TextField(
+                  controller: reasonController,
+                  autofocus: true,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Reason',
+                    hintText: 'Why are you cancelling?',
+                  ),
+                ),
+              ],
+            ),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cancel order'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Keep order'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = reasonController.text.trim();
+                if (text.isEmpty) return;
+                Navigator.pop(dialogContext, text);
+              },
+              child: const Text('Cancel order'),
+            ),
+          ],
+        );
+      },
     );
-    if (confirmed != true) return;
+    reasonController.dispose();
+    if (reason == null || reason.isEmpty) return;
+
     setState(() => _cancelling = true);
-    final result = await _api.cancelOrder(widget.publicId);
+    final result = await _api.cancelOrder(
+      widget.publicId,
+      reason: reason,
+    );
     if (!mounted) return;
     result.fold(
       (f) {
@@ -418,24 +520,111 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
+  Future<void> _contactStore() async {
+    final order = _order;
+    if (order == null) return;
+    final raw = (order['store_whatsapp'] ?? order['store_phone'] ?? '')
+        .toString()
+        .trim();
+    final digits = raw.replaceAll(RegExp(r'\D'), '');
+    if (digits.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No store contact available')),
+      );
+      return;
+    }
+    final result = await UrlLauncherService.instance.launch(digits);
+    if (!mounted) return;
+    result.fold(
+      (f) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(f.message)),
+      ),
+      (_) {},
+    );
+  }
+
+  Future<void> _reportProblem() async {
+    final messageController = TextEditingController();
+    final message = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Report a problem'),
+          content: TextField(
+            controller: messageController,
+            autofocus: true,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'What went wrong?',
+              hintText: 'Describe the issue',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final text = messageController.text.trim();
+                if (text.isEmpty) return;
+                Navigator.pop(dialogContext, text);
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+    messageController.dispose();
+    if (message == null || message.isEmpty) return;
+
+    setState(() => _reporting = true);
+    final result = await _api.reportOrderProblem(
+      publicId: widget.publicId,
+      message: message,
+    );
+    if (!mounted) return;
+    setState(() => _reporting = false);
+    result.fold(
+      (f) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(f.message)),
+      ),
+      (_) => ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Problem reported')),
+      ),
+    );
+  }
+
   Future<void> _uploadProof() async {
+    final colors = Theme.of(context).colorScheme;
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       showDragHandle: true,
-      builder: (context) {
+      builder: (sheetContext) {
+        final labelStyle = Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colors.onSurface,
+            );
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Choose from gallery'),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
+                leading: Icon(
+                  Icons.photo_library_outlined,
+                  color: colors.onSurface,
+                ),
+                title: Text('Choose from gallery', style: labelStyle),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Take a photo'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
+                leading: Icon(
+                  Icons.photo_camera_outlined,
+                  color: colors.onSurface,
+                ),
+                title: Text('Take a photo', style: labelStyle),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
               ),
             ],
           ),
@@ -444,46 +633,46 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
     if (source == null || !mounted) return;
 
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: source,
-      imageQuality: 85,
-      maxWidth: 2000,
-    );
-    if (picked == null || !mounted) return;
+    // Let the sheet finish dismissing before presenting the native picker.
+    // Calling pickImage mid-transition often fails on iOS with a channel-error.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
 
-    final noteController = TextEditingController();
+    late final XFile picked;
+    try {
+      final result = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 2000,
+        requestFullMetadata: false,
+      );
+      if (result == null || !mounted) return;
+      picked = result;
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      final needsRebuild = e.code == 'channel-error';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            needsRebuild
+                ? 'Photo picker needs a full app restart. Stop the app and run again.'
+                : (e.message ?? 'Could not open the photo picker.'),
+          ),
+        ),
+      );
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the photo picker.')),
+      );
+      return;
+    }
+
     final note = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Payment receipt'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              picked.name,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: noteController,
-              decoration: const InputDecoration(
-                labelText: 'Transaction reference / note (optional)',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, noteController.text),
-            child: const Text('Upload'),
-          ),
-        ],
+      builder: (dialogContext) => _PaymentProofNoteDialog(
+        fileName: picked.name,
       ),
     );
     if (note == null || !mounted) return;
@@ -568,11 +757,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final status = _text(order, 'status');
     final fulfillment = _text(order, 'fulfillment_type');
     final paymentMethod = _text(order, 'payment_method');
+    final paymentStatus = _text(order, 'payment_status');
+    final customerPhone = _text(order, 'customer_phone');
     final isPickup = isPickupFulfillment(fulfillment);
     final branchName = _text(order, 'branch_name');
     final customerNotes = _text(order, 'customer_notes');
     final deliveryFee = _text(order, 'delivery_fee');
     final addressText = _text(order, 'delivery_address_text');
+    final houseNumber = _text(order, 'delivery_house_number');
+    final landmark = _text(order, 'delivery_landmark');
     final bankInstructions = _text(order, 'payment_instructions').isNotEmpty
         ? _text(order, 'payment_instructions')
         : _text(order, 'bank_transfer_instructions');
@@ -591,6 +784,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         (status == 'awaiting_payment' ||
             status == 'accepted' ||
             status == 'payment_submitted');
+    final timelineIndex = orderTimelineIndex(
+      status,
+      fulfillmentType: fulfillment,
+    );
+    final addressParts = [
+      if (houseNumber.isNotEmpty) houseNumber,
+      if (landmark.isNotEmpty) landmark,
+      if (addressText.isNotEmpty) addressText,
+    ];
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(
@@ -651,6 +853,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ],
           ),
         ),
+        if (timelineIndex >= 0) ...[
+          SizedBox(height: 12.h),
+          _SectionCard(
+            title: 'Status',
+            child: _OrderTimeline(
+              fulfillmentType: fulfillment,
+              currentIndex: timelineIndex,
+            ),
+          ),
+        ],
         SizedBox(height: 12.h),
         _SectionCard(
           title: isPickup ? 'Pickup' : 'Delivery',
@@ -661,11 +873,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 label: 'Method',
                 value: labelFulfillment(fulfillment),
               ),
-              if (!isPickup && addressText.isNotEmpty) ...[
+              if (!isPickup && addressParts.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _InfoRow(
                   label: 'Address',
-                  value: addressText,
+                  value: addressParts.join('\n'),
                   multiline: true,
                 ),
               ],
@@ -674,6 +886,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 _InfoRow(
                   label: 'Pickup from',
                   value: branchName,
+                ),
+              ],
+              if (customerPhone.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                _InfoRow(
+                  label: 'Phone',
+                  value: customerPhone,
                 ),
               ],
               if (customerNotes.isNotEmpty) ...[
@@ -697,6 +916,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 label: 'Method',
                 value: labelPayment(paymentMethod),
               ),
+              if (paymentStatus.isNotEmpty) ...[
+                SizedBox(height: 10.h),
+                _InfoRow(
+                  label: 'Status',
+                  value: labelPaymentStatus(paymentStatus),
+                ),
+              ],
               if (bankInstructions.isNotEmpty) ...[
                 SizedBox(height: 12.h),
                 Container(
@@ -804,6 +1030,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ),
         ],
         SizedBox(height: 16.h),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _contactStore,
+            icon: const Icon(Icons.chat_outlined),
+            label: const Text('Contact store'),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _reporting ? null : _reportProblem,
+            icon: const Icon(Icons.flag_outlined),
+            label: Text(_reporting ? 'Reporting…' : 'Report a problem'),
+          ),
+        ),
+        SizedBox(height: 8.h),
         _CancelSection(
           order: order,
           cancelling: _cancelling,
@@ -867,6 +1111,98 @@ class _SectionCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _OrderTimeline extends StatelessWidget {
+  const _OrderTimeline({
+    required this.fulfillmentType,
+    required this.currentIndex,
+  });
+
+  final String fulfillmentType;
+  final int currentIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final steps = orderTimelineSteps(fulfillmentType: fulfillmentType);
+
+    return Column(
+      children: [
+        for (var i = 0; i < steps.length; i++) ...[
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Column(
+                children: [
+                  Container(
+                    width: 22.w,
+                    height: 22.w,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: i <= currentIndex
+                          ? cs.primary
+                          : cs.surfaceContainerHighest,
+                      border: Border.all(
+                        color: i <= currentIndex
+                            ? cs.primary
+                            : cs.outlineVariant,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: i < currentIndex
+                        ? Icon(
+                            Icons.check_rounded,
+                            size: 14,
+                            color: cs.onPrimary,
+                          )
+                        : i == currentIndex
+                            ? Center(
+                                child: Container(
+                                  width: 8.w,
+                                  height: 8.w,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: cs.onPrimary,
+                                  ),
+                                ),
+                              )
+                            : null,
+                  ),
+                  if (i != steps.length - 1)
+                    Container(
+                      width: 2,
+                      height: 22.h,
+                      color: i < currentIndex
+                          ? cs.primary
+                          : cs.outlineVariant,
+                    ),
+                ],
+              ),
+              SizedBox(width: 10.w),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 2.h, bottom: 8.h),
+                  child: Text(
+                    steps[i].label,
+                    style: tt.bodyMedium?.copyWith(
+                      fontWeight: i <= currentIndex
+                          ? FontWeight.w700
+                          : FontWeight.w500,
+                      color: i <= currentIndex
+                          ? cs.primary
+                          : cs.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
@@ -1127,6 +1463,67 @@ class _SummaryRow extends StatelessWidget {
             fontWeight: FontWeight.w800,
             color: cs.onSurface,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PaymentProofNoteDialog extends StatefulWidget {
+  const _PaymentProofNoteDialog({required this.fileName});
+
+  final String fileName;
+
+  @override
+  State<_PaymentProofNoteDialog> createState() =>
+      _PaymentProofNoteDialogState();
+}
+
+class _PaymentProofNoteDialogState extends State<_PaymentProofNoteDialog> {
+  late final TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    return AlertDialog(
+      title: const Text('Payment receipt'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.fileName, style: tt.bodySmall),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _noteController,
+              decoration: const InputDecoration(
+                labelText: 'Transaction reference / note (optional)',
+              ),
+              textInputAction: TextInputAction.done,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _noteController.text),
+          child: const Text('Upload'),
         ),
       ],
     );

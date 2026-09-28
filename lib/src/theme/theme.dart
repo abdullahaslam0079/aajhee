@@ -285,12 +285,22 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     ),
 
     // List Tile Theme
+    // Always set textColor + title color: ListTileThemeData.titleTextStyle without a
+    // color overrides M3 defaults, and M3 ListTile has no default textColor — titles
+    // then inherit nothing useful and can render invisible on light sheets.
     listTileTheme: ListTileThemeData(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       shape: const RoundedRectangleBorder(borderRadius: AppBorders.md),
       visualDensity: VisualDensity.comfortable,
-      titleTextStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-      subtitleTextStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+      textColor: colorScheme.onSurface,
+      iconColor: colorScheme.onSurface,
+      titleTextStyle: textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: colorScheme.onSurface,
+      ),
+      subtitleTextStyle: textTheme.bodyMedium?.copyWith(
+        color: colorScheme.onSurfaceVariant,
+      ),
     ),
 
     // Checkbox Theme

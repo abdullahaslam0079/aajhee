@@ -16,14 +16,20 @@ class BranchDiscountSummary {
   final String? imageUrl;
 
   factory BranchDiscountSummary.fromJson(Map<String, dynamic> json) {
+    final imageUrls = json['image_urls'];
+    final firstGalleryUrl = imageUrls is List && imageUrls.isNotEmpty
+        ? parseApiString(imageUrls.first)
+        : null;
+
     return BranchDiscountSummary(
       id: parseApiInt(json['id']),
       title: parseApiString(json['title']) ?? '',
       discountPercent: parseApiDouble(json['discount_percent']),
       imageUrl: resolveMediaUrl(
         parseApiString(
-          json['image_url'] ?? json['image'] ?? json['cover_image_url'],
-        ),
+              json['image_url'] ?? json['image'] ?? json['cover_image_url'],
+            ) ??
+            firstGalleryUrl,
       ),
     );
   }

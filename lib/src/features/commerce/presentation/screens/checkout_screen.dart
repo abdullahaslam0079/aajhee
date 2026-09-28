@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
+import 'package:aajhee/src/features/commerce/domain/pakistani_phone.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
@@ -92,23 +94,47 @@ class _CheckoutGroup {
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _api = CommerceApiService(DioService.instance);
   final _notesController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _houseController = TextEditingController();
+  final _landmarkController = TextEditingController();
 
   List<_CheckoutGroup> _groups = const [];
+  final Map<int, XFile?> _paymentProofs = {};
   bool _loading = true;
   bool _placing = false;
   String? _error;
+  String? _lastAddressId;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(_load);
+    Future.microtask(() {
+      final phone = ref.read(userProfileProvider).profile.phone;
+      if (phone != null && phone.trim().isNotEmpty) {
+        _phoneController.text = formatPakistaniMobileLocal(phone);
+      }
+      _applyAddressFields(ref.read(savedAddressesProvider).selectedAddress);
+      _load();
+    });
   }
 
   @override
   void dispose() {
     _notesController.dispose();
+    _phoneController.dispose();
+    _houseController.dispose();
+    _landmarkController.dispose();
     super.dispose();
   }
+
+  void _applyAddressFields(SavedAddress? address) {
+    _lastAddressId = address?.id;
+    _houseController.text = address?.houseNumber ?? '';
+    _landmarkController.text = address?.landmark ?? '';
+  }
+
+  bool get _needsDelivery =>
+      _groups.any((g) => isDeliveryFulfillment(g.fulfillmentType));
 
   Future<void> _load() async {
     setState(() {
@@ -238,10 +264,92 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     });
   }
 
+  Future<void> _pickPaymentProof(int groupIndex) async {
+    final colors = Theme.of(context).colorScheme;
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final labelStyle = Theme.of(sheetContext).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colors.onSurface,
+            );
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(
+                  Icons.photo_library_outlined,
+                  color: colors.onSurface,
+                ),
+                title: Text('Choose from gallery', style: labelStyle),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: Icon(
+                  Icons.photo_camera_outlined,
+                  color: colors.onSurface,
+                ),
+                title: Text('Take a photo', style: labelStyle),
+                onTap: () => Navigator.pop(sheetContext, ImageSource.camera),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (source == null || !mounted) return;
+
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+
+    try {
+      final result = await ImagePicker().pickImage(
+        source: source,
+        imageQuality: 85,
+        maxWidth: 2000,
+        requestFullMetadata: false,
+      );
+      if (result == null || !mounted) return;
+      setState(() => _paymentProofs[groupIndex] = result);
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      final needsRebuild = e.code == 'channel-error';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            needsRebuild
+                ? 'Photo picker needs a full app restart. Stop the app and run again.'
+                : (e.message ?? 'Could not open the photo picker.'),
+          ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the photo picker.')),
+      );
+    }
+  }
+
   Future<void> _placeOrder() async {
     if (_placing || _groups.isEmpty) return;
 
-    for (final group in _groups) {
+    final phoneError = validatePakistaniMobile(_phoneController.text);
+    if (phoneError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(phoneError)),
+      );
+      return;
+    }
+    final customerPhone = normalizePakistaniMobile(_phoneController.text)!;
+    final houseNumber = _houseController.text.trim();
+    final landmark = _landmarkController.text.trim();
+    final selectedAddress = ref.read(savedAddressesProvider).selectedAddress;
+
+    for (var i = 0; i < _groups.length; i++) {
+      final group = _groups[i];
       if (group.fulfillmentType.isEmpty || group.paymentMethod.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -250,45 +358,100 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         );
         return;
       }
-      if (isDeliveryFulfillment(group.fulfillmentType) &&
-          ref.read(savedAddressesProvider).selectedAddress == null) {
+      if (isDeliveryFulfillment(group.fulfillmentType)) {
+        if (selectedAddress == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Add a delivery address to continue.'),
+            ),
+          );
+          return;
+        }
+        if (houseNumber.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Enter your house / flat number.'),
+            ),
+          );
+          return;
+        }
+      }
+      if (requiresPaymentProof(group.paymentMethod) &&
+          _paymentProofs[i] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add a delivery address to continue.')),
+          SnackBar(
+            content: Text(
+              'Upload a payment receipt for ${group.storeName}.',
+            ),
+          ),
         );
         return;
       }
     }
 
-    final selectedAddress = ref.read(savedAddressesProvider).selectedAddress;
     final notes = _notesController.text.trim();
-    final checkoutGroups = _groups.map((group) {
+    final checkoutGroups = <Map<String, dynamic>>[];
+    for (var i = 0; i < _groups.length; i++) {
+      final group = _groups[i];
       final isDelivery = isDeliveryFulfillment(group.fulfillmentType);
-      return {
+      checkoutGroups.add({
         'branch_id': group.branchId,
         'item_ids': group.items.map((e) => e['id'] as int).toList(),
         'fulfillment_type': group.fulfillmentType,
         'payment_method': group.paymentMethod,
-        'delivery_address_text': selectedAddress?.formattedAddress ?? '',
+        if (isDelivery)
+          'delivery_address_text': selectedAddress?.formattedAddress ??
+              selectedAddress?.shortLabel ??
+              '',
+        'delivery_house_number': houseNumber,
+        'delivery_landmark': landmark,
+        'customer_phone': customerPhone,
         'customer_notes': [
           if (isDelivery) selectedAddress?.deliveryInstructions.trim() ?? '',
           if (notes.isNotEmpty) notes,
         ].where((e) => e.isNotEmpty).join('\n'),
-      };
-    }).toList();
+      });
+    }
+
+    final paymentProofs = <int, MultipartFile>{};
+    for (final entry in _paymentProofs.entries) {
+      final file = entry.value;
+      if (file == null) continue;
+      paymentProofs[entry.key] = await MultipartFile.fromFile(
+        file.path,
+        filename: file.name,
+      );
+    }
 
     setState(() => _placing = true);
     final placed = await _api.placeOrders(
       groups: checkoutGroups,
       addressId: selectedAddress?.id,
+      customerPhone: customerPhone,
+      paymentProofs: paymentProofs.isEmpty ? null : paymentProofs,
     );
     if (!mounted) return;
     setState(() => _placing = false);
 
-    placed.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(f.message)),
-      ),
-      (orders) {
+    await placed.fold(
+      (f) async {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(f.message)),
+        );
+      },
+      (orders) async {
+        final profile = ref.read(userProfileProvider).profile;
+        try {
+          await ref.read(userProfileProvider.notifier).updateProfile(
+                name: profile.name.isNotEmpty
+                    ? profile.name
+                    : profile.displayName,
+                phone: customerPhone,
+              );
+        } catch (_) {
+          // Order already placed; phone save is best-effort.
+        }
+        if (!mounted) return;
         unawaited(ref.read(cartProvider.notifier).refresh());
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Placed ${orders.length} order(s)')),
@@ -316,6 +479,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final canvas = homeCanvasOf(context);
 
     ref.listen(savedAddressesProvider, (previous, next) {
+      final address = next.selectedAddress;
+      if (address?.id != _lastAddressId) {
+        _applyAddressFields(address);
+      }
       if (!next.selectedLocationChangedFrom(previous)) return;
       _load();
     });
@@ -403,14 +570,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                             icon: Icons.person_outline_rounded,
                             label: profile.displayName,
                           ),
-                          if (profile.phone != null &&
-                              profile.phone!.trim().isNotEmpty) ...[
-                            SizedBox(height: 8.h),
-                            _DetailRow(
-                              icon: Icons.phone_outlined,
-                              label: profile.phone!,
-                            ),
-                          ],
                           if (profile.email.isNotEmpty) ...[
                             SizedBox(height: 8.h),
                             _DetailRow(
@@ -418,128 +577,183 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               label: profile.email,
                             ),
                           ],
+                          SizedBox(height: 12.h),
+                          TextField(
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            textInputAction: TextInputAction.next,
+                            decoration: const InputDecoration(
+                              labelText: 'Mobile number',
+                              hintText: '03XX-XXXXXXX',
+                              prefixIcon: Icon(Icons.phone_outlined),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 12.h),
-                    _SectionCard(
-                      title: 'Delivery address',
-                      trailing: TextButton(
-                        onPressed: () =>
-                            showDeliveryAddressPicker(context, ref),
-                        child: Text(address == null ? 'Add' : 'Change'),
-                      ),
-                      child: address == null
-                          ? Text(
-                              'Add an address for delivery orders.',
-                              style: tt.bodyMedium?.copyWith(
-                                color: cs.onSurfaceVariant,
-                              ),
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  address.shortLabel,
-                                  style: tt.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: cs.onSurface,
-                                  ),
+                    if (_needsDelivery) ...[
+                      SizedBox(height: 12.h),
+                      _SectionCard(
+                        title: 'Delivery address',
+                        trailing: TextButton(
+                          onPressed: () =>
+                              showDeliveryAddressPicker(context, ref),
+                          child: Text(address == null ? 'Add' : 'Change'),
+                        ),
+                        child: address == null
+                            ? Text(
+                                'Add an address for delivery orders.',
+                                style: tt.bodyMedium?.copyWith(
+                                  color: cs.onSurfaceVariant,
                                 ),
-                                if (address.formattedAddress.isNotEmpty) ...[
-                                  SizedBox(height: 4.h),
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    address.formattedAddress,
-                                    style: tt.bodySmall?.copyWith(
-                                      color: cs.onSurfaceVariant,
-                                      height: 1.35,
+                                    address.shortLabel.isNotEmpty
+                                        ? address.shortLabel
+                                        : address.formattedAddress,
+                                    style: tt.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: cs.onSurface,
+                                    ),
+                                  ),
+                                  if (address.deliveryInstructions
+                                      .trim()
+                                      .isNotEmpty) ...[
+                                    SizedBox(height: 8.h),
+                                    Text(
+                                      'Note: ${address.deliveryInstructions.trim()}',
+                                      style: tt.bodySmall?.copyWith(
+                                        color: cs.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                  SizedBox(height: 12.h),
+                                  TextField(
+                                    controller: _houseController,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: const InputDecoration(
+                                      labelText: 'House / flat number',
+                                      hintText: 'e.g. Flat 4B',
+                                    ),
+                                  ),
+                                  SizedBox(height: 10.h),
+                                  TextField(
+                                    controller: _landmarkController,
+                                    textInputAction: TextInputAction.next,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Landmark',
+                                      hintText: 'e.g. Near Liberty Market',
                                     ),
                                   ),
                                 ],
-                                if (address.deliveryInstructions
-                                    .trim()
-                                    .isNotEmpty) ...[
+                              ),
+                      ),
+                    ],
+                    for (var groupIndex = 0;
+                        groupIndex < _groups.length;
+                        groupIndex++) ...[
+                      SizedBox(height: 12.h),
+                      _SectionCard(
+                        title: _groups[groupIndex].storeName,
+                        child: Builder(
+                          builder: (context) {
+                            final group = _groups[groupIndex];
+                            final proof = _paymentProofs[groupIndex];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (final item in group.items) ...[
+                                  _CheckoutItemRow(item: item),
+                                  if (item != group.items.last)
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 10.h,
+                                      ),
+                                      child: Divider(
+                                        height: 1,
+                                        color: cs.outlineVariant,
+                                      ),
+                                    ),
+                                ],
+                                SizedBox(height: 16.h),
+                                Text(
+                                  'Fulfillment',
+                                  style: tt.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                for (final option in group.options)
+                                  _SelectableTile(
+                                    selected: group.fulfillmentType ==
+                                        option['fulfillment_type']?.toString(),
+                                    title: (option['label']
+                                                ?.toString()
+                                                .trim()
+                                                .isNotEmpty ??
+                                            false)
+                                        ? option['label'].toString()
+                                        : labelFulfillment(
+                                            option['fulfillment_type']
+                                                ?.toString(),
+                                          ),
+                                    subtitle:
+                                        'Fee: Rs ${_money(_toDouble(option['fee']))}',
+                                    onTap: () => _setFulfillment(
+                                      group,
+                                      option['fulfillment_type']?.toString() ??
+                                          '',
+                                    ),
+                                  ),
+                                SizedBox(height: 14.h),
+                                Text(
+                                  'Payment method',
+                                  style: tt.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: cs.onSurface,
+                                  ),
+                                ),
+                                SizedBox(height: 8.h),
+                                for (final method
+                                    in group.availablePaymentMethods())
+                                  _SelectableTile(
+                                    selected: group.paymentMethod == method,
+                                    title: labelPayment(method),
+                                    subtitle: _paymentSubtitle(group, method),
+                                    onTap: () => setState(
+                                      () => group.paymentMethod = method,
+                                    ),
+                                  ),
+                                if (requiresPaymentProof(
+                                  group.paymentMethod,
+                                )) ...[
+                                  _PaymentInstructionsDetails(
+                                    method: group.paymentMethod,
+                                    payments: group.payments,
+                                  ),
                                   SizedBox(height: 8.h),
-                                  Text(
-                                    'Note: ${address.deliveryInstructions.trim()}',
-                                    style: tt.bodySmall?.copyWith(
-                                      color: cs.onSurfaceVariant,
+                                  OutlinedButton.icon(
+                                    onPressed: () =>
+                                        _pickPaymentProof(groupIndex),
+                                    icon: Icon(
+                                      proof == null
+                                          ? Icons.upload_file_outlined
+                                          : Icons.check_circle_outline,
+                                    ),
+                                    label: Text(
+                                      proof == null
+                                          ? 'Upload payment receipt'
+                                          : proof.name,
                                     ),
                                   ),
                                 ],
                               ],
-                            ),
-                    ),
-                    for (final group in _groups) ...[
-                      SizedBox(height: 12.h),
-                      _SectionCard(
-                        title: group.storeName,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            for (final item in group.items) ...[
-                              _CheckoutItemRow(item: item),
-                              if (item != group.items.last)
-                                Padding(
-                                  padding:
-                                      EdgeInsets.symmetric(vertical: 10.h),
-                                  child: Divider(
-                                    height: 1,
-                                    color: cs.outlineVariant,
-                                  ),
-                                ),
-                            ],
-                            SizedBox(height: 16.h),
-                            Text(
-                              'Fulfillment',
-                              style: tt.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            for (final option in group.options)
-                              _SelectableTile(
-                                selected: group.fulfillmentType ==
-                                    option['fulfillment_type']?.toString(),
-                                title: (option['label']?.toString().trim().isNotEmpty ??
-                                        false)
-                                    ? option['label'].toString()
-                                    : labelFulfillment(
-                                        option['fulfillment_type']?.toString(),
-                                      ),
-                                subtitle:
-                                    'Fee: Rs ${_money(_toDouble(option['fee']))}',
-                                onTap: () => _setFulfillment(
-                                  group,
-                                  option['fulfillment_type']?.toString() ?? '',
-                                ),
-                              ),
-                            SizedBox(height: 14.h),
-                            Text(
-                              'Payment method',
-                              style: tt.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: cs.onSurface,
-                              ),
-                            ),
-                            SizedBox(height: 8.h),
-                            for (final method
-                                in group.availablePaymentMethods())
-                              _SelectableTile(
-                                selected: group.paymentMethod == method,
-                                title: labelPayment(method),
-                                subtitle: _paymentSubtitle(group, method),
-                                onTap: () => setState(
-                                  () => group.paymentMethod = method,
-                                ),
-                              ),
-                            if (requiresPaymentProof(group.paymentMethod))
-                              _PaymentInstructionsDetails(
-                                method: group.paymentMethod,
-                                payments: group.payments,
-                              ),
-                          ],
+                            );
+                          },
                         ),
                       ),
                     ],

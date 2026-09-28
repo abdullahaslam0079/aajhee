@@ -43,14 +43,14 @@ class AddressAutocompleteService {
   }
 
   Future<List<AddressSuggestion>> _searchGoogle(String query) async {
-    final lahore = MapConstants.defaultCenter;
+    final bias = MapConstants.defaultCenter;
     final response = await _dio.get<Map<String, dynamic>>(
       _googleAutocompleteUrl,
       queryParameters: {
         'input': query,
         'key': _googleApiKey,
         'components': 'country:pk',
-        'location': '${lahore.latitude},${lahore.longitude}',
+        'location': '${bias.latitude},${bias.longitude}',
         'radius': 50000,
         'language': 'en',
       },
@@ -147,10 +147,10 @@ class AddressAutocompleteService {
   }
 
   Future<List<AddressSuggestion>> _searchNominatim(String query) async {
-    final lahore = MapConstants.defaultCenter;
-    // Bias around Lahore (~0.4° ≈ 40 km).
+    final bias = MapConstants.defaultCenter;
+    // Bias around the primary launch city (~0.4° ≈ 40 km).
     final viewbox =
-        '${lahore.longitude - 0.4},${lahore.latitude + 0.4},${lahore.longitude + 0.4},${lahore.latitude - 0.4}';
+        '${bias.longitude - 0.4},${bias.latitude + 0.4},${bias.longitude + 0.4},${bias.latitude - 0.4}';
 
     final response = await _dio.get<List<dynamic>>(
       _nominatimUrl,

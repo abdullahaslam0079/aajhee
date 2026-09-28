@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:aajhee/src/config/launch_cities.dart';
 
 /// Matches the [BottomAppBar] content height in [BottomNavigationBarScreen].
 const double kBottomNavBarHeight = 74;
@@ -24,13 +25,13 @@ const double kHomeFeedBottomInset =
     kBottomNavBarHeight + kHomeFabProtrusion + 20;
 
 abstract final class MapConstants {
-  /// Default map center — Lahore, Pakistan.
-  static const LatLng defaultCenter = LatLng(31.5204, 74.3587);
+  /// Default map center — primary enabled launch city.
+  static LatLng get defaultCenter => primaryLaunchCity.center;
 
-  static const CameraPosition initialCameraPosition = CameraPosition(
-    target: defaultCenter,
-    zoom: 12.4746,
-  );
+  static CameraPosition get initialCameraPosition => CameraPosition(
+        target: defaultCenter,
+        zoom: 12.4746,
+      );
 
   static CameraPosition cameraPositionFor(
     LatLng target, {

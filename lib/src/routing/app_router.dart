@@ -12,6 +12,7 @@ import 'package:aajhee/src/routing/global_navigator.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
 
 import 'package:aajhee/src/features/auth/presentation/models/phone_otp_args.dart';
+import 'package:aajhee/src/features/auth/presentation/screens/complete_profile_screen.dart';
 import 'package:aajhee/src/features/auth/presentation/screens/login_screen.dart';
 import 'package:aajhee/src/features/auth/presentation/screens/verify_otp_screen.dart';
 
@@ -73,6 +74,11 @@ final GoRouter appRouter = GoRouter(
         }
         return VerifyOtpScreen(args: args);
       },
+    ),
+    GoRoute(
+      path: AppRoutes.completeProfile,
+      name: 'completeProfile',
+      builder: (context, state) => const CompleteProfileScreen(),
     ),
     GoRoute(
       path: AppRoutes.bottomNavigator,

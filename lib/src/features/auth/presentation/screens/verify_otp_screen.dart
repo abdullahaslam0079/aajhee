@@ -93,7 +93,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
       await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
             context: context,
             idToken: idToken,
-            displayName: widget.args.displayName,
           );
     } catch (error) {
       if (!mounted) return;
@@ -126,7 +125,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
         await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
               context: context,
               idToken: session.idToken!,
-              displayName: widget.args.displayName,
             );
         return;
       }

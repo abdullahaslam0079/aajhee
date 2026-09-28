@@ -1,3 +1,4 @@
+import 'package:aajhee/src/config/launch_cities.dart';
 import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:aajhee/src/features/settings/data/services/address_geocoding_service.dart';
 import 'package:aajhee/src/features/settings/domain/entities/address_suggestion.dart';
@@ -32,6 +33,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
   final _postalCodeController = TextEditingController();
   final _cityController = TextEditingController();
   final _instructionsController = TextEditingController();
+  final _landmarkController = TextEditingController();
 
   /// 0 = pick location on map, 1 = fill / confirm details
   int _step = 0;
@@ -53,6 +55,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
       _postalCodeController.text = address.postalCode;
       _cityController.text = address.city;
       _instructionsController.text = address.deliveryInstructions;
+      _landmarkController.text = address.landmark;
       _verifiedAddress = address.formattedAddress;
       _mapLat = address.latitude;
       _mapLng = address.longitude;
@@ -159,6 +162,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
     _postalCodeController.dispose();
     _cityController.dispose();
     _instructionsController.dispose();
+    _landmarkController.dispose();
     super.dispose();
   }
 
@@ -186,6 +190,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
         county: _county,
       );
       final instructions = _instructionsController.text.trim();
+      final landmark = _landmarkController.text.trim();
       final notifier = ref.read(savedAddressesProvider.notifier);
       if (widget.isEditMode) {
         await notifier.updateAddress(
@@ -196,6 +201,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
           city: _cityController.text,
           geocoded: geocoded,
           deliveryInstructions: instructions,
+          landmark: landmark,
         );
       } else {
         await notifier.addAddress(
@@ -205,6 +211,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
           city: _cityController.text,
           geocoded: geocoded,
           deliveryInstructions: instructions,
+          landmark: landmark,
         );
       }
 
@@ -483,7 +490,7 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
                     controller: _cityController,
                     enabled: !_isBusy,
                     label: 'City',
-                    hint: 'e.g. Lahore',
+                    hint: cityHintExample(),
                     prefixIcon: const Icon(Icons.location_city_outlined),
                     textInputAction: TextInputAction.next,
                     validator: (v) =>
@@ -491,6 +498,15 @@ class _AddAddressScreenState extends ConsumerState<AddAddressScreen> {
                   ),
                 ),
               ],
+            ),
+            SizedBox(height: AppSpacing.md.h),
+            AppTextField(
+              controller: _landmarkController,
+              enabled: !_isBusy,
+              label: 'Landmark',
+              hint: 'e.g. Near Liberty Market',
+              prefixIcon: const Icon(Icons.place_outlined),
+              textInputAction: TextInputAction.next,
             ),
             SizedBox(height: AppSpacing.md.h),
             AppTextField(

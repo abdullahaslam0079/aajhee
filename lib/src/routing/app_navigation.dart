@@ -4,12 +4,21 @@ import 'package:go_router/go_router.dart';
 import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:aajhee/src/features/onboarding/presentation/providers/onboarding_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/user_profile_provider.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
+
+bool isDisplayNameMissing(String? name) => name == null || name.trim().isEmpty;
 
 void navigateAfterAuthentication(
   BuildContext context, {
   required bool hasSavedAddress,
+  bool needsDisplayName = false,
 }) {
+  if (needsDisplayName) {
+    context.go(AppRoutes.completeProfile);
+    return;
+  }
+
   if (hasSavedAddress) {
     context.go(AppRoutes.bottomNavigator);
   } else {
@@ -54,6 +63,14 @@ Future<void> navigateFromSplash(BuildContext context, WidgetRef ref) async {
   final session = ref.read(sessionProvider);
   if (session.status != SessionStatus.authenticated) {
     context.go(AppRoutes.login);
+    return;
+  }
+
+  final profileName = ref.read(userProfileProvider).profile.name;
+  final sessionName = session.user?.name;
+  if (isDisplayNameMissing(profileName) &&
+      isDisplayNameMissing(sessionName)) {
+    context.go(AppRoutes.completeProfile);
     return;
   }
 

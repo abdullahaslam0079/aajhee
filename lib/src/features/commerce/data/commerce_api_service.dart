@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'dart:convert';
 import 'package:aajhee/src/config/app_config.dart';
 import 'package:aajhee/src/services/dio_service.dart';
 import 'package:aajhee/src/utils/failure.dart';
@@ -142,10 +143,54 @@ class CommerceApiService {
   FutureEither<List<Map<String, dynamic>>> placeOrders({
     required List<Map<String, dynamic>> groups,
     String? addressId,
+    String? customerPhone,
+    Map<int, MultipartFile>? paymentProofs,
   }) async {
+    final hasProofs = paymentProofs != null && paymentProofs.isNotEmpty;
+    if (hasProofs) {
+      final formMap = <String, dynamic>{
+        'groups': jsonEncode(groups),
+        if (customerPhone != null && customerPhone.isNotEmpty)
+          'customer_phone': customerPhone,
+      };
+      for (final entry in paymentProofs.entries) {
+        formMap['proof_${entry.key}'] = entry.value;
+      }
+      final result = await runTask(
+        () => AppConfig.dio.post(
+          '/api/checkout/place',
+          data: FormData.fromMap(formMap),
+          queryParameters: {
+            if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
+          },
+          options: Options(
+            contentType: 'multipart/form-data',
+            headers: {'Content-Type': 'multipart/form-data'},
+          ),
+        ),
+        requiresNetwork: true,
+      );
+      return result.fold(left, (r) {
+        final data = r.data;
+        if (data is List) {
+          return right(
+            data
+                .whereType<Map>()
+                .map((e) => Map<String, dynamic>.from(e))
+                .toList(),
+          );
+        }
+        return left(ServerFailure('Unexpected checkout response.'));
+      });
+    }
+
     final result = await _dio.post(
       '/api/checkout/place',
-      data: {'groups': groups},
+      data: {
+        'groups': groups,
+        if (customerPhone != null && customerPhone.isNotEmpty)
+          'customer_phone': customerPhone,
+      },
       queryParameters: {
         if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
       },
@@ -157,8 +202,16 @@ class CommerceApiService {
     });
   }
 
-  FutureEither<List<Map<String, dynamic>>> getOrders() async {
-    final result = await _dio.get('/api/orders');
+  FutureEither<List<Map<String, dynamic>>> getOrders({
+    String? statusGroup,
+  }) async {
+    final result = await _dio.get(
+      '/api/orders',
+      queryParameters: {
+        if (statusGroup != null && statusGroup.isNotEmpty)
+          'status_group': statusGroup,
+      },
+    );
     return result.fold(left, (r) {
       final data = r.data;
       if (data is List) return right(data.cast<Map<String, dynamic>>());
@@ -177,8 +230,28 @@ class CommerceApiService {
     );
   }
 
-  FutureEither<Map<String, dynamic>> cancelOrder(String publicId) async {
-    final result = await _dio.post('/api/orders/$publicId/cancel');
+  FutureEither<Map<String, dynamic>> cancelOrder(
+    String publicId, {
+    String reason = '',
+  }) async {
+    final result = await _dio.post(
+      '/api/orders/$publicId/cancel',
+      data: {'reason': reason},
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> reportOrderProblem({
+    required String publicId,
+    required String message,
+  }) async {
+    final result = await _dio.post(
+      '/api/orders/$publicId/report',
+      data: {'message': message.trim()},
+    );
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),

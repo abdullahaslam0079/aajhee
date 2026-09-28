@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:aajhee/src/config/launch_cities.dart';
 import 'package:aajhee/src/features/settings/data/services/address_autocomplete_service.dart';
 import 'package:aajhee/src/features/settings/domain/entities/address_suggestion.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
@@ -180,7 +181,7 @@ class _AddressSearchFieldState extends State<AddressSearchField> {
         ] else if (_searchedEmpty && !_isSearching) ...[
           SizedBox(height: AppSpacing.xs.h),
           Text(
-            'No addresses found. Try a street name in Lahore.',
+            addressSearchEmptyHint(),
             style: tt.bodySmall?.copyWith(color: cs.onSurfaceVariant),
           ),
         ],

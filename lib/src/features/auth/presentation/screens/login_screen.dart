@@ -8,8 +8,6 @@ import 'package:aajhee/src/imports/packages_imports.dart';
 /// Free personal teams cannot provision `com.apple.developer.applesignin`.
 const kAppleSignInEnabledOnApplePlatforms = false;
 
-final _namePattern = RegExp(r"^[\p{L}][\p{L}\s.'\-]*$", unicode: true);
-
 /// Phone number entry with Google / Apple social sign-in.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -20,7 +18,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _phoneFocus = FocusNode();
   var _autovalidateMode = AutovalidateMode.disabled;
@@ -30,7 +27,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
     _phoneController.dispose();
     _phoneFocus.dispose();
     super.dispose();
@@ -52,15 +48,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return '+$digits';
     }
     return '${_country.dialCode}$digits';
-  }
-
-  String? _validateName(String? value) {
-    if (AppUtils.isBlank(value)) return 'auth.name_required'.tr();
-    final name = value!.trim();
-    if (name.length < 2) return 'auth.name_too_short'.tr();
-    if (name.length > 50) return 'auth.name_too_long'.tr();
-    if (!_namePattern.hasMatch(name)) return 'auth.name_invalid'.tr();
-    return null;
   }
 
   String? _validatePhone(String? value) {
@@ -85,7 +72,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_validateForm()) return;
 
     final phone = _toE164(_phoneController.text);
-    final displayName = _nameController.text.trim();
     setState(() => _isSending = true);
 
     try {
@@ -99,7 +85,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         await ref.read(authControllerProvider.notifier).completeFirebaseLogin(
               context: context,
               idToken: session.idToken!,
-              displayName: displayName,
             );
         return;
       }
@@ -119,7 +104,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           phoneNumber: phone,
           verificationId: session.verificationId!,
           resendToken: session.resendToken,
-          displayName: displayName,
         ),
       );
     } catch (error, stackTrace) {
@@ -217,20 +201,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     height: 80.h,
                     fit: BoxFit.contain,
                   ),
-                  SizedBox(height: AppSpacing.lg.h),
-                  Text(
-                    'auth.log_in'.tr(),
-                    textAlign: TextAlign.center,
-                    style: tt.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.sm.h),
+                  SizedBox(height: AppSpacing.md.h),
                   Text(
                     'auth.log_in_subtitle'.tr(),
                     textAlign: TextAlign.center,
-                    style: tt.bodyMedium?.copyWith(
+                    style: tt.bodyLarge?.copyWith(
                       color: cs.onSurfaceVariant,
                       height: 1.45,
                     ),
@@ -242,22 +217,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        AppTextField(
-                          controller: _nameController,
-                          enabled: !isLoading,
-                          label: 'auth.name'.tr(),
-                          prefixIcon: const Icon(Icons.person_outline_rounded),
-                          keyboardType: TextInputType.name,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.name],
-                          inputFormatters: [
-                            LengthLimitingTextInputFormatter(50),
-                          ],
-                          onFieldSubmitted: (_) => _phoneFocus.requestFocus(),
-                          validator: _validateName,
-                        ),
-                        SizedBox(height: AppSpacing.md.h),
                         AppTextField(
                           controller: _phoneController,
                           focusNode: _phoneFocus,

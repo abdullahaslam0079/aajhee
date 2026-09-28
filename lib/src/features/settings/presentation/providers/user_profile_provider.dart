@@ -151,10 +151,11 @@ class UserProfile extends _$UserProfile {
     );
   }
 
-  Future<void> updateProfile({required String name}) async {
+  Future<void> updateProfile({required String name, String? phone}) async {
     final trimmedName = name.trim();
     final result = await UserProfileService.instance.updateProfile(
       name: trimmedName,
+      phone: phone,
     );
 
     await result.fold(
@@ -167,7 +168,7 @@ class UserProfile extends _$UserProfile {
           email: userModel.email.isNotEmpty
               ? userModel.email
               : state.profile.email,
-          phone: userModel.phone ?? state.profile.phone,
+          phone: userModel.phone ?? phone ?? state.profile.phone,
         );
 
         final prefs = await _preferences;

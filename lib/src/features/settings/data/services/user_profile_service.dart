@@ -18,11 +18,17 @@ class UserProfileService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<UserModel> updateProfile({required String name}) async {
+  FutureEither<UserModel> updateProfile({
+    required String name,
+    String? phone,
+  }) async {
     return runTask(() async {
       final response = await _dio.patch<Map<String, dynamic>>(
         '/api/user/profile',
-        data: {'name': name.trim()},
+        data: {
+          'name': name.trim(),
+          if (phone != null) 'phone': phone.trim(),
+        },
       );
       return UserModel.fromJson(response.data ?? const {});
     }, requiresNetwork: true);
