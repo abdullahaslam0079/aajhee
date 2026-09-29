@@ -18,10 +18,10 @@ void main() {
   });
 
   group('formatOrderNumber', () {
-    test('shortens uuid to last 8 uppercase chars', () {
+    test('shortens uuid to first 8 chars of public_id', () {
       expect(
         formatOrderNumber('02248330-1b5e-4756-a71f-f02605a5467a'),
-        '#05A5467A',
+        '#02248330',
       );
     });
 

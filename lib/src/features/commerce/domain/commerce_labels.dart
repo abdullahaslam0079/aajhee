@@ -158,17 +158,16 @@ int orderTimelineIndex(String? status, {required String? fulfillmentType}) {
   }
 }
 
-/// Short platform order number from `public_id` (last 8 chars, uppercase).
+/// Short platform order number from `public_id` (first 8 chars of the UUID
+/// string, with hyphens — same as admin `public_id.slice(0, 8)` /
+/// backend `str(public_id)[:8]`).
 ///
-/// Example: `02248330-1b5e-4756-a71f-f02605a5467a` → `#05A5467A`.
+/// Example: `02248330-1b5e-4756-a71f-f02605a5467a` → `#02248330`.
 String formatOrderNumber(String? publicId) {
   final raw = (publicId ?? '').trim();
   if (raw.isEmpty) return '';
-  final compact = raw.replaceAll('-', '');
-  final short = compact.length > 8
-      ? compact.substring(compact.length - 8)
-      : compact;
-  return '#${short.toUpperCase()}';
+  final short = raw.length > 8 ? raw.substring(0, 8) : raw;
+  return '#$short';
 }
 
 /// Home product list channel chips: All / In-store / Ecommerce.

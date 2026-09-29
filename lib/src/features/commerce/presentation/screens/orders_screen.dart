@@ -874,6 +874,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 label: 'Method',
                 value: labelFulfillment(fulfillment),
               ),
+              if (fulfillment == 'local_same_day') ...[
+                SizedBox(height: 10.h),
+                _InfoRow(
+                  label: 'Promised by',
+                  value: () {
+                    final snap = order['delivery_snapshot'];
+                    final promised = snap is Map
+                        ? formatCommerceDateTime(
+                            snap['promised_by']?.toString(),
+                          )
+                        : '—';
+                    if (promised == '—' || promised.isEmpty) {
+                      return 'End of day';
+                    }
+                    return 'End of day · $promised';
+                  }(),
+                ),
+              ],
               if (!isPickup && addressParts.isNotEmpty) ...[
                 SizedBox(height: 10.h),
                 _InfoRow(
