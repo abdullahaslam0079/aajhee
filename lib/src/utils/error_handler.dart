@@ -31,15 +31,7 @@ class AppErrorHandler {
     if (data is! Map) return null;
     final map = Map<String, dynamic>.from(data);
 
-    final message = map['message'];
-    if (message is String && message.isNotEmpty) return message;
-
-    final detail = map['detail'];
-    if (detail is String && detail.isNotEmpty) return detail;
-
-    final error = map['error'];
-    if (error is String && error.isNotEmpty) return error;
-
+    // Prefer field-level validation errors over a generic "Validation failed."
     final errors = map['errors'];
     if (errors is Map) {
       for (final value in errors.values) {
@@ -51,6 +43,15 @@ class AppErrorHandler {
         }
       }
     }
+
+    final message = map['message'];
+    if (message is String && message.isNotEmpty) return message;
+
+    final detail = map['detail'];
+    if (detail is String && detail.isNotEmpty) return detail;
+
+    final error = map['error'];
+    if (error is String && error.isNotEmpty) return error;
 
     return null;
   }

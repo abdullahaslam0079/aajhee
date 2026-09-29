@@ -283,4 +283,82 @@ class CommerceApiService {
       (r) => right(Map<String, dynamic>.from(r.data as Map)),
     );
   }
+
+  FutureEither<Map<String, dynamic>> createOrderItemReview({
+    required String publicId,
+    required int itemId,
+    required int rating,
+    String comment = '',
+    List<MultipartFile> images = const [],
+  }) async {
+    final map = <String, dynamic>{
+      'rating': rating,
+      'comment': comment,
+    };
+    if (images.isNotEmpty) {
+      map['images'] = images;
+    }
+    final form = FormData.fromMap(map);
+    final result = await runTask(
+      () => AppConfig.dio.post(
+        '/api/orders/$publicId/items/$itemId/reviews',
+        data: form,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: {'Content-Type': 'multipart/form-data'},
+        ),
+      ),
+      requiresNetwork: true,
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> updateReview({
+    required int reviewId,
+    int? rating,
+    String? comment,
+    List<MultipartFile>? images,
+    bool replaceImages = false,
+  }) async {
+    final map = <String, dynamic>{
+      'replace_images': replaceImages,
+    };
+    if (rating != null) map['rating'] = rating;
+    if (comment != null) map['comment'] = comment;
+    if (images != null && images.isNotEmpty) map['images'] = images;
+    final form = FormData.fromMap(map);
+    final result = await runTask(
+      () => AppConfig.dio.patch(
+        '/api/reviews/$reviewId',
+        data: form,
+        options: Options(
+          contentType: 'multipart/form-data',
+          headers: {'Content-Type': 'multipart/form-data'},
+        ),
+      ),
+      requiresNetwork: true,
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> getProductReviews(
+    int productId, {
+    int page = 1,
+    String sort = 'newest',
+  }) async {
+    final result = await _dio.get(
+      '/api/products/$productId/reviews',
+      queryParameters: {'page': page, 'sort': sort},
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
 }

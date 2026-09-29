@@ -269,6 +269,10 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
                             businessName: businessName,
                             branchName: showInStore ? branchName : '',
                             logoUrl: logoUrl,
+                            ratingAvg: business['rating_avg']?.toString(),
+                            ratingCount:
+                                int.tryParse('${business['rating_count'] ?? 0}') ??
+                                    0,
                             showOnline: showOnline,
                             showInStore: showInStore,
                             address: showInStore ? address : '',
@@ -405,12 +409,16 @@ class _StoreHero extends StatelessWidget {
     required this.canNavigate,
     required this.contacts,
     required this.onContact,
+    this.ratingAvg,
+    this.ratingCount = 0,
     this.onNavigate,
   });
 
   final String businessName;
   final String branchName;
   final String? logoUrl;
+  final String? ratingAvg;
+  final int ratingCount;
   final bool showOnline;
   final bool showInStore;
   final String address;
@@ -489,6 +497,16 @@ class _StoreHero extends StatelessWidget {
                               style: tt.bodyMedium?.copyWith(
                                 color: cs.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                          if (ratingCount > 0) ...[
+                            SizedBox(height: 6.h),
+                            Text(
+                              '★ ${ratingAvg ?? '0.00'} ($ratingCount)',
+                              style: tt.labelLarge?.copyWith(
+                                color: const Color(0xFFE6A817),
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ],

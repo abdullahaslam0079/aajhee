@@ -336,14 +336,14 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                   ),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 210.h,
+                      height: 148.h,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
                         padding:
                             EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
                         itemCount: _topPicks.length,
-                        separatorBuilder: (_, __) => SizedBox(width: 12.w),
+                        separatorBuilder: (_, __) => SizedBox(width: 10.w),
                         itemBuilder: (context, index) {
                           final product = _topPicks[index];
                           return _TopPickCard(
@@ -393,42 +393,49 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                       ),
                     ),
                   )
-                else
+                else ...[
                   SliverPadding(
                     padding: EdgeInsets.fromLTRB(
                       AppSpacing.ms.w,
                       0,
                       AppSpacing.ms.w,
-                      bottomInset,
+                      _loadingMore ? AppSpacing.sm.h : bottomInset,
                     ),
-                    sliver: SliverList.separated(
-                      itemCount: visible.length + (_loadingMore ? 1 : 0),
-                      separatorBuilder: (_, __) =>
-                          SizedBox(height: AppSpacing.sm.h),
-                      itemBuilder: (context, index) {
-                        if (index >= visible.length) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            child: Center(
-                              child: SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            ),
+                    sliver: SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10.h,
+                        crossAxisSpacing: 10.w,
+                        // Packed square image + meta (~3 product rows visible).
+                        childAspectRatio: 0.72,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = visible[index];
+                          return _ProductGridCard(
+                            product: product,
+                            channel: _channelFor(product),
+                            onTap: () => _openProduct(product),
                           );
-                        }
-                        final product = visible[index];
-                        return _ProductListCard(
-                          product: product,
-                          channel: _channelFor(product),
-                          onTap: () => _openProduct(product),
-                        );
-                      },
+                        },
+                        childCount: visible.length,
+                      ),
                     ),
                   ),
+                  if (_loadingMore)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(0, 4.h, 0, bottomInset),
+                        child: const Center(
+                          child: SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ],
             ],
           ),
@@ -700,7 +707,7 @@ class _ProductChannelFilterChips extends StatelessWidget {
                   : cs.surfaceContainerLowest;
           final fg = isSelected ? cs.onPrimary : cs.onSurfaceVariant;
           final icon = switch (filter) {
-            ProductChannelFilter.all => Icons.apps_rounded,
+            ProductChannelFilter.all => Icons.grid_view_rounded,
             ProductChannelFilter.ecommerce => Icons.language_rounded,
             ProductChannelFilter.inStore => Icons.storefront_outlined,
           };
@@ -749,7 +756,6 @@ class _ProductChannelFilterChips extends StatelessWidget {
     );
   }
 }
-
 class _TopPickCard extends StatelessWidget {
   const _TopPickCard({
     required this.product,
@@ -762,61 +768,96 @@ class _TopPickCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
     final hasDiscount = product['has_discount'] == true;
     final imageUrl = product['image_url']?.toString();
+    final businessName = product['business_name']?.toString() ?? '';
+    final price = _formatMoney(
+      product['effective_price'] ?? product['base_price'],
+    );
+    final basePrice = _formatMoney(product['base_price']);
+    final discountLabel = _formatDiscount(product['effective_discount_percent']);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: SizedBox(
-        width: 150.w,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
-                  image: imageUrl != null && imageUrl.isNotEmpty
-                      ? DecorationImage(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit.cover,
-                        )
-                      : null,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppBorders.md,
+        child: Ink(
+          width: 118.w,
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: AppBorders.md,
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      child: _ProductThumb(imageUrl: imageUrl),
+                    ),
+                    if (hasDiscount && discountLabel != null)
+                      Positioned(
+                        left: 6.w,
+                        bottom: 6.h,
+                        child: _DiscountBadge(label: discountLabel),
+                      ),
+                  ],
                 ),
-                child: imageUrl == null || imageUrl.isEmpty
-                    ? const Center(child: Icon(Icons.image_outlined))
-                    : const SizedBox.expand(),
               ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              product['name']?.toString() ?? '',
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            Text(
-              hasDiscount
-                  ? 'Rs ${product['effective_price']} · ${product['effective_discount_percent']}% off'
-                  : 'Rs ${product['effective_price'] ?? product['base_price']}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: hasDiscount
-                        ? context.appColors.deal
-                        : cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-          ],
+              Padding(
+                padding: EdgeInsets.fromLTRB(8.w, 6.h, 8.w, 8.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (businessName.isNotEmpty)
+                      Text(
+                        businessName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                          height: 1.1,
+                        ),
+                      ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      product['name']?.toString() ?? '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tt.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    _PriceRow(
+                      price: price,
+                      basePrice: hasDiscount ? basePrice : null,
+                      emphasize: hasDiscount,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ProductListCard extends StatelessWidget {
-  const _ProductListCard({
+class _ProductGridCard extends StatelessWidget {
+  const _ProductGridCard({
     required this.product,
     required this.channel,
     required this.onTap,
@@ -833,96 +874,86 @@ class _ProductListCard extends StatelessWidget {
     final hasDiscount = product['has_discount'] == true;
     final imageUrl = product['image_url']?.toString();
     final businessName = product['business_name']?.toString() ?? '';
+    final price = _formatMoney(
+      product['effective_price'] ?? product['base_price'],
+    );
+    final basePrice = _formatMoney(product['base_price']);
+    final discountLabel = _formatDiscount(product['effective_discount_percent']);
+    final channelLabel = _channelLabel(channel);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.card,
+        borderRadius: AppBorders.md,
         child: Ink(
           decoration: BoxDecoration(
             color: cs.surfaceContainerLowest,
-            borderRadius: AppBorders.card,
+            borderRadius: AppBorders.md,
             border: Border.all(color: cs.outlineVariant),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(10.r),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: AppBorders.md,
-                  child: SizedBox(
-                    width: 88.w,
-                    height: 88.w,
-                    child: imageUrl != null && imageUrl.isNotEmpty
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : ColoredBox(
-                            color: cs.surfaceContainerHighest,
-                            child: const Icon(Icons.image_outlined),
-                          ),
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(12),
+                      ),
+                      child: _ProductThumb(imageUrl: imageUrl),
+                    ),
+                    if (hasDiscount && discountLabel != null)
+                      Positioned(
+                        left: 6.w,
+                        bottom: 6.h,
+                        child: _DiscountBadge(label: discountLabel),
+                      ),
+                  ],
                 ),
-                SizedBox(width: 12.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (businessName.isNotEmpty)
-                        Text(
-                          businessName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: tt.labelSmall?.copyWith(
-                            color: cs.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      SizedBox(height: 4.h),
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(8.w, 7.h, 8.w, 8.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (businessName.isNotEmpty || channelLabel != null)
                       Text(
-                        product['name']?.toString() ?? '',
-                        maxLines: 2,
+                        [
+                          if (businessName.isNotEmpty) businessName,
+                          if (channelLabel != null) channelLabel,
+                        ].join(' · '),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: tt.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                          height: 1.1,
                         ),
                       ),
-                      SizedBox(height: 6.h),
-                      Text(
-                        hasDiscount
-                            ? 'Rs ${product['effective_price']} · ${product['effective_discount_percent']}% off'
-                            : 'Rs ${product['effective_price'] ?? product['base_price']}',
-                        style: tt.bodySmall?.copyWith(
-                          color: hasDiscount
-                              ? context.appColors.deal
-                              : cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    SizedBox(height: 3.h),
+                    Text(
+                      product['name']?.toString() ?? '',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: tt.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                        color: cs.onSurface,
                       ),
-                      if (channel.showInStore || channel.showOnline) ...[
-                        SizedBox(height: 8.h),
-                        Wrap(
-                          spacing: 6.w,
-                          runSpacing: 4.h,
-                          children: [
-                            if (channel.showOnline)
-                              const _ChannelChip(
-                                label: 'Ecommerce',
-                                icon: Icons.language_rounded,
-                              ),
-                            if (channel.showInStore)
-                              const _ChannelChip(
-                                label: 'In-store',
-                                icon: Icons.storefront_outlined,
-                              ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                    SizedBox(height: 6.h),
+                    _PriceRow(
+                      price: price,
+                      basePrice: hasDiscount ? basePrice : null,
+                      emphasize: hasDiscount,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -930,38 +961,139 @@ class _ProductListCard extends StatelessWidget {
   }
 }
 
-class _ChannelChip extends StatelessWidget {
-  const _ChannelChip({
-    required this.label,
-    required this.icon,
-  });
+class _ProductThumb extends StatelessWidget {
+  const _ProductThumb({required this.imageUrl});
 
-  final String label;
-  final IconData icon;
+  final String? imageUrl;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: AppBorders.sm,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: cs.onSurfaceVariant),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
+    if (imageUrl != null && imageUrl!.isNotEmpty) {
+      return Image.network(
+        imageUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => ColoredBox(
+          color: cs.surfaceContainerHighest,
+          child: Icon(Icons.image_outlined, color: cs.onSurfaceVariant),
+        ),
+      );
+    }
+    return ColoredBox(
+      color: cs.surfaceContainerHighest,
+      child: Icon(Icons.image_outlined, color: cs.onSurfaceVariant),
+    );
+  }
+}
+
+class _PriceRow extends StatelessWidget {
+  const _PriceRow({
+    required this.price,
+    required this.emphasize,
+    this.basePrice,
+  });
+
+  final String price;
+  final String? basePrice;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Flexible(
+          child: Text(
+            'Rs $price',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: tt.labelLarge?.copyWith(
+              color: emphasize ? context.appColors.deal : cs.onSurface,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+            ),
+          ),
+        ),
+        if (basePrice != null && basePrice!.isNotEmpty) ...[
+          SizedBox(width: 5.w),
+          Flexible(
+            child: Text(
+              'Rs $basePrice',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: tt.labelSmall?.copyWith(
+                color: cs.onSurfaceVariant,
+                decoration: TextDecoration.lineThrough,
+                height: 1.1,
+              ),
+            ),
           ),
         ],
+      ],
+    );
+  }
+}
+
+class _DiscountBadge extends StatelessWidget {
+  const _DiscountBadge({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final appColors = context.appColors;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: appColors.deal,
+        borderRadius: AppBorders.full,
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: appColors.onDeal,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+              fontSize: 10,
+            ),
       ),
     );
   }
+}
+
+String _formatMoney(dynamic value) {
+  if (value == null) return '';
+  if (value is num) {
+    final asDouble = value.toDouble();
+    if (asDouble == asDouble.roundToDouble()) {
+      return asDouble.toInt().toString();
+    }
+    return asDouble.toStringAsFixed(2);
+  }
+  final raw = value.toString().trim();
+  final parsed = double.tryParse(raw);
+  if (parsed == null) return raw;
+  if (parsed == parsed.roundToDouble()) return parsed.toInt().toString();
+  return parsed.toStringAsFixed(2);
+}
+
+String? _formatDiscount(dynamic value) {
+  if (value == null) return null;
+  final parsed = value is num ? value.toDouble() : double.tryParse('$value');
+  if (parsed == null) return null;
+  final label = parsed == parsed.roundToDouble()
+      ? '${parsed.toInt()}%'
+      : '${parsed.toStringAsFixed(0)}%';
+  return '$label off';
+}
+
+String? _channelLabel(({bool showInStore, bool showOnline}) channel) {
+  if (channel.showOnline && channel.showInStore) return 'Online & store';
+  if (channel.showOnline) return 'Online';
+  if (channel.showInStore) return 'In-store';
+  return null;
 }

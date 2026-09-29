@@ -1,5 +1,6 @@
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
+import 'package:aajhee/src/features/commerce/presentation/widgets/rate_product_sheet.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 
@@ -973,6 +974,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   item: items[i],
                   imageUrl: _productImages[_asInt(items[i]['product_id'])] ??
                       _imageFromItem(items[i]),
+                  orderStatus: status,
+                  onRate: status == 'completed' &&
+                          (items[i]['can_review'] == true)
+                      ? () async {
+                          final ok = await showRateProductSheet(
+                            context: context,
+                            api: _api,
+                            orderPublicId: widget.publicId,
+                            item: items[i],
+                          );
+                          if (ok && mounted) _load();
+                        }
+                      : null,
                 ),
                 if (i != items.length - 1)
                   Padding(
@@ -1306,10 +1320,14 @@ class _OrderItemTile extends StatelessWidget {
   const _OrderItemTile({
     required this.item,
     this.imageUrl,
+    this.orderStatus,
+    this.onRate,
   });
 
   final Map<String, dynamic> item;
   final String? imageUrl;
+  final String? orderStatus;
+  final VoidCallback? onRate;
 
   @override
   Widget build(BuildContext context) {
@@ -1323,6 +1341,12 @@ class _OrderItemTile extends StatelessWidget {
     final productId = item['product_id'];
     final initial = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
     final resolvedImage = (imageUrl ?? '').trim();
+    final review = item['review'] is Map
+        ? Map<String, dynamic>.from(item['review'] as Map)
+        : null;
+    final reviewRating = review == null
+        ? null
+        : int.tryParse('${review['rating'] ?? ''}');
 
     return Material(
       color: Colors.transparent,
@@ -1336,6 +1360,7 @@ class _OrderItemTile extends StatelessWidget {
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 2.h),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
                 borderRadius: AppBorders.md,
@@ -1381,7 +1406,42 @@ class _OrderItemTile extends StatelessWidget {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (productId != null) ...[
+                    if (reviewRating != null) ...[
+                      SizedBox(height: 6.h),
+                      Row(
+                        children: [
+                          ...List.generate(
+                            5,
+                            (i) => Icon(
+                              i < reviewRating
+                                  ? Icons.star_rounded
+                                  : Icons.star_outline_rounded,
+                              size: 16.sp,
+                              color: const Color(0xFFE6A817),
+                            ),
+                          ),
+                          SizedBox(width: 6.w),
+                          Text(
+                            'Your rating',
+                            style: tt.labelSmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (onRate != null) ...[
+                      SizedBox(height: 8.h),
+                      OutlinedButton.icon(
+                        onPressed: onRate,
+                        icon: Icon(Icons.star_outline_rounded, size: 18.sp),
+                        label: const Text('Rate product'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.symmetric(horizontal: 10.w),
+                        ),
+                      ),
+                    ] else if (productId != null) ...[
                       SizedBox(height: 4.h),
                       Text(
                         'View product',

@@ -25,6 +25,21 @@ class AppNotification {
   int? get branchId => _asInt(data['branch_id']);
   int? get orderId => _asInt(data['order_id'] ?? data['public_id']);
 
+  /// UUID public id for commerce orders (preferred over [orderId]).
+  String? get orderPublicId {
+    final raw = data['order_public_id'] ?? data['order_id'] ?? data['public_id'];
+    final value = raw?.toString().trim() ?? '';
+    if (value.isEmpty) return null;
+    // Ignore numeric legacy ids — order routes expect UUID.
+    if (int.tryParse(value) != null) return null;
+    return value;
+  }
+
+  String? get routeHint {
+    final route = data['route']?.toString().trim();
+    return (route == null || route.isEmpty) ? null : route;
+  }
+
   AppNotification copyWith({
     bool? isRead,
     DateTime? readAt,

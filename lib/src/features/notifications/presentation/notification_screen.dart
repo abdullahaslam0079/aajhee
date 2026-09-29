@@ -40,6 +40,24 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
     final notifier = ref.read(notificationsProvider.notifier);
     await notifier.markRead(notification);
 
+    final orderPublicId = notification.orderPublicId;
+    final route = notification.routeHint;
+    if (orderPublicId != null &&
+        (route == null ||
+            route.startsWith('/orders') ||
+            notification.type == 'order_status_changed' ||
+            notification.type == 'order_rate_prompt')) {
+      if (!mounted) return;
+      context.push(AppRoutes.orderDetail(orderPublicId));
+      return;
+    }
+
+    if (route != null && route.startsWith('/products/')) {
+      if (!mounted) return;
+      context.push(route);
+      return;
+    }
+
     final branch = await notifier.resolveBranch(notification);
     if (!mounted) return;
 
@@ -50,7 +68,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
 
     showToast(
       context,
-      message: 'Could not open this store right now.',
+      message: 'Could not open this notification right now.',
       status: 'warning',
     );
   }

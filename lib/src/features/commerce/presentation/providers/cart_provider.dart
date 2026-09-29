@@ -11,6 +11,7 @@ class CartState {
     this.subtotal,
     this.isLoading = false,
     this.isUpdating = false,
+    this.updatingItemId,
     this.errorMessage,
   });
 
@@ -18,6 +19,7 @@ class CartState {
   final String? subtotal;
   final bool isLoading;
   final bool isUpdating;
+  final int? updatingItemId;
   final String? errorMessage;
 
   int get totalQuantity => items.fold<int>(0, (sum, item) {
@@ -32,15 +34,20 @@ class CartState {
     String? subtotal,
     bool? isLoading,
     bool? isUpdating,
+    int? updatingItemId,
     String? errorMessage,
     bool clearError = false,
     bool clearSubtotal = false,
+    bool clearUpdatingItem = false,
   }) {
     return CartState(
       items: items ?? this.items,
       subtotal: clearSubtotal ? null : (subtotal ?? this.subtotal),
       isLoading: isLoading ?? this.isLoading,
       isUpdating: isUpdating ?? this.isUpdating,
+      updatingItemId: clearUpdatingItem
+          ? null
+          : (updatingItemId ?? this.updatingItemId),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -84,8 +91,10 @@ class Cart extends _$Cart {
     return const CartState(isLoading: true);
   }
 
-  Future<void> refresh() async {
-    state = state.copyWith(isLoading: true, clearError: true);
+  Future<void> refresh({bool silent = false}) async {
+    if (!silent) {
+      state = state.copyWith(isLoading: true, clearError: true);
+    }
     final result = await _api.getCart();
     if (!ref.mounted) return;
     result.fold(
@@ -93,6 +102,8 @@ class Cart extends _$Cart {
         AppLogger.error('Failed to load cart', failure.message);
         state = state.copyWith(
           isLoading: false,
+          isUpdating: false,
+          clearUpdatingItem: true,
           errorMessage: failure.message,
         );
       },
@@ -101,6 +112,8 @@ class Cart extends _$Cart {
           items: _parseItems(cart['items']),
           subtotal: cart['subtotal']?.toString(),
           isLoading: false,
+          isUpdating: false,
+          clearUpdatingItem: true,
           clearError: true,
         );
       },
@@ -124,22 +137,47 @@ class Cart extends _$Cart {
       state = state.copyWith(isUpdating: false, errorMessage: failed);
       return false;
     }
-    await refresh();
-    if (ref.mounted) state = state.copyWith(isUpdating: false);
+    await refresh(silent: true);
     return true;
   }
 
   Future<bool> setQuantity(int itemId, int quantity) async {
-    state = state.copyWith(isUpdating: true, clearError: true);
+    final previousItems =
+        state.items.map((e) => Map<String, dynamic>.from(e)).toList();
+
+    // Optimistic local update so qty controls feel instant.
+    if (quantity < 1) {
+      state = state.copyWith(
+        items: state.items.where((item) => item['id'] != itemId).toList(),
+        isUpdating: true,
+        updatingItemId: itemId,
+        clearError: true,
+      );
+    } else {
+      state = state.copyWith(
+        items: state.items.map((item) {
+          if (item['id'] != itemId) return item;
+          return {...item, 'quantity': quantity};
+        }).toList(),
+        isUpdating: true,
+        updatingItemId: itemId,
+        clearError: true,
+      );
+    }
+
     final result = await _api.updateCartItem(itemId, quantity);
     if (!ref.mounted) return false;
     final failed = result.fold((f) => f.message, (_) => null);
     if (failed != null) {
-      state = state.copyWith(isUpdating: false, errorMessage: failed);
+      state = state.copyWith(
+        items: previousItems,
+        isUpdating: false,
+        clearUpdatingItem: true,
+        errorMessage: failed,
+      );
       return false;
     }
-    await refresh();
-    if (ref.mounted) state = state.copyWith(isUpdating: false);
+    await refresh(silent: true);
     return true;
   }
 
