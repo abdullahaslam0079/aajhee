@@ -1,47 +1,75 @@
+import 'package:aajhee/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
+import 'package:aajhee/src/features/commerce/presentation/providers/active_orders_badge_provider.dart';
+import 'package:aajhee/src/features/commerce/presentation/providers/commerce_realtime_provider.dart';
 import 'package:aajhee/src/features/commerce/presentation/widgets/rate_product_sheet.dart';
+import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/shared/mixins/periodic_refresh_mixin.dart';
 
-class OrdersScreen extends StatefulWidget {
+class OrdersScreen extends ConsumerStatefulWidget {
   const OrdersScreen({super.key});
 
   @override
-  State<OrdersScreen> createState() => _OrdersScreenState();
+  ConsumerState<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen> {
+class _OrdersScreenState extends ConsumerState<OrdersScreen>
+    with WidgetsBindingObserver, PeriodicRefreshMixin {
   final _api = CommerceApiService(DioService.instance);
   List<Map<String, dynamic>> _orders = const [];
   bool _loading = true;
   String? _error;
   OrderStatusGroup _statusGroup = OrderStatusGroup.active;
+  int _lastRealtimeTick = 0;
 
   @override
   void initState() {
     super.initState();
     _load();
+    startPeriodicRefresh();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  @override
+  void dispose() {
+    stopPeriodicRefresh();
+    super.dispose();
+  }
+
+  @override
+  Future<void> onPeriodicRefresh() => _load(silent: true);
+
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     final result = await _api.getOrders(
       statusGroup: _statusGroup.apiValue,
     );
     if (!mounted) return;
     result.fold(
-      (f) => setState(() {
-        _loading = false;
-        _error = f.message;
-      }),
-      (items) => setState(() {
-        _orders = items;
-        _loading = false;
-      }),
+      (f) {
+        if (silent) return;
+        setState(() {
+          _loading = false;
+          _error = f.message;
+        });
+      },
+      (items) {
+        setState(() {
+          _orders = items;
+          _loading = false;
+          _error = null;
+        });
+        if (_statusGroup == OrderStatusGroup.active) {
+          ref.invalidate(activeOrdersBadgeProvider);
+        }
+      },
     );
   }
 
@@ -53,6 +81,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tick = ref.watch(commerceRealtimeTickProvider);
+    if (tick != _lastRealtimeTick) {
+      _lastRealtimeTick = tick;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load(silent: true);
+      });
+    }
+
     final canvas = homeCanvasOf(context);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
@@ -62,6 +98,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
       appBar: AppBar(
         backgroundColor: canvas,
         title: const Text('My orders'),
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
@@ -143,7 +180,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             subtitle:
                                 'When you place an order, it will show up here.',
                             actionLabel: 'Continue shopping',
-                            onAction: () => context.pop(),
+                            onAction: () {
+                              ref
+                                  .read(bottomNavBarControllerProvider.notifier)
+                                  .setSelectedIndex(0);
+                            },
                           )
                         : RefreshIndicator(
                             onRefresh: _load,
@@ -151,8 +192,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               physics: const AlwaysScrollableScrollPhysics(
                                 parent: BouncingScrollPhysics(),
                               ),
-                              padding:
-                                  EdgeInsets.fromLTRB(16.w, 0, 16.w, 24.h),
+                              padding: EdgeInsets.fromLTRB(
+                                16.w,
+                                0,
+                                16.w,
+                                kHomeFeedBottomInset +
+                                    MediaQuery.paddingOf(context).bottom +
+                                    16.h,
+                              ),
                               itemCount: _orders.length,
                               separatorBuilder: (_, __) =>
                                   SizedBox(height: 12.h),
@@ -345,35 +392,65 @@ class _OrderListCard extends StatelessWidget {
   }
 }
 
-class OrderDetailScreen extends StatefulWidget {
+class OrderDetailScreen extends ConsumerStatefulWidget {
   const OrderDetailScreen({super.key, required this.publicId});
 
   final String publicId;
 
   @override
-  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+  ConsumerState<OrderDetailScreen> createState() => _OrderDetailScreenState();
 }
 
-class _OrderDetailScreenState extends State<OrderDetailScreen> {
+class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
+    with WidgetsBindingObserver, PeriodicRefreshMixin {
   final _api = CommerceApiService(DioService.instance);
   Map<String, dynamic>? _order;
   final Map<int, String> _productImages = {};
   bool _loading = true;
   bool _cancelling = false;
   bool _reporting = false;
+  int _lastRealtimeTick = 0;
+
+  static const _terminalStatuses = {
+    'completed',
+    'cancelled',
+  };
+
+  @override
+  Duration get refreshInterval => const Duration(seconds: 20);
+
+  @override
+  bool get shouldPeriodicRefresh {
+    final status = _order?['status']?.toString().toLowerCase();
+    if (status == null) return true;
+    return !_terminalStatuses.contains(status);
+  }
 
   @override
   void initState() {
     super.initState();
     _load();
+    startPeriodicRefresh();
   }
 
-  Future<void> _load() async {
-    setState(() => _loading = true);
+  @override
+  void dispose() {
+    stopPeriodicRefresh();
+    super.dispose();
+  }
+
+  @override
+  Future<void> onPeriodicRefresh() => _load(silent: true);
+
+  Future<void> _load({bool silent = false}) async {
+    if (!silent) {
+      setState(() => _loading = true);
+    }
     final result = await _api.getOrder(widget.publicId);
     if (!mounted) return;
     await result.fold(
       (f) async {
+        if (silent) return;
         setState(() {
           _loading = false;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -727,6 +804,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tick = ref.watch(commerceRealtimeTickProvider);
+    if (tick != _lastRealtimeTick) {
+      _lastRealtimeTick = tick;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load(silent: true);
+      });
+    }
+
     final order = _order;
     final canvas = homeCanvasOf(context);
     return Scaffold(

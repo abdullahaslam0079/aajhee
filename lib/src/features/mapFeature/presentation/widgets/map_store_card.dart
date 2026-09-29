@@ -29,11 +29,18 @@ class MapStoreCard extends ConsumerWidget {
     final muted = isDark
         ? colorScheme.onSurfaceVariant
         : colorScheme.onSurface.withValues(alpha: 0.55);
-    final discountPercent = branch.highestDiscountPercent.round();
-    final distanceKm = _distanceKm(ref);
-    final metaLabel = branch.categoryName.isNotEmpty
-        ? '${branch.categoryName} • ${distanceKm.toStringAsFixed(1)} km'
-        : '${distanceKm.toStringAsFixed(1)} km away';
+    final distanceKm = branch.distanceKm ?? _distanceKm(ref);
+    final deliveryBadge = branch.deliveryBadgeLabel;
+    final ratingAvg = branch.ratingAvg;
+    final ratingCount = branch.ratingCount;
+    final showRating = ratingAvg != null &&
+        (ratingCount == null || ratingCount > 0);
+
+    final metaParts = <String>[
+      if (branch.categoryName.isNotEmpty) branch.categoryName,
+      '${distanceKm.toStringAsFixed(1)} km',
+    ];
+    final metaLabel = metaParts.join(' • ');
 
     final cardColor = isDark
         ? colorScheme.surfaceContainerHigh
@@ -119,25 +126,24 @@ class MapStoreCard extends ConsumerWidget {
                           top: 10,
                           child: Row(
                             children: [
-                              if (branch.categoryName.isNotEmpty)
-                                Flexible(
-                                  child: _Badge(
-                                    label: branch.categoryName,
-                                    background: Colors.black.withValues(
-                                      alpha: 0.62,
-                                    ),
-                                    foreground: Colors.white,
-                                  ),
-                                ),
-                              if (branch.categoryName.isNotEmpty &&
-                                  discountPercent > 0)
-                                const SizedBox(width: 6),
-                              if (discountPercent > 0)
+                              if (deliveryBadge != null)
                                 _Badge(
-                                  label: '$discountPercent% off',
-                                  background: appColors.deal,
-                                  foreground: appColors.onDeal,
-                                  icon: Icons.sell_rounded,
+                                  label: deliveryBadge,
+                                  background: colorScheme.primary,
+                                  foreground: colorScheme.onPrimary,
+                                  icon: Icons.local_shipping_outlined,
+                                ),
+                              if (deliveryBadge != null && showRating)
+                                const SizedBox(width: 6),
+                              if (showRating)
+                                _Badge(
+                                  label: ratingAvg.toStringAsFixed(1),
+                                  background: Colors.black.withValues(
+                                    alpha: 0.62,
+                                  ),
+                                  foreground: Colors.white,
+                                  icon: Icons.star_rounded,
+                                  iconColor: appColors.deal,
                                 ),
                             ],
                           ),
@@ -284,12 +290,14 @@ class _Badge extends StatelessWidget {
     required this.background,
     required this.foreground,
     this.icon,
+    this.iconColor,
   });
 
   final String label;
   final Color background;
   final Color foreground;
   final IconData? icon;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +315,7 @@ class _Badge extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 13, color: foreground),
+              Icon(icon, size: 13, color: iconColor ?? foreground),
               const SizedBox(width: 4),
             ],
             Flexible(

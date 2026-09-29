@@ -24,6 +24,13 @@ int parseApiInt(dynamic value, {int fallback = 0}) {
   return int.tryParse(value.toString()) ?? fallback;
 }
 
+int? parseApiNullableInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
 bool parseApiBool(dynamic value, {bool fallback = false}) {
   return parseApiNullableBool(value) ?? fallback;
 }

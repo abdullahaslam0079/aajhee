@@ -1,9 +1,12 @@
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/store_catalog_screen.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/utils/money_format.dart';
 
 class ProductDetailScreen extends ConsumerStatefulWidget {
   const ProductDetailScreen({
@@ -104,6 +107,77 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     return null;
   }
 
+  MapBranchModel? _branchForBusiness(int? businessId) {
+    if (businessId == null || businessId <= 0) return null;
+    final branches = ref.read(homeFeedProvider).branches;
+    for (final branch in branches) {
+      if (branch.businessId == businessId) return branch;
+    }
+    return null;
+  }
+
+  bool _isVerifiedSeller(Map<String, dynamic> product, MapBranchModel? branch) {
+    if (branch?.isVerified ?? false) return true;
+    if (product['is_verified'] == true || product['verified'] == true) {
+      return true;
+    }
+    final business = product['business'];
+    if (business is Map) {
+      if (business['is_verified'] == true || business['verified'] == true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  dynamic _deliveryFeeValue(
+    Map<String, dynamic> product,
+    MapBranchModel? branch,
+  ) {
+    final fromProduct = product['delivery_fee'] ??
+        product['same_day_delivery_fee'];
+    if (fromProduct != null) return fromProduct;
+
+    final business = product['business'];
+    if (business is Map) {
+      final fromBusiness =
+          business['delivery_fee'] ?? business['same_day_delivery_fee'];
+      if (fromBusiness != null) return fromBusiness;
+    }
+
+    return branch?.deliveryFee;
+  }
+
+  bool _supportsSameDay(
+    Map<String, dynamic> product,
+    MapBranchModel? branch,
+  ) {
+    if (branch != null) return branch.treatsAsSameDay;
+
+    final business = product['business'];
+    if (business is Map) {
+      if (business['supports_same_day'] == true ||
+          business['same_day_enabled'] == true ||
+          business['same_day_delivery'] == true) {
+        return true;
+      }
+      if (business['supports_same_day'] == false) return false;
+      final fulfillment =
+          business['fulfillment_types'] ?? business['fulfillment_modes'];
+      if (fulfillment is List &&
+          fulfillment.any((e) => e.toString() == 'local_same_day')) {
+        return true;
+      }
+    }
+
+    if (product['supports_same_day'] == true ||
+        product['same_day_enabled'] == true ||
+        product['same_day_delivery'] == true) {
+      return true;
+    }
+    return false;
+  }
+
   void _openStore(Map<String, dynamic> product) {
     final businessId = _asInt(product['business_id']);
     if (businessId == null) return;
@@ -120,6 +194,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
         branchId: branchId,
         businessName: product['business_name']?.toString(),
         logoUrl: logoUrl,
+        branch: _branchForBusiness(businessId),
       ),
     );
   }
@@ -181,7 +256,12 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final product = _product;
-    final hasDiscount = product?['has_discount'] == true;
+    final hasDiscountFlag = product?['has_discount'] == true;
+    final discountPercent = _discountPercent(
+      product?['effective_discount_percent'],
+    );
+    final showDiscount =
+        hasDiscountFlag && discountPercent != null && discountPercent > 0;
     final cartState = ref.watch(cartProvider);
     final cartItem = cartState.itemForProduct(
       _productId,
@@ -202,16 +282,55 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               (state) => state.logoUrlForBusiness(businessId),
             ),
           );
+    final matchingBranch = businessId == null
+        ? null
+        : ref.watch(
+            homeFeedProvider.select(
+              (state) {
+                for (final branch in state.branches) {
+                  if (branch.businessId == businessId) return branch;
+                }
+                return null;
+              },
+            ),
+          );
+    final city = ref
+            .watch(savedAddressesProvider)
+            .selectedAddress
+            ?.city
+            .trim() ??
+        '';
     final description = product?['description']?.toString().trim() ?? '';
     final detailed =
         product?['detailed_description']?.toString().trim() ?? '';
-    final price = _formatMoney(
+    final price = formatRs(
       product?['effective_price'] ?? product?['base_price'],
     );
-    final basePrice = _formatMoney(product?['base_price']);
-    final discountLabel =
-        _formatDiscount(product?['effective_discount_percent']);
+    final basePrice = formatRsOrNull(product?['base_price']);
+    final discountLabel = showDiscount
+        ? _formatDiscount(product?['effective_discount_percent'])
+        : null;
     final busyAdding = _adding;
+    final isVerified =
+        product != null && _isVerifiedSeller(product, matchingBranch);
+    final sameDayAvailable =
+        product != null && _supportsSameDay(product, matchingBranch);
+    final feeValue =
+        product == null ? null : _deliveryFeeValue(product, matchingBranch);
+    final feeLabel = formatRsOrNull(feeValue);
+
+    final moreFromShop = <Map<String, dynamic>>[];
+    final similarProducts = <Map<String, dynamic>>[];
+    for (final item in _suggestions) {
+      final itemBusinessId = _asInt(item['business_id']);
+      if (businessId != null &&
+          itemBusinessId != null &&
+          itemBusinessId == businessId) {
+        moreFromShop.add(item);
+      } else {
+        similarProducts.add(item);
+      }
+    }
 
     return Scaffold(
       backgroundColor: canvas,
@@ -240,7 +359,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
               inCart: cartItemId != null,
               quantity: cartQty,
               busy: busyAdding,
-              priceLabel: 'Rs $price',
+              priceLabel: price,
               onAdd: busyAdding ? null : _addToCart,
               onViewCart: () => context.push(AppRoutes.cart),
               onDecrease: cartItemId == null
@@ -274,7 +393,7 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                     SliverToBoxAdapter(
                       child: _HeroImage(
                         imageUrl: product['image_url']?.toString(),
-                        discountLabel: hasDiscount ? discountLabel : null,
+                        discountLabel: discountLabel,
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -295,16 +414,23 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                             SizedBox(height: 10.h),
                             _PriceBlock(
                               price: price,
-                              basePrice: hasDiscount ? basePrice : null,
-                              emphasize: hasDiscount,
+                              basePrice: showDiscount ? basePrice : null,
+                              emphasize: showDiscount,
                             ),
                             SizedBox(height: 10.h),
                             _ProductRatingRow(product: product),
+                            SizedBox(height: 12.h),
+                            _DeliveryInfoBox(
+                              city: city,
+                              sameDayAvailable: sameDayAvailable,
+                              feeLabel: feeLabel,
+                            ),
                             if (businessName.isNotEmpty) ...[
                               SizedBox(height: 18.h),
                               _SoldByRow(
                                 businessName: businessName,
                                 logoUrl: logoUrl,
+                                isVerified: isVerified,
                                 onTap: () => _openStore(product),
                               ),
                             ],
@@ -360,43 +486,65 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
                         ),
                       ),
                     ),
-                    if (_suggestions.isNotEmpty) ...[
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(16.w, 28.h, 16.w, 10.h),
-                          child: Text(
-                            'You may also like',
-                            style: tt.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                            ),
-                          ),
-                        ),
+                    if (moreFromShop.isNotEmpty)
+                      ..._suggestionSection(
+                        title: 'More from this shop',
+                        items: moreFromShop,
+                        tt: tt,
+                        cs: cs,
                       ),
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 196.h,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _suggestions.length,
-                            separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                            itemBuilder: (context, index) {
-                              final item = _suggestions[index];
-                              return _SuggestionCard(
-                                product: item,
-                                onTap: () => _openProduct(item),
-                              );
-                            },
-                          ),
-                        ),
+                    if (similarProducts.isNotEmpty)
+                      ..._suggestionSection(
+                        title: 'Similar products',
+                        items: similarProducts,
+                        tt: tt,
+                        cs: cs,
                       ),
-                    ],
                     SliverToBoxAdapter(child: SizedBox(height: 28.h)),
                   ],
                 ),
     );
+  }
+
+  List<Widget> _suggestionSection({
+    required String title,
+    required List<Map<String, dynamic>> items,
+    required TextTheme tt,
+    required ColorScheme cs,
+  }) {
+    return [
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16.w, 28.h, 16.w, 10.h),
+          child: Text(
+            title,
+            style: tt.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: cs.onSurface,
+            ),
+          ),
+        ),
+      ),
+      SliverToBoxAdapter(
+        child: SizedBox(
+          height: 196.h,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(horizontal: 16.w),
+            itemCount: items.length,
+            separatorBuilder: (_, __) => SizedBox(width: 10.w),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return _SuggestionCard(
+                product: item,
+                onTap: () => _openProduct(item),
+              );
+            },
+          ),
+        ),
+      ),
+    ];
   }
 
   static int _cartQuantity(Map<String, dynamic>? cartItem) {
@@ -405,6 +553,97 @@ class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen> {
     if (qty is int) return qty;
     if (qty is num) return qty.toInt();
     return 1;
+  }
+}
+
+class _DeliveryInfoBox extends StatelessWidget {
+  const _DeliveryInfoBox({
+    required this.city,
+    required this.sameDayAvailable,
+    this.feeLabel,
+  });
+
+  final String city;
+  final bool sameDayAvailable;
+  final String? feeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    String? sameDayLine;
+    if (sameDayAvailable) {
+      if (city.isNotEmpty && feeLabel != null) {
+        sameDayLine = 'Delivery today in $city · $feeLabel';
+      } else if (city.isNotEmpty) {
+        sameDayLine = 'Delivery today in $city';
+      } else if (feeLabel != null) {
+        sameDayLine = 'Delivery today · $feeLabel';
+      } else {
+        sameDayLine = 'Delivery today';
+      }
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: AppBorders.md,
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (sameDayLine != null) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.local_shipping_outlined,
+                  size: 18,
+                  color: cs.primary,
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: Text(
+                    sameDayLine,
+                    style: tt.bodyMedium?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w700,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 6.h),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.payments_outlined,
+                size: 18,
+                color: cs.onSurfaceVariant,
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  'Cash on delivery available',
+                  style: tt.bodyMedium?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -457,19 +696,20 @@ class _HeroImage extends StatelessWidget {
           ),
           if (discountLabel != null)
             Positioned(
-              top: 12.h,
-              left: 16.w,
+              top: 10.h,
+              left: 12.w,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                 decoration: BoxDecoration(
                   color: context.appColors.deal,
                   borderRadius: AppBorders.full,
                 ),
                 child: Text(
                   discountLabel!,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: context.appColors.onDeal,
                         fontWeight: FontWeight.w800,
+                        fontSize: 11,
                       ),
                 ),
               ),
@@ -502,7 +742,7 @@ class _PriceBlock extends StatelessWidget {
       textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
-          'Rs $price',
+          price,
           style: tt.headlineSmall?.copyWith(
             color: emphasize ? deal : cs.onSurface,
             fontWeight: FontWeight.w800,
@@ -513,7 +753,7 @@ class _PriceBlock extends StatelessWidget {
         if (basePrice != null && basePrice!.isNotEmpty) ...[
           SizedBox(width: 10.w),
           Text(
-            'Rs $basePrice',
+            basePrice!,
             style: tt.titleSmall?.copyWith(
               color: cs.onSurfaceVariant,
               decoration: TextDecoration.lineThrough,
@@ -531,11 +771,13 @@ class _SoldByRow extends StatelessWidget {
     required this.businessName,
     required this.logoUrl,
     required this.onTap,
+    this.isVerified = false,
   });
 
   final String businessName;
   final String? logoUrl;
   final VoidCallback onTap;
+  final bool isVerified;
 
   @override
   Widget build(BuildContext context) {
@@ -575,14 +817,24 @@ class _SoldByRow extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 2.h),
-                      Text(
-                        businessName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: cs.onSurface,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              businessName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tt.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: cs.onSurface,
+                              ),
+                            ),
+                          ),
+                          if (isVerified) ...[
+                            SizedBox(width: 6.w),
+                            const _VerifiedChip(),
+                          ],
+                        ],
                       ),
                     ],
                   ),
@@ -600,6 +852,39 @@ class _SoldByRow extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _VerifiedChip extends StatelessWidget {
+  const _VerifiedChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.12),
+        borderRadius: AppBorders.full,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified_rounded, size: 12, color: cs.primary),
+          SizedBox(width: 3.w),
+          Text(
+            'Verified',
+            style: tt.labelSmall?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w800,
+              fontSize: 10,
+              height: 1.1,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -753,13 +1038,18 @@ class _SuggestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final hasDiscount = product['has_discount'] == true;
+    final discountPercent =
+        _discountPercent(product['effective_discount_percent']);
+    final hasDiscount = product['has_discount'] == true &&
+        discountPercent != null &&
+        discountPercent > 0;
     final imageUrl = product['image_url']?.toString();
-    final price = _formatMoney(
+    final price = formatRs(
       product['effective_price'] ?? product['base_price'],
     );
-    final discountLabel =
-        _formatDiscount(product['effective_discount_percent']);
+    final discountLabel = hasDiscount
+        ? _formatDiscount(product['effective_discount_percent'])
+        : null;
 
     return Material(
       color: Colors.transparent,
@@ -794,7 +1084,7 @@ class _SuggestionCard extends StatelessWidget {
                               ),
                       ),
                     ),
-                    if (hasDiscount && discountLabel != null)
+                    if (discountLabel != null)
                       Positioned(
                         left: 6.w,
                         bottom: 6.h,
@@ -836,7 +1126,7 @@ class _SuggestionCard extends StatelessWidget {
                     ),
                     SizedBox(height: 4.h),
                     Text(
-                      'Rs $price',
+                      price,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: tt.labelLarge?.copyWith(
@@ -912,7 +1202,7 @@ class _ReviewCard extends StatelessWidget {
     final name = review['user_display_name']?.toString() ?? 'Customer';
     final reply = review['merchant_reply']?.toString().trim() ?? '';
     final images = ((review['images'] as List?) ?? const [])
-        .whereType<Map>()
+        .whereType<Map<dynamic, dynamic>>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
 
@@ -1008,26 +1298,15 @@ class _ReviewCard extends StatelessWidget {
   }
 }
 
-String _formatMoney(dynamic value) {
-  if (value == null) return '';
-  if (value is num) {
-    final asDouble = value.toDouble();
-    if (asDouble == asDouble.roundToDouble()) {
-      return asDouble.toInt().toString();
-    }
-    return asDouble.toStringAsFixed(2);
-  }
-  final raw = value.toString().trim();
-  final parsed = double.tryParse(raw);
-  if (parsed == null) return raw;
-  if (parsed == parsed.roundToDouble()) return parsed.toInt().toString();
-  return parsed.toStringAsFixed(2);
+double? _discountPercent(dynamic value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse('$value');
 }
 
 String? _formatDiscount(dynamic value) {
-  if (value == null) return null;
-  final parsed = value is num ? value.toDouble() : double.tryParse('$value');
-  if (parsed == null) return null;
+  final parsed = _discountPercent(value);
+  if (parsed == null || parsed <= 0) return null;
   final label = parsed == parsed.roundToDouble()
       ? '${parsed.toInt()}%'
       : '${parsed.toStringAsFixed(0)}%';

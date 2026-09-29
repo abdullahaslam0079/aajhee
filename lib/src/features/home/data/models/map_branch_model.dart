@@ -20,6 +20,14 @@ class MapBranchModel {
     this.highestDiscountImageUrl,
     this.discountSummary,
     this.distanceKm,
+    this.ratingAvg,
+    this.ratingCount,
+    this.isVerified,
+    this.supportsSameDay,
+    this.supportsNationwide,
+    this.deliveryFee,
+    this.isOpen,
+    this.openingHours,
   });
 
   final int id;
@@ -38,12 +46,53 @@ class MapBranchModel {
   final BranchDiscountSummary? discountSummary;
   final double? distanceKm;
 
+  /// Optional marketplace fields — present when the API sends them.
+  final double? ratingAvg;
+  final int? ratingCount;
+  final bool? isVerified;
+  final bool? supportsSameDay;
+  final bool? supportsNationwide;
+  final double? deliveryFee;
+  final bool? isOpen;
+  final String? openingHours;
+
   String get displayName => businessName.isNotEmpty ? businessName : name;
 
   String? get logoUrl => businessLogoUrl;
 
   String? get coverImageUrl =>
       highestDiscountImageUrl ?? discountSummary?.imageUrl;
+
+  /// Short pin label: shop name preferred, else category. Never a discount %.
+  String get mapPinLabel {
+    final shop = displayName.trim();
+    if (shop.isNotEmpty) {
+      return shop.length > 18 ? '${shop.substring(0, 16)}…' : shop;
+    }
+    final cat = categoryName.trim();
+    if (cat.isNotEmpty) {
+      return cat.length > 18 ? '${cat.substring(0, 16)}…' : cat;
+    }
+    return 'Shop';
+  }
+
+  /// True when the API marks same-day, or when unset and this is a local
+  /// (non-nationwide) shop — used with city checks at the call site.
+  bool get treatsAsSameDay {
+    if (supportsSameDay == true) return true;
+    if (supportsSameDay == false) return false;
+    if (supportsNationwide == true) return false;
+    return true; // unset → treat as local same-day candidate
+  }
+
+  String? get deliveryBadgeLabel {
+    if (supportsSameDay == true) return 'Same-day';
+    if (supportsNationwide == true) return 'Nationwide';
+    if (supportsSameDay == null && supportsNationwide == null) {
+      return 'Same-day';
+    }
+    return null;
+  }
 
   MapBranchModel copyWith({
     int? id,
@@ -61,6 +110,14 @@ class MapBranchModel {
     String? highestDiscountImageUrl,
     BranchDiscountSummary? discountSummary,
     double? distanceKm,
+    double? ratingAvg,
+    int? ratingCount,
+    bool? isVerified,
+    bool? supportsSameDay,
+    bool? supportsNationwide,
+    double? deliveryFee,
+    bool? isOpen,
+    String? openingHours,
   }) {
     return MapBranchModel(
       id: id ?? this.id,
@@ -80,6 +137,14 @@ class MapBranchModel {
           highestDiscountImageUrl ?? this.highestDiscountImageUrl,
       discountSummary: discountSummary ?? this.discountSummary,
       distanceKm: distanceKm ?? this.distanceKm,
+      ratingAvg: ratingAvg ?? this.ratingAvg,
+      ratingCount: ratingCount ?? this.ratingCount,
+      isVerified: isVerified ?? this.isVerified,
+      supportsSameDay: supportsSameDay ?? this.supportsSameDay,
+      supportsNationwide: supportsNationwide ?? this.supportsNationwide,
+      deliveryFee: deliveryFee ?? this.deliveryFee,
+      isOpen: isOpen ?? this.isOpen,
+      openingHours: openingHours ?? this.openingHours,
     );
   }
 
@@ -88,6 +153,24 @@ class MapBranchModel {
     final discount = discountJson != null
         ? BranchDiscountSummary.fromJson(discountJson)
         : null;
+
+    final fulfillment = json['fulfillment_types'] ?? json['fulfillment_modes'];
+    bool? sameDay;
+    bool? nationwide;
+    if (fulfillment is List) {
+      final modes = fulfillment.map((e) => e.toString()).toSet();
+      sameDay = modes.contains('local_same_day');
+      nationwide = modes.contains('nationwide');
+    } else {
+      sameDay = parseApiNullableBool(
+        json['supports_same_day'] ??
+            json['same_day_enabled'] ??
+            json['same_day_delivery'],
+      );
+      nationwide = parseApiNullableBool(
+        json['supports_nationwide'] ?? json['nationwide_delivery'],
+      );
+    }
 
     return MapBranchModel(
       id: parseApiInt(json['id']),
@@ -101,7 +184,9 @@ class MapBranchModel {
       name: parseApiString(json['name']) ?? '',
       latitude: parseApiDouble(json['latitude']),
       longitude: parseApiDouble(json['longitude']),
-      formattedAddress: parseApiString(json['formattedAddress']) ?? '',
+      formattedAddress: parseApiString(json['formattedAddress']) ??
+          parseApiString(json['formatted_address']) ??
+          '',
       highestDiscountPercent: parseApiDouble(
         json['highest_discount_percent'],
         fallback: discount?.discountPercent ?? 0,
@@ -119,6 +204,24 @@ class MapBranchModel {
       ),
       discountSummary: discount,
       distanceKm: parseApiNullableDouble(json['distance_km']),
+      ratingAvg: parseApiNullableDouble(
+        json['rating_avg'] ?? json['business_rating_avg'],
+      ),
+      ratingCount: parseApiNullableInt(
+        json['rating_count'] ?? json['business_rating_count'],
+      ),
+      isVerified: parseApiNullableBool(
+        json['is_verified'] ?? json['verified'],
+      ),
+      supportsSameDay: sameDay,
+      supportsNationwide: nationwide,
+      deliveryFee: parseApiNullableDouble(
+        json['delivery_fee'] ?? json['same_day_delivery_fee'],
+      ),
+      isOpen: parseApiNullableBool(json['is_open'] ?? json['open_now']),
+      openingHours: parseApiString(
+        json['opening_hours'] ?? json['hours'] ?? json['business_hours'],
+      ),
     );
   }
 }

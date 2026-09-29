@@ -94,7 +94,7 @@ class _LocationBar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Location',
+                'Deliver to',
                 style: textTheme.labelSmall?.copyWith(
                   color: colorScheme.onSurface.withValues(alpha: 0.48),
                   fontWeight: FontWeight.w500,

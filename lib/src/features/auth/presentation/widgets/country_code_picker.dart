@@ -18,15 +18,19 @@ class CountryDialCode {
       '$name $iso2 $dialCode'.toLowerCase();
 }
 
-const kDefaultCountry = CountryDialCode(
-  name: 'Germany',
-  iso2: 'DE',
-  dialCode: '+49',
-  flag: '🇩🇪',
+const kPakistanCountry = CountryDialCode(
+  name: 'Pakistan',
+  iso2: 'PK',
+  dialCode: '+92',
+  flag: '🇵🇰',
 );
 
+/// Fallback when the device locale country is not in [kCountryDialCodes].
+const kDefaultCountry = kPakistanCountry;
+
 const kCountryDialCodes = <CountryDialCode>[
-  kDefaultCountry,
+  kPakistanCountry,
+  CountryDialCode(name: 'Germany', iso2: 'DE', dialCode: '+49', flag: '🇩🇪'),
   CountryDialCode(name: 'Austria', iso2: 'AT', dialCode: '+43', flag: '🇦🇹'),
   CountryDialCode(name: 'Switzerland', iso2: 'CH', dialCode: '+41', flag: '🇨🇭'),
   CountryDialCode(name: 'Netherlands', iso2: 'NL', dialCode: '+31', flag: '🇳🇱'),
@@ -51,7 +55,6 @@ const kCountryDialCodes = <CountryDialCode>[
   CountryDialCode(name: 'Canada', iso2: 'CA', dialCode: '+1', flag: '🇨🇦'),
   CountryDialCode(name: 'Australia', iso2: 'AU', dialCode: '+61', flag: '🇦🇺'),
   CountryDialCode(name: 'India', iso2: 'IN', dialCode: '+91', flag: '🇮🇳'),
-  CountryDialCode(name: 'Pakistan', iso2: 'PK', dialCode: '+92', flag: '🇵🇰'),
   CountryDialCode(name: 'United Arab Emirates', iso2: 'AE', dialCode: '+971', flag: '🇦🇪'),
   CountryDialCode(name: 'Saudi Arabia', iso2: 'SA', dialCode: '+966', flag: '🇸🇦'),
   CountryDialCode(name: 'Brazil', iso2: 'BR', dialCode: '+55', flag: '🇧🇷'),
@@ -71,6 +74,20 @@ const kCountryDialCodes = <CountryDialCode>[
   CountryDialCode(name: 'Ukraine', iso2: 'UA', dialCode: '+380', flag: '🇺🇦'),
   CountryDialCode(name: 'New Zealand', iso2: 'NZ', dialCode: '+64', flag: '🇳🇿'),
 ];
+
+/// Prefer the device locale country when it is in [kCountryDialCodes],
+/// otherwise Pakistan (+92).
+CountryDialCode countryFromDeviceLocale([Locale? locale]) {
+  final resolved =
+      locale ?? WidgetsBinding.instance.platformDispatcher.locale;
+  final iso = resolved.countryCode?.toUpperCase();
+  if (iso != null && iso.isNotEmpty) {
+    for (final country in kCountryDialCodes) {
+      if (country.iso2 == iso) return country;
+    }
+  }
+  return kDefaultCountry;
+}
 
 class CountryCodePicker extends StatelessWidget {
   const CountryCodePicker({

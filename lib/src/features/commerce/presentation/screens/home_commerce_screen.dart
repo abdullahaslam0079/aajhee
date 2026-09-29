@@ -1,17 +1,25 @@
 import 'dart:async';
 
+import 'package:aajhee/src/config/launch_cities.dart';
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/product_search_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/widgets/commerce_search_bar.dart';
+import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
+import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
+import 'package:aajhee/src/features/home/presentation/utils/category_icons.dart';
+import 'package:aajhee/src/features/home/presentation/widgets/category_widget.dart';
 import 'package:aajhee/src/features/home/presentation/widgets/delivery_address_picker_sheet.dart';
 import 'package:aajhee/src/features/home/presentation/widgets/home_header.dart';
 import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
-import 'package:aajhee/src/features/commerce/presentation/widgets/commerce_search_bar.dart';
+import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/shared/widgets/store_logo_badge.dart';
+import 'package:aajhee/src/utils/money_format.dart';
 
 class HomeCommerceScreen extends ConsumerStatefulWidget {
   const HomeCommerceScreen({super.key});
@@ -24,11 +32,8 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
   final _api = CommerceApiService(DioService.instance);
   final _scrollController = ScrollController();
 
-  List<Map<String, dynamic>> _topPicks = const [];
   List<Map<String, dynamic>> _products = const [];
-  final Map<int, ({bool showInStore, bool showOnline})> _businessChannels = {};
-
-  ProductChannelFilter _channelFilter = ProductChannelFilter.all;
+  ProductListFilter _listFilter = ProductListFilter.all;
   String? _error;
   bool _loading = true;
   bool _loadingMore = false;
@@ -39,7 +44,10 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    Future.microtask(_load);
+    Future.microtask(() {
+      _ensureHomeFeedLoaded();
+      _load();
+    });
   }
 
   @override
@@ -48,6 +56,13 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
       ..removeListener(_onScroll)
       ..dispose();
     super.dispose();
+  }
+
+  void _ensureHomeFeedLoaded() {
+    final feed = ref.read(homeFeedProvider);
+    if (feed.categories.isEmpty && !feed.isLoading) {
+      unawaited(ref.read(homeFeedProvider.notifier).load());
+    }
   }
 
   void _onScroll() {
@@ -64,54 +79,30 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
       _error = null;
     });
 
-    final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
-    final feedsResult = await _api.getHomeFeeds(addressId: addressId);
+    _ensureHomeFeedLoaded();
     final productsResult = await _api.listProducts(page: 1, pageSize: 20);
     unawaited(ref.read(cartProvider.notifier).refresh());
     if (!mounted) return;
 
     String? error;
-    var topPicks = <Map<String, dynamic>>[];
     var products = <Map<String, dynamic>>[];
     var hasMore = false;
 
-    feedsResult.fold(
-      (f) => error = f.message,
-      (data) {
-        topPicks = _asProductList(data['top_picks']);
-      },
-    );
-
     productsResult.fold(
-      (f) => error ??= f.message,
+      (f) => error = f.message,
       (data) {
         products = _asProductList(data['results']);
         hasMore = data['next'] != null;
       },
     );
 
-    // Fallback when /api/products is empty: use home-feed product shelves.
-    if (products.isEmpty) {
-      feedsResult.fold((_) {}, (data) {
-        products = _dedupeById([
-          ..._asProductList(data['top_picks']),
-          ..._asProductList(data['offers']),
-          ..._asProductList(data['trending']),
-        ]);
-        hasMore = false;
-      });
-    }
-
     setState(() {
-      _topPicks = topPicks;
       _products = products;
       _hasMore = hasMore;
       _page = 1;
       _loading = false;
-      _error = products.isEmpty && topPicks.isEmpty ? error : null;
+      _error = products.isEmpty ? error : null;
     });
-
-    await _ensureBusinessChannels([...topPicks, ...products]);
   }
 
   Future<void> _loadMoreProducts() async {
@@ -120,9 +111,9 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     final nextPage = _page + 1;
     final result = await _api.listProducts(page: nextPage, pageSize: 20);
     if (!mounted) return;
-    await result.fold(
-      (_) async => setState(() => _loadingMore = false),
-      (data) async {
+    result.fold(
+      (_) => setState(() => _loadingMore = false),
+      (data) {
         final more = _asProductList(data['results']);
         setState(() {
           _products = _dedupeById([..._products, ...more]);
@@ -130,63 +121,27 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
           _hasMore = data['next'] != null;
           _loadingMore = false;
         });
-        await _ensureBusinessChannels(more);
       },
     );
   }
 
-  Future<void> _ensureBusinessChannels(
-    List<Map<String, dynamic>> products,
-  ) async {
-    final ids = <int>{};
-    for (final product in products) {
-      final id = _asInt(product['business_id']);
-      if (id != null && !_businessChannels.containsKey(id)) {
-        ids.add(id);
-      }
-    }
-    if (ids.isEmpty) return;
-
-    await Future.wait(ids.map((id) async {
-      final result = await _api.getBusinessCatalog(id);
-      result.fold((_) {}, (data) {
-        final business = Map<String, dynamic>.from(
-          data['business'] as Map? ?? {},
-        );
-        _businessChannels[id] = (
-          showInStore: business['show_instore'] == true,
-          showOnline: business['show_online'] == true,
-        );
-      });
-    }));
-    if (mounted) setState(() {});
-  }
-
-  List<Map<String, dynamic>> get _visibleProducts {
-    if (_channelFilter == ProductChannelFilter.all) return _products;
-    return _products.where((product) {
-      final channel = _channelFor(product);
-      return _channelFilter.matches(
-        showInStore: channel.showInStore,
-        showOnline: channel.showOnline,
-      );
-    }).toList();
-  }
-
-  ({bool showInStore, bool showOnline}) _channelFor(
-    Map<String, dynamic> product,
-  ) {
-    final id = _asInt(product['business_id']);
-    if (id != null && _businessChannels.containsKey(id)) {
-      return _businessChannels[id]!;
-    }
-    return (showInStore: false, showOnline: true);
+  Future<void> _onRefresh() async {
+    await Future.wait([
+      ref.read(homeFeedProvider.notifier).load(),
+      _load(),
+    ]);
   }
 
   static int? _asInt(dynamic value) {
     if (value is int) return value;
     if (value is num) return value.toInt();
-    return null;
+    return int.tryParse('$value');
+  }
+
+  static double? _asDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    return double.tryParse('$value');
   }
 
   static List<Map<String, dynamic>> _asProductList(dynamic raw) {
@@ -210,6 +165,98 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     return out;
   }
 
+  static Set<int> _sameDayBusinessIds(List<MapBranchModel> branches) {
+    return {
+      for (final branch in branches)
+        if (branch.treatsAsSameDay && branch.businessId > 0) branch.businessId,
+    };
+  }
+
+  static Set<int> _businessIds(List<MapBranchModel> branches) {
+    return {
+      for (final branch in branches)
+        if (branch.businessId > 0) branch.businessId,
+    };
+  }
+
+  List<Map<String, dynamic>> _productsForBusinessIds(Set<int> businessIds) {
+    if (businessIds.isEmpty) return const [];
+    return _products.where((product) {
+      final id = _asInt(product['business_id']);
+      return id != null && businessIds.contains(id);
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _categoryScopedProducts({
+    required int selectedCategoryIndex,
+    required Set<int> categoryBusinessIds,
+  }) {
+    if (selectedCategoryIndex <= 0) return _products;
+    if (categoryBusinessIds.isEmpty) return const [];
+    return _productsForBusinessIds(categoryBusinessIds);
+  }
+
+  List<Map<String, dynamic>> _applyListFilter(
+    List<Map<String, dynamic>> products, {
+    required Set<int> sameDayBusinessIds,
+  }) {
+    switch (_listFilter) {
+      case ProductListFilter.all:
+        return products;
+      case ProductListFilter.sameDay:
+        if (sameDayBusinessIds.isEmpty) return const [];
+        return products.where((product) {
+          final id = _asInt(product['business_id']);
+          return id != null && sameDayBusinessIds.contains(id);
+        }).toList();
+      case ProductListFilter.topRated:
+        final sorted = [...products];
+        sorted.sort((a, b) {
+          final aRating = _asDouble(a['rating_avg']);
+          final bRating = _asDouble(b['rating_avg']);
+          if (aRating == null && bRating == null) return 0;
+          if (aRating == null) return 1;
+          if (bRating == null) return -1;
+          return bRating.compareTo(aRating);
+        });
+        return sorted;
+      case ProductListFilter.priceLowToHigh:
+        final sorted = [...products];
+        sorted.sort((a, b) {
+          final aPrice =
+              _asDouble(a['effective_price'] ?? a['base_price']) ??
+                  double.infinity;
+          final bPrice =
+              _asDouble(b['effective_price'] ?? b['base_price']) ??
+                  double.infinity;
+          return aPrice.compareTo(bPrice);
+        });
+        return sorted;
+    }
+  }
+
+  String _locationText(SavedAddress? address) {
+    if (address == null) return 'Add address';
+    final city = address.city.trim();
+    final area = address.landmark.trim().isNotEmpty
+        ? address.landmark.trim()
+        : address.street.trim();
+    if (city.isNotEmpty && area.isNotEmpty && area.length <= 28) {
+      return '$area, $city';
+    }
+    if (city.isNotEmpty) return city;
+    if (area.isNotEmpty) return area;
+    final short = address.shortLabel.trim();
+    if (short.isNotEmpty) return short;
+    return 'Add address';
+  }
+
+  String _cityForBanner(SavedAddress? address) {
+    final city = address?.city.trim() ?? '';
+    if (city.isNotEmpty) return city;
+    return primaryCityName;
+  }
+
   void _openSearch() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -225,6 +272,10 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     );
   }
 
+  void _openBranch(MapBranchModel branch) {
+    context.push(AppRoutes.businessStore, extra: branch);
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(savedAddressesProvider, (previous, next) {
@@ -233,6 +284,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     });
 
     final addresses = ref.watch(savedAddressesProvider);
+    final feed = ref.watch(homeFeedProvider);
     final unread = ref.watch(notificationsProvider).unreadCount;
     final cartCount = ref.watch(
       cartProvider.select((state) => state.totalQuantity),
@@ -241,15 +293,33 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     final canvas = homeCanvasOf(context);
     final bottomInset =
         kHomeFeedBottomInset + MediaQuery.paddingOf(context).bottom;
-    final visible = _visibleProducts;
-    final locationText = addresses.selectedAddress?.city ?? 'Add address';
+
+    final branches = feed.filteredBranches;
+    final sameDayIds = _sameDayBusinessIds(branches);
+    final categoryBusinessIds = _businessIds(branches);
+    final hasSameDayShops = sameDayIds.isNotEmpty;
+    final cityLabel = _cityForBanner(addresses.selectedAddress);
+    final locationText = _locationText(addresses.selectedAddress);
+
+    final todayProducts = _productsForBusinessIds(sameDayIds);
+    final scopedProducts = _categoryScopedProducts(
+      selectedCategoryIndex: feed.selectedCategoryIndex,
+      categoryBusinessIds: categoryBusinessIds,
+    );
+    final visibleProducts = _applyListFilter(
+      scopedProducts,
+      sameDayBusinessIds: sameDayIds,
+    );
+
+    final categoryLabels = feed.categoryLabels;
+    final showFeedSkeleton = _loading && _products.isEmpty;
 
     return Scaffold(
       backgroundColor: canvas,
       body: SafeArea(
         bottom: false,
         child: RefreshIndicator(
-          onRefresh: _load,
+          onRefresh: _onRefresh,
           child: CustomScrollView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
@@ -278,33 +348,58 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                   onTap: _openSearch,
                 ),
               ),
-              if (_loading)
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Center(child: CircularProgressIndicator()),
+              if (showFeedSkeleton)
+                SliverToBoxAdapter(
+                  child: _MarketplaceSkeleton(bottomInset: bottomInset),
                 )
-              else if (_error != null)
+              else if (_error != null && _products.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_error!, textAlign: TextAlign.center),
-                          const SizedBox(height: 12),
-                          FilledButton(
-                            onPressed: _load,
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      ),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
+                    child: AppEmptyState(
+                      icon: Icons.error_outline_rounded,
+                      title: 'Could not load products',
+                      subtitle: _error,
+                      actionLabel: 'Retry',
+                      onAction: _load,
                     ),
                   ),
                 )
               else ...[
-                if (_topPicks.isNotEmpty) ...[
+                if (categoryLabels.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 40.h,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.ms.w,
+                          4.h,
+                          AppSpacing.ms.w,
+                          4.h,
+                        ),
+                        itemCount: categoryLabels.length,
+                        itemBuilder: (context, index) {
+                          final label = categoryLabels[index];
+                          return CategoryWidget(
+                            selectedCategoryIndex:
+                                feed.selectedCategoryIndex,
+                            index: index,
+                            label: label,
+                            icon: index == 0
+                                ? Icons.apps_rounded
+                                : categoryIconForName(label),
+                            onTap: () => ref
+                                .read(homeFeedProvider.notifier)
+                                .selectCategory(index),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                if (hasSameDayShops)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: EdgeInsets.fromLTRB(
@@ -313,42 +408,63 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         AppSpacing.ms.w,
                         AppSpacing.xs.h,
                       ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.local_fire_department_rounded,
-                            size: 22,
-                            color: context.appColors.deal,
-                          ),
-                          SizedBox(width: 6.w),
-                          Expanded(
-                            child: Text(
-                              'Top picks for you',
-                              style: tt.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: _SameDayBanner(
+                        label: labelSameDayDelivery(cityLabel),
                       ),
+                    ),
+                  ),
+                if (todayProducts.isNotEmpty) ...[
+                  const SliverToBoxAdapter(
+                    child: _SectionTitle(
+                      title: 'Get it today',
+                      icon: Icons.bolt_rounded,
                     ),
                   ),
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 148.h,
+                      height: 168.h,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const BouncingScrollPhysics(),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
-                        itemCount: _topPicks.length,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.ms.w,
+                        ),
+                        itemCount: todayProducts.length,
                         separatorBuilder: (_, __) => SizedBox(width: 10.w),
                         itemBuilder: (context, index) {
-                          final product = _topPicks[index];
-                          return _TopPickCard(
+                          final product = todayProducts[index];
+                          return _TodayProductCard(
                             product: product,
                             onTap: () => _openProduct(product),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+                if (branches.isNotEmpty) ...[
+                  const SliverToBoxAdapter(
+                    child: _SectionTitle(
+                      title: 'Shops near you',
+                      icon: Icons.storefront_outlined,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 132.h,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.ms.w,
+                        ),
+                        itemCount: branches.length,
+                        separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                        itemBuilder: (context, index) {
+                          final branch = branches[index];
+                          return _NearbyShopCard(
+                            branch: branch,
+                            onTap: () => _openBranch(branch),
                           );
                         },
                       ),
@@ -360,14 +476,14 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                   delegate: _PinnedFiltersDelegate(
                     textTheme: tt,
                     backgroundColor: canvas,
-                    channelFilter: _channelFilter,
-                    onChannelSelected: (filter) {
-                      if (_channelFilter == filter) return;
-                      setState(() => _channelFilter = filter);
+                    listFilter: _listFilter,
+                    onFilterSelected: (filter) {
+                      if (_listFilter == filter) return;
+                      setState(() => _listFilter = filter);
                     },
                   ),
                 ),
-                if (visible.isEmpty)
+                if (visibleProducts.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: Padding(
@@ -375,20 +491,19 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                           EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
                       child: AppEmptyState(
                         icon: Icons.inventory_2_outlined,
-                        title: _channelFilter == ProductChannelFilter.all
+                        title: _listFilter == ProductListFilter.all
                             ? 'No products yet'
-                            : 'No ${_channelFilter.label.toLowerCase()} products',
-                        subtitle: _channelFilter == ProductChannelFilter.all
+                            : 'No ${_listFilter.label.toLowerCase()} products',
+                        subtitle: _listFilter == ProductListFilter.all
                             ? 'Check back soon for local picks.'
                             : 'Try another filter to see more products.',
-                        actionLabel: _channelFilter == ProductChannelFilter.all
+                        actionLabel: _listFilter == ProductListFilter.all
                             ? null
                             : 'Show all',
-                        onAction: _channelFilter == ProductChannelFilter.all
+                        onAction: _listFilter == ProductListFilter.all
                             ? null
                             : () => setState(
-                                  () => _channelFilter =
-                                      ProductChannelFilter.all,
+                                  () => _listFilter = ProductListFilter.all,
                                 ),
                       ),
                     ),
@@ -406,19 +521,17 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10.h,
                         crossAxisSpacing: 10.w,
-                        // Packed square image + meta (~3 product rows visible).
                         childAspectRatio: 0.72,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final product = visible[index];
+                          final product = visibleProducts[index];
                           return _ProductGridCard(
                             product: product,
-                            channel: _channelFor(product),
                             onTap: () => _openProduct(product),
                           );
                         },
-                        childCount: visible.length,
+                        childCount: visibleProducts.length,
                       ),
                     ),
                   ),
@@ -545,7 +658,7 @@ class _PinnedSearchBarDelegate extends SliverPersistentHeaderDelegate {
           ),
           child: CommerceSearchBar(
             onTap: onTap,
-            hintText: 'Search products',
+            hintText: 'Search shops & products',
           ),
         ),
       ),
@@ -562,14 +675,14 @@ class _PinnedFiltersDelegate extends SliverPersistentHeaderDelegate {
   _PinnedFiltersDelegate({
     required this.textTheme,
     required this.backgroundColor,
-    required this.channelFilter,
-    required this.onChannelSelected,
+    required this.listFilter,
+    required this.onFilterSelected,
   });
 
   final TextTheme textTheme;
   final Color backgroundColor;
-  final ProductChannelFilter channelFilter;
-  final ValueChanged<ProductChannelFilter> onChannelSelected;
+  final ProductListFilter listFilter;
+  final ValueChanged<ProductListFilter> onFilterSelected;
 
   double get _topPad => AppSpacing.sm.h.ceilToDouble();
   double get _titleGap => AppSpacing.xs.h.ceilToDouble();
@@ -636,9 +749,9 @@ class _PinnedFiltersDelegate extends SliverPersistentHeaderDelegate {
                     SizedBox(height: _titleGap),
                     SizedBox(
                       height: _chipsHeight,
-                      child: _ProductChannelFilterChips(
-                        selected: channelFilter,
-                        onSelected: onChannelSelected,
+                      child: _ProductListFilterChips(
+                        selected: listFilter,
+                        onSelected: onFilterSelected,
                       ),
                     ),
                   ],
@@ -670,20 +783,20 @@ class _PinnedFiltersDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _PinnedFiltersDelegate oldDelegate) {
-    return channelFilter != oldDelegate.channelFilter ||
+    return listFilter != oldDelegate.listFilter ||
         textTheme != oldDelegate.textTheme ||
         backgroundColor != oldDelegate.backgroundColor;
   }
 }
 
-class _ProductChannelFilterChips extends StatelessWidget {
-  const _ProductChannelFilterChips({
+class _ProductListFilterChips extends StatelessWidget {
+  const _ProductListFilterChips({
     required this.selected,
     required this.onSelected,
   });
 
-  final ProductChannelFilter selected;
-  final ValueChanged<ProductChannelFilter> onSelected;
+  final ProductListFilter selected;
+  final ValueChanged<ProductListFilter> onSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -692,10 +805,10 @@ class _ProductChannelFilterChips extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
-        itemCount: ProductChannelFilter.values.length,
+        itemCount: ProductListFilter.values.length,
         separatorBuilder: (_, __) => SizedBox(width: 8.w),
         itemBuilder: (context, index) {
-          final filter = ProductChannelFilter.values[index];
+          final filter = ProductListFilter.values[index];
           final isSelected = filter == selected;
           final cs = context.theme.colorScheme;
           final tt = context.theme.textTheme;
@@ -707,9 +820,10 @@ class _ProductChannelFilterChips extends StatelessWidget {
                   : cs.surfaceContainerLowest;
           final fg = isSelected ? cs.onPrimary : cs.onSurfaceVariant;
           final icon = switch (filter) {
-            ProductChannelFilter.all => Icons.grid_view_rounded,
-            ProductChannelFilter.ecommerce => Icons.language_rounded,
-            ProductChannelFilter.inStore => Icons.storefront_outlined,
+            ProductListFilter.all => Icons.grid_view_rounded,
+            ProductListFilter.sameDay => Icons.bolt_rounded,
+            ProductListFilter.topRated => Icons.star_outline_rounded,
+            ProductListFilter.priceLowToHigh => Icons.south_rounded,
           };
 
           return Material(
@@ -756,8 +870,85 @@ class _ProductChannelFilterChips extends StatelessWidget {
     );
   }
 }
-class _TopPickCard extends StatelessWidget {
-  const _TopPickCard({
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({
+    required this.title,
+    required this.icon,
+  });
+
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.ms.w,
+        AppSpacing.sm.h,
+        AppSpacing.ms.w,
+        AppSpacing.xs.h,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: cs.primary),
+          SizedBox(width: 6.w),
+          Expanded(
+            child: Text(
+              title,
+              style: tt.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SameDayBanner extends StatelessWidget {
+  const _SameDayBanner({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.1),
+        borderRadius: AppBorders.md,
+        border: Border.all(color: cs.primary.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.local_shipping_outlined, size: 20, color: cs.primary),
+          SizedBox(width: 10.w),
+          Expanded(
+            child: Text(
+              label,
+              style: tt.labelLarge?.copyWith(
+                color: cs.primary,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TodayProductCard extends StatelessWidget {
+  const _TodayProductCard({
     required this.product,
     required this.onTap,
   });
@@ -769,14 +960,14 @@ class _TopPickCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final hasDiscount = product['has_discount'] == true;
+    final discount = _discountLabel(product);
     final imageUrl = product['image_url']?.toString();
     final businessName = product['business_name']?.toString() ?? '';
-    final price = _formatMoney(
-      product['effective_price'] ?? product['base_price'],
-    );
-    final basePrice = _formatMoney(product['base_price']);
-    final discountLabel = _formatDiscount(product['effective_discount_percent']);
+    final price = formatRs(product['effective_price'] ?? product['base_price']);
+    final basePrice = formatRsOrNull(product['base_price']);
+    final showStrike = discount != null &&
+        basePrice != null &&
+        basePrice != price;
 
     return Material(
       color: Colors.transparent,
@@ -784,7 +975,7 @@ class _TopPickCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppBorders.md,
         child: Ink(
-          width: 118.w,
+          width: 124.w,
           decoration: BoxDecoration(
             color: cs.surfaceContainerLowest,
             borderRadius: AppBorders.md,
@@ -803,11 +994,16 @@ class _TopPickCard extends StatelessWidget {
                       ),
                       child: _ProductThumb(imageUrl: imageUrl),
                     ),
-                    if (hasDiscount && discountLabel != null)
+                    Positioned(
+                      top: 6.h,
+                      left: 6.w,
+                      child: const _TodayBadge(),
+                    ),
+                    if (discount != null)
                       Positioned(
                         left: 6.w,
                         bottom: 6.h,
-                        child: _DiscountBadge(label: discountLabel),
+                        child: _DiscountBadge(label: discount),
                       ),
                   ],
                 ),
@@ -842,8 +1038,8 @@ class _TopPickCard extends StatelessWidget {
                     SizedBox(height: 4.h),
                     _PriceRow(
                       price: price,
-                      basePrice: hasDiscount ? basePrice : null,
-                      emphasize: hasDiscount,
+                      basePrice: showStrike ? basePrice : null,
+                      emphasize: discount != null,
                     ),
                   ],
                 ),
@@ -856,30 +1052,188 @@ class _TopPickCard extends StatelessWidget {
   }
 }
 
-class _ProductGridCard extends StatelessWidget {
-  const _ProductGridCard({
-    required this.product,
-    required this.channel,
+class _NearbyShopCard extends StatelessWidget {
+  const _NearbyShopCard({
+    required this.branch,
     required this.onTap,
   });
 
-  final Map<String, dynamic> product;
-  final ({bool showInStore, bool showOnline}) channel;
+  final MapBranchModel branch;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final hasDiscount = product['has_discount'] == true;
+    final badge = branch.deliveryBadgeLabel;
+    final distance = branch.distanceKm;
+    final fee = branch.deliveryFee;
+    final rating = branch.ratingAvg;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppBorders.md,
+        child: Ink(
+          width: 168.w,
+          padding: EdgeInsets.all(10.w),
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLowest,
+            borderRadius: AppBorders.md,
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  StoreLogoBadge(
+                    name: branch.displayName,
+                    imageUrl: branch.logoUrl,
+                    size: 36,
+                  ),
+                  SizedBox(width: 8.w),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          branch.displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: tt.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.15,
+                          ),
+                        ),
+                        if (branch.categoryName.trim().isNotEmpty)
+                          Text(
+                            branch.categoryName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: tt.labelSmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              height: 1.15,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              if (rating != null && rating > 0)
+                Row(
+                  children: [
+                    Icon(
+                      Icons.star_rounded,
+                      size: 14,
+                      color: context.appColors.deal,
+                    ),
+                    SizedBox(width: 2.w),
+                    Text(
+                      rating.toStringAsFixed(1),
+                      style: tt.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              SizedBox(height: 4.h),
+              Wrap(
+                spacing: 6.w,
+                runSpacing: 4.h,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (badge != null)
+                    _MetaChip(
+                      label: badge,
+                      emphasized: badge == 'Same-day',
+                    ),
+                  if (distance != null)
+                    Text(
+                      '${distance.toStringAsFixed(1)} km',
+                      style: tt.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        height: 1.1,
+                      ),
+                    ),
+                  if (fee != null)
+                    Text(
+                      formatRs(fee),
+                      style: tt.labelSmall?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        height: 1.1,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.label,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bg = emphasized
+        ? cs.primary.withValues(alpha: 0.12)
+        : cs.surfaceContainerHighest;
+    final fg = emphasized ? cs.primary : cs.onSurfaceVariant;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: AppBorders.full,
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: fg,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              height: 1.1,
+            ),
+      ),
+    );
+  }
+}
+
+class _ProductGridCard extends StatelessWidget {
+  const _ProductGridCard({
+    required this.product,
+    required this.onTap,
+  });
+
+  final Map<String, dynamic> product;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    final discount = _discountLabel(product);
     final imageUrl = product['image_url']?.toString();
     final businessName = product['business_name']?.toString() ?? '';
-    final price = _formatMoney(
-      product['effective_price'] ?? product['base_price'],
-    );
-    final basePrice = _formatMoney(product['base_price']);
-    final discountLabel = _formatDiscount(product['effective_discount_percent']);
-    final channelLabel = _channelLabel(channel);
+    final price = formatRs(product['effective_price'] ?? product['base_price']);
+    final basePrice = formatRsOrNull(product['base_price']);
+    final showStrike = discount != null &&
+        basePrice != null &&
+        basePrice != price;
 
     return Material(
       color: Colors.transparent,
@@ -905,11 +1259,11 @@ class _ProductGridCard extends StatelessWidget {
                       ),
                       child: _ProductThumb(imageUrl: imageUrl),
                     ),
-                    if (hasDiscount && discountLabel != null)
+                    if (discount != null)
                       Positioned(
                         left: 6.w,
                         bottom: 6.h,
-                        child: _DiscountBadge(label: discountLabel),
+                        child: _DiscountBadge(label: discount),
                       ),
                   ],
                 ),
@@ -919,12 +1273,9 @@ class _ProductGridCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (businessName.isNotEmpty || channelLabel != null)
+                    if (businessName.isNotEmpty)
                       Text(
-                        [
-                          if (businessName.isNotEmpty) businessName,
-                          if (channelLabel != null) channelLabel,
-                        ].join(' · '),
+                        businessName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: tt.labelSmall?.copyWith(
@@ -947,8 +1298,8 @@ class _ProductGridCard extends StatelessWidget {
                     SizedBox(height: 6.h),
                     _PriceRow(
                       price: price,
-                      basePrice: hasDiscount ? basePrice : null,
-                      emphasize: hasDiscount,
+                      basePrice: showStrike ? basePrice : null,
+                      emphasize: discount != null,
                     ),
                   ],
                 ),
@@ -1008,7 +1359,7 @@ class _PriceRow extends StatelessWidget {
       children: [
         Flexible(
           child: Text(
-            'Rs $price',
+            price,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: tt.labelLarge?.copyWith(
@@ -1022,7 +1373,7 @@ class _PriceRow extends StatelessWidget {
           SizedBox(width: 5.w),
           Flexible(
             child: Text(
-              'Rs $basePrice',
+              basePrice!,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: tt.labelSmall?.copyWith(
@@ -1038,6 +1389,31 @@ class _PriceRow extends StatelessWidget {
   }
 }
 
+class _TodayBadge extends StatelessWidget {
+  const _TodayBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: cs.primary,
+        borderRadius: AppBorders.full,
+      ),
+      child: Text(
+        'Today',
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: cs.onPrimary,
+              fontWeight: FontWeight.w800,
+              height: 1.1,
+              fontSize: 9,
+            ),
+      ),
+    );
+  }
+}
+
 class _DiscountBadge extends StatelessWidget {
   const _DiscountBadge({required this.label});
 
@@ -1047,7 +1423,7 @@ class _DiscountBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final appColors = context.appColors;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
       decoration: BoxDecoration(
         color: appColors.deal,
         borderRadius: AppBorders.full,
@@ -1058,42 +1434,109 @@ class _DiscountBadge extends StatelessWidget {
               color: appColors.onDeal,
               fontWeight: FontWeight.w800,
               height: 1.1,
-              fontSize: 10,
+              fontSize: 9,
             ),
       ),
     );
   }
 }
 
-String _formatMoney(dynamic value) {
-  if (value == null) return '';
-  if (value is num) {
-    final asDouble = value.toDouble();
-    if (asDouble == asDouble.roundToDouble()) {
-      return asDouble.toInt().toString();
+class _MarketplaceSkeleton extends StatelessWidget {
+  const _MarketplaceSkeleton({required this.bottomInset});
+
+  final double bottomInset;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bone = cs.surfaceContainerHighest;
+
+    Widget box({
+      required double height,
+      double? width,
+      BorderRadius? radius,
+    }) {
+      return Container(
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+          color: bone,
+          borderRadius: radius ?? AppBorders.md,
+        ),
+      );
     }
-    return asDouble.toStringAsFixed(2);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.ms.w,
+        AppSpacing.sm.h,
+        AppSpacing.ms.w,
+        bottomInset,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 34.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 5,
+              separatorBuilder: (_, __) => SizedBox(width: 8.w),
+              itemBuilder: (_, __) => box(height: 34.h, width: 78.w),
+            ),
+          ),
+          SizedBox(height: AppSpacing.sm.h),
+          box(height: 48.h),
+          SizedBox(height: AppSpacing.md.h),
+          box(height: 16.h, width: 120.w),
+          SizedBox(height: AppSpacing.xs.h),
+          SizedBox(
+            height: 150.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 3,
+              separatorBuilder: (_, __) => SizedBox(width: 10.w),
+              itemBuilder: (_, __) => box(height: 150.h, width: 120.w),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md.h),
+          box(height: 16.h, width: 140.w),
+          SizedBox(height: AppSpacing.xs.h),
+          SizedBox(
+            height: 120.h,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: 3,
+              separatorBuilder: (_, __) => SizedBox(width: 10.w),
+              itemBuilder: (_, __) => box(height: 120.h, width: 160.w),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md.h),
+          box(height: 16.h, width: 110.w),
+          SizedBox(height: AppSpacing.xs.h),
+          Row(
+            children: [
+              Expanded(child: box(height: 180.h)),
+              SizedBox(width: 10.w),
+              Expanded(child: box(height: 180.h)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
-  final raw = value.toString().trim();
-  final parsed = double.tryParse(raw);
-  if (parsed == null) return raw;
-  if (parsed == parsed.roundToDouble()) return parsed.toInt().toString();
-  return parsed.toStringAsFixed(2);
 }
 
-String? _formatDiscount(dynamic value) {
-  if (value == null) return null;
-  final parsed = value is num ? value.toDouble() : double.tryParse('$value');
-  if (parsed == null) return null;
+String? _discountLabel(Map<String, dynamic> product) {
+  if (product['has_discount'] != true) return null;
+  final raw = product['effective_discount_percent'];
+  final parsed = raw is num ? raw.toDouble() : double.tryParse('$raw');
+  if (parsed == null || parsed <= 0) return null;
   final label = parsed == parsed.roundToDouble()
       ? '${parsed.toInt()}%'
       : '${parsed.toStringAsFixed(0)}%';
   return '$label off';
-}
-
-String? _channelLabel(({bool showInStore, bool showOnline}) channel) {
-  if (channel.showOnline && channel.showInStore) return 'Online & store';
-  if (channel.showOnline) return 'Online';
-  if (channel.showInStore) return 'In-store';
-  return null;
 }

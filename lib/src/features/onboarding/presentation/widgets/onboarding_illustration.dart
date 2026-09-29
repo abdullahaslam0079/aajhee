@@ -2,9 +2,9 @@ import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 
 enum OnboardingIllustrationType {
-  discoverDeals,
-  exploreMap,
-  orderDelivery,
+  localShops,
+  sameDayDelivery,
+  orderPayOnDelivery,
 }
 
 class OnboardingIllustration extends StatefulWidget {
@@ -119,17 +119,17 @@ class _OnboardingIllustrationState extends State<OnboardingIllustration>
 
   Widget _buildScene(BuildContext context) {
     return switch (widget.type) {
-      OnboardingIllustrationType.discoverDeals => _DiscoverDealsScene(
+      OnboardingIllustrationType.localShops => _LocalShopsScene(
         accentColor: widget.accentColor,
         secondaryColor: widget.secondaryColor,
         drift: _floatController,
       ),
-      OnboardingIllustrationType.exploreMap => _ExploreMapScene(
+      OnboardingIllustrationType.sameDayDelivery => _SameDayDeliveryScene(
         accentColor: widget.accentColor,
         secondaryColor: widget.secondaryColor,
         drift: _floatController,
       ),
-      OnboardingIllustrationType.orderDelivery => _OrderDeliveryScene(
+      OnboardingIllustrationType.orderPayOnDelivery => _OrderPayOnDeliveryScene(
         accentColor: widget.accentColor,
         secondaryColor: widget.secondaryColor,
         drift: _floatController,
@@ -171,8 +171,8 @@ class _GlowOrb extends StatelessWidget {
   }
 }
 
-class _DiscoverDealsScene extends StatelessWidget {
-  const _DiscoverDealsScene({
+class _LocalShopsScene extends StatelessWidget {
+  const _LocalShopsScene({
     required this.accentColor,
     required this.secondaryColor,
     required this.drift,
@@ -200,7 +200,7 @@ class _DiscoverDealsScene extends StatelessWidget {
               rotation: -0.15,
             ),
             _FloatingBadge(
-              icon: Icons.percent_rounded,
+              icon: Icons.shopping_bag_rounded,
               color: secondaryColor,
               size: 44,
               offset: Offset(62.w, -44.h + (0.5 - t) * 6.h),
@@ -234,7 +234,7 @@ class _DiscoverDealsScene extends StatelessWidget {
               rotation: -0.08,
             ),
             _DealChip(
-              label: '-30%',
+              label: 'onboarding.nearby_label'.tr(),
               color: accentColor,
               offset: Offset(54.w, 52.h + (0.5 - t) * 7.h),
             ),
@@ -245,8 +245,8 @@ class _DiscoverDealsScene extends StatelessWidget {
   }
 }
 
-class _ExploreMapScene extends StatelessWidget {
-  const _ExploreMapScene({
+class _SameDayDeliveryScene extends StatelessWidget {
+  const _SameDayDeliveryScene({
     required this.accentColor,
     required this.secondaryColor,
     required this.drift,
@@ -282,18 +282,18 @@ class _ExploreMapScene extends StatelessWidget {
             _MapPin(
               color: accentColor,
               offset: Offset(-28.w, -18.h + (t - 0.5) * 4.h),
-              label: '20%',
+              label: 'Shop',
             ),
             _MapPin(
               color: secondaryColor,
               offset: Offset(34.w, -8.h + (0.5 - t) * 5.h),
-              label: '15%',
+              label: 'Cafe',
               scale: 0.85,
             ),
             _MapPin(
               color: accentColor,
               offset: Offset(-8.w, 36.h + (t - 0.5) * 3.h),
-              label: '25%',
+              label: 'Market',
               scale: 0.9,
             ),
             Positioned(
@@ -314,10 +314,10 @@ class _ExploreMapScene extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.near_me_rounded, size: 14.sp, color: accentColor),
+                    Icon(Icons.local_shipping_rounded, size: 14.sp, color: accentColor),
                     SizedBox(width: 4.w),
                     Text(
-                      'onboarding.nearby_label'.tr(),
+                      'onboarding.today_label'.tr(),
                       style: context.theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: context.theme.colorScheme.onSurface,
@@ -334,8 +334,8 @@ class _ExploreMapScene extends StatelessWidget {
   }
 }
 
-class _OrderDeliveryScene extends StatelessWidget {
-  const _OrderDeliveryScene({
+class _OrderPayOnDeliveryScene extends StatelessWidget {
+  const _OrderPayOnDeliveryScene({
     required this.accentColor,
     required this.secondaryColor,
     required this.drift,
@@ -363,7 +363,7 @@ class _OrderDeliveryScene extends StatelessWidget {
               rotation: -0.12,
             ),
             _FloatingBadge(
-              icon: Icons.local_shipping_rounded,
+              icon: Icons.payments_rounded,
               color: secondaryColor,
               size: 46,
               offset: Offset(60.w, -40.h + (0.5 - t) * 7.h),
@@ -390,14 +390,14 @@ class _OrderDeliveryScene extends StatelessWidget {
               ),
             ),
             _DealChip(
-              label: 'Pickup',
+              label: 'Order',
               color: secondaryColor,
               offset: Offset(-70.w, 52.h + (t - 0.5) * 4.h),
             ),
             _DealChip(
-              label: 'Delivery',
+              label: 'onboarding.cod_label'.tr(),
               color: accentColor,
-              offset: Offset(58.w, 56.h + (0.5 - t) * 4.h),
+              offset: Offset(48.w, 56.h + (0.5 - t) * 4.h),
             ),
           ],
         );

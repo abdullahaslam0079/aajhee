@@ -3,9 +3,10 @@ import 'package:aajhee/src/features/settings/presentation/settings.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/features/bottomNavigator/presentation/controllers/bottom_nav_bar_controller.dart';
+import 'package:aajhee/src/features/commerce/presentation/providers/active_orders_badge_provider.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/home_commerce_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/orders_screen.dart';
 import 'package:aajhee/src/features/home/presentation/screens/stores_tab_screen.dart';
-import 'package:aajhee/src/features/mapFeature/presentation/map_screen.dart';
 
 class BottomNavigationBarScreen extends ConsumerWidget {
   const BottomNavigationBarScreen({super.key});
@@ -13,6 +14,8 @@ class BottomNavigationBarScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(bottomNavBarControllerProvider);
+    final activeOrdersCount =
+        ref.watch(activeOrdersBadgeProvider).value ?? 0;
 
     return Scaffold(
       backgroundColor: homeCanvasOf(context),
@@ -26,9 +29,9 @@ class BottomNavigationBarScreen extends ConsumerWidget {
           child: selectedIndex == 0
               ? const HomeCommerceScreen()
               : selectedIndex == 1
-              ? const MapScreen()
-              : selectedIndex == 2
               ? const StoresTabScreen()
+              : selectedIndex == 2
+              ? const OrdersScreen()
               : const SettingsScreen(),
         ),
       ),
@@ -67,9 +70,9 @@ class BottomNavigationBarScreen extends ConsumerWidget {
             Expanded(
               child: _BottomItem(
                 icon: selectedIndex == 1
-                    ? Icons.explore_rounded
-                    : Icons.explore_outlined,
-                label: 'Discover',
+                    ? Icons.storefront_rounded
+                    : Icons.storefront_outlined,
+                label: 'Shops',
                 selected: selectedIndex == 1,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
@@ -79,10 +82,11 @@ class BottomNavigationBarScreen extends ConsumerWidget {
             Expanded(
               child: _BottomItem(
                 icon: selectedIndex == 2
-                    ? Icons.storefront_rounded
-                    : Icons.storefront_outlined,
-                label: 'Stores',
+                    ? Icons.receipt_long_rounded
+                    : Icons.receipt_long_outlined,
+                label: 'Orders',
                 selected: selectedIndex == 2,
+                badgeCount: activeOrdersCount,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
                     .setSelectedIndex(2),
@@ -113,24 +117,63 @@ class _BottomItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final color = selected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    final showBadge = badgeCount > 0;
+    final badgeLabel = badgeCount > 99 ? '99+' : '$badgeCount';
 
     return InkWell(
       onTap: onTap,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 24),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, color: color, size: 24),
+              if (showBadge)
+                Positioned(
+                  top: -4,
+                  right: -10,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: colorScheme.error,
+                      borderRadius: AppBorders.full,
+                      border: Border.all(
+                        color: colorScheme.surfaceContainerLowest,
+                        width: 1.5,
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      badgeLabel,
+                      style: TextStyle(
+                        color: colorScheme.onError,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
           SizedBox(height: 2.h),
           Text(
             label,

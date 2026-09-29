@@ -1,10 +1,12 @@
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
+import 'package:aajhee/src/features/commerce/domain/pakistani_phone.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/utils/money_format.dart';
 
 /// Opens a store catalog from a map branch or business/branch ids.
 class StoreCatalogArgs {
@@ -54,6 +56,8 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
   bool _loading = true;
   String? _error;
 
+  static const _whatsAppGreen = Color(0xFF25D366);
+
   @override
   void initState() {
     super.initState();
@@ -79,7 +83,7 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
     if (result == null) {
       setState(() {
         _loading = false;
-        _error = 'Store not found.';
+        _error = 'Shop not found.';
       });
       return;
     }
@@ -139,6 +143,75 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
     }
   }
 
+  MapBranchModel? _matchingFeedBranch(int? businessId) {
+    if (businessId == null || businessId <= 0) return null;
+    if (widget.args.branch != null &&
+        widget.args.branch!.businessId == businessId) {
+      return widget.args.branch;
+    }
+    for (final branch in ref.read(homeFeedProvider).branches) {
+      if (branch.businessId == businessId) return branch;
+    }
+    return null;
+  }
+
+  static bool _isTrulyDiscounted(Map<String, dynamic> product) {
+    if (product['has_discount'] != true) return false;
+    final raw = product['effective_discount_percent'];
+    final percent = raw is num
+        ? raw.toDouble()
+        : double.tryParse('${raw ?? ''}');
+    return percent != null && percent > 0;
+  }
+
+  static String? _pickHours({
+    required Map<String, dynamic> business,
+    required Map<String, dynamic> branchData,
+    MapBranchModel? feedBranch,
+  }) {
+    for (final source in [branchData, business]) {
+      for (final key in ['opening_hours', 'hours', 'business_hours']) {
+        final value = source[key]?.toString().trim() ?? '';
+        if (value.isNotEmpty) return value;
+      }
+    }
+    final fromBranch = feedBranch?.openingHours?.trim();
+    if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
+    return null;
+  }
+
+  static bool? _flagFromMaps(
+    List<Map<String, dynamic>> maps,
+    List<String> keys,
+  ) {
+    for (final map in maps) {
+      for (final key in keys) {
+        final value = map[key];
+        if (value == true) return true;
+        if (value == false) return false;
+      }
+    }
+    return null;
+  }
+
+  static dynamic _feeFromMaps(List<Map<String, dynamic>> maps) {
+    for (final map in maps) {
+      final fee = map['delivery_fee'] ?? map['same_day_delivery_fee'];
+      if (fee != null) return fee;
+    }
+    return null;
+  }
+
+  static bool _listHasSameDay(dynamic fulfillment) {
+    if (fulfillment is! List) return false;
+    return fulfillment.any((e) => e.toString() == 'local_same_day');
+  }
+
+  static bool _listHasNationwide(dynamic fulfillment) {
+    if (fulfillment is! List) return false;
+    return fulfillment.any((e) => e.toString() == 'nationwide');
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(savedAddressesProvider, (previous, next) {
@@ -158,8 +231,10 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
         Map<String, dynamic>.from(_catalog?['branch'] as Map? ?? {});
     final contacts =
         (_catalog?['contacts'] as List? ?? []).cast<Map<String, dynamic>>();
-    final discounted =
+    final discountedRaw =
         (_catalog?['discounted'] as List? ?? []).cast<Map<String, dynamic>>();
+    final discounted =
+        discountedRaw.where(_isTrulyDiscounted).toList(growable: false);
     final categories =
         (_catalog?['categories'] as List? ?? []).cast<Map<String, dynamic>>();
 
@@ -170,7 +245,7 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
             ? business['name'].toString()
             : (widget.args.businessName ??
                 widget.args.branch?.businessName ??
-                'Store');
+                'Shop');
     final branchName =
         (branchData['name']?.toString().trim().isNotEmpty ?? false)
             ? branchData['name'].toString()
@@ -205,6 +280,64 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
         widget.args.resolvedBranchId ??
         widget.args.branch?.id;
 
+    final feedBranch = _matchingFeedBranch(businessId);
+    final isVerified = business['is_verified'] == true ||
+        business['verified'] == true ||
+        branchData['is_verified'] == true ||
+        branchData['verified'] == true ||
+        (feedBranch?.isVerified ?? false) ||
+        (widget.args.branch?.isVerified ?? false);
+
+    final maps = [branchData, business];
+    final sameDayFlag = _flagFromMaps(maps, [
+          'supports_same_day',
+          'same_day_enabled',
+          'same_day_delivery',
+        ]) ??
+        (feedBranch?.supportsSameDay) ??
+        widget.args.branch?.supportsSameDay;
+    final nationwideFlag = _flagFromMaps(maps, [
+          'supports_nationwide',
+          'nationwide_delivery',
+        ]) ??
+        (feedBranch?.supportsNationwide) ??
+        widget.args.branch?.supportsNationwide;
+    final fulfillment = branchData['fulfillment_types'] ??
+        branchData['fulfillment_modes'] ??
+        business['fulfillment_types'] ??
+        business['fulfillment_modes'];
+
+    final supportsSameDay = (sameDayFlag ?? false) ||
+        _listHasSameDay(fulfillment) ||
+        (sameDayFlag == null &&
+            nationwideFlag == null &&
+            ((feedBranch?.treatsAsSameDay ?? false) ||
+                (widget.args.branch?.treatsAsSameDay ?? false)));
+    final supportsNationwide =
+        (nationwideFlag ?? false) || _listHasNationwide(fulfillment);
+
+    final deliveryFee = _feeFromMaps(maps) ??
+        feedBranch?.deliveryFee ??
+        widget.args.branch?.deliveryFee;
+    final deliveryFeeLabel = formatRsOrNull(deliveryFee);
+    final openingHours = _pickHours(
+      business: business,
+      branchData: branchData,
+      feedBranch: feedBranch ?? widget.args.branch,
+    );
+
+    Map<String, dynamic>? whatsappContact;
+    final otherContacts = <Map<String, dynamic>>[];
+    for (final contact in contacts) {
+      final type =
+          (contact['contact_type']?.toString() ?? '').trim().toLowerCase();
+      if (type == 'whatsapp' && whatsappContact == null) {
+        whatsappContact = contact;
+      } else {
+        otherContacts.add(contact);
+      }
+    }
+
     final productSections = <({String title, List<Map<String, dynamic>> items})>[
       if (discounted.isNotEmpty) (title: 'On sale', items: discounted),
       for (final cat in categories)
@@ -223,7 +356,7 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
       backgroundColor: canvas,
       appBar: AppBar(
         backgroundColor: canvas,
-        title: const Text('Store'),
+        title: const Text('Shop'),
         actions: [
           IconButton(
             tooltip: 'Cart',
@@ -273,12 +406,18 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
                             ratingCount:
                                 int.tryParse('${business['rating_count'] ?? 0}') ??
                                     0,
+                            isVerified: isVerified,
+                            supportsSameDay: supportsSameDay,
+                            supportsNationwide: supportsNationwide,
+                            deliveryFeeLabel: deliveryFeeLabel,
+                            openingHours: openingHours,
                             showOnline: showOnline,
                             showInStore: showInStore,
                             address: showInStore ? address : '',
                             canNavigate:
                                 showInStore && lat != null && lng != null,
-                            contacts: contacts,
+                            whatsappContact: whatsappContact,
+                            contacts: otherContacts,
                             onNavigate: lat != null && lng != null
                                 ? () => _openGoogleMaps(
                                       latitude: lat,
@@ -286,6 +425,7 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
                                     )
                                 : null,
                             onContact: _contact,
+                            whatsAppColor: _whatsAppGreen,
                           ),
                         ),
                       ),
@@ -298,7 +438,7 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen> {
                               icon: Icons.inventory_2_outlined,
                               title: 'No products yet',
                               subtitle:
-                                  'This store has not published listings yet.',
+                                  'This shop has not published listings yet.',
                             ),
                           ),
                         )
@@ -409,8 +549,15 @@ class _StoreHero extends StatelessWidget {
     required this.canNavigate,
     required this.contacts,
     required this.onContact,
+    required this.isVerified,
+    required this.supportsSameDay,
+    required this.supportsNationwide,
+    required this.whatsAppColor,
     this.ratingAvg,
     this.ratingCount = 0,
+    this.deliveryFeeLabel,
+    this.openingHours,
+    this.whatsappContact,
     this.onNavigate,
   });
 
@@ -419,18 +566,28 @@ class _StoreHero extends StatelessWidget {
   final String? logoUrl;
   final String? ratingAvg;
   final int ratingCount;
+  final bool isVerified;
+  final bool supportsSameDay;
+  final bool supportsNationwide;
+  final String? deliveryFeeLabel;
+  final String? openingHours;
   final bool showOnline;
   final bool showInStore;
   final String address;
   final bool canNavigate;
+  final Map<String, dynamic>? whatsappContact;
   final List<Map<String, dynamic>> contacts;
   final ValueChanged<Map<String, dynamic>> onContact;
   final VoidCallback? onNavigate;
+  final Color whatsAppColor;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
+    final hasDeliveryBadges = supportsSameDay ||
+        supportsNationwide ||
+        (deliveryFeeLabel != null && deliveryFeeLabel!.isNotEmpty);
 
     return Container(
       width: double.infinity,
@@ -481,14 +638,25 @@ class _StoreHero extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            businessName,
-                            style: tt.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: cs.onSurface,
-                              letterSpacing: -0.4,
-                              height: 1.15,
-                            ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  businessName,
+                                  style: tt.headlineSmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    color: cs.onSurface,
+                                    letterSpacing: -0.4,
+                                    height: 1.15,
+                                  ),
+                                ),
+                              ),
+                              if (isVerified) ...[
+                                SizedBox(width: 6.w),
+                                const _VerifiedBadge(),
+                              ],
+                            ],
                           ),
                           if (branchName.isNotEmpty) ...[
                             SizedBox(height: 4.h),
@@ -510,30 +678,76 @@ class _StoreHero extends StatelessWidget {
                               ),
                             ),
                           ],
-                          SizedBox(height: 10.h),
-                          Wrap(
-                            spacing: 8.w,
-                            runSpacing: 6.h,
-                            children: [
-                              if (showOnline)
-                                const _ChannelChip(
-                                  label: 'Ecommerce',
-                                  icon: Icons.language_rounded,
-                                ),
-                              if (showInStore)
-                                const _ChannelChip(
-                                  label: 'In-store',
-                                  icon: Icons.storefront_outlined,
-                                ),
-                            ],
-                          ),
+                          if (hasDeliveryBadges) ...[
+                            SizedBox(height: 10.h),
+                            Wrap(
+                              spacing: 8.w,
+                              runSpacing: 6.h,
+                              children: [
+                                if (supportsSameDay)
+                                  const _DeliveryChip(
+                                    label: 'Same-day',
+                                    icon: Icons.bolt_rounded,
+                                    emphasized: true,
+                                  ),
+                                if (supportsNationwide)
+                                  const _DeliveryChip(
+                                    label: 'Nationwide',
+                                    icon: Icons.public_rounded,
+                                  ),
+                                if (deliveryFeeLabel != null)
+                                  _DeliveryChip(
+                                    label: deliveryFeeLabel!,
+                                    icon: Icons.local_shipping_outlined,
+                                  ),
+                              ],
+                            ),
+                          ],
+                          if (!hasDeliveryBadges &&
+                              (showOnline || showInStore)) ...[
+                            SizedBox(height: 10.h),
+                            Text(
+                              [
+                                if (showOnline) 'Online',
+                                if (showInStore) 'In-store',
+                              ].join(' · '),
+                              style: tt.labelSmall?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
                   ],
                 ),
+                if (openingHours != null && openingHours!.isNotEmpty) ...[
+                  SizedBox(height: 14.h),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 18,
+                        color: cs.onSurfaceVariant,
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          openingHours!,
+                          style: tt.bodyMedium?.copyWith(
+                            color: cs.onSurface,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (showInStore && address.isNotEmpty) ...[
-                  SizedBox(height: 16.h),
+                  SizedBox(height: 14.h),
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(12.r),
@@ -564,15 +778,37 @@ class _StoreHero extends StatelessWidget {
                     ),
                   ),
                 ],
-                if (canNavigate && onNavigate != null) ...[
+                if (whatsappContact != null) ...[
                   SizedBox(height: 12.h),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: onNavigate,
-                      icon: const Icon(Icons.directions_rounded),
-                      label: const Text('Navigate to store'),
+                      onPressed: () => onContact(whatsappContact!),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: whatsAppColor,
+                        foregroundColor: Colors.white,
+                        minimumSize: Size.fromHeight(46.h),
+                      ),
+                      icon: const Icon(Icons.chat_rounded),
+                      label: const Text('WhatsApp'),
                     ),
+                  ),
+                ],
+                if (canNavigate && onNavigate != null) ...[
+                  SizedBox(height: 10.h),
+                  SizedBox(
+                    width: double.infinity,
+                    child: whatsappContact != null
+                        ? OutlinedButton.icon(
+                            onPressed: onNavigate,
+                            icon: const Icon(Icons.directions_rounded),
+                            label: const Text('Navigate to store'),
+                          )
+                        : FilledButton.icon(
+                            onPressed: onNavigate,
+                            icon: const Icon(Icons.directions_rounded),
+                            label: const Text('Navigate to store'),
+                          ),
                   ),
                 ],
                 if (contacts.isNotEmpty) ...[
@@ -607,6 +843,84 @@ class _StoreHero extends StatelessWidget {
   }
 }
 
+class _VerifiedBadge extends StatelessWidget {
+  const _VerifiedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: cs.primary.withValues(alpha: 0.12),
+        borderRadius: AppBorders.full,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.verified_rounded, size: 14, color: cs.primary),
+          SizedBox(width: 4.w),
+          Text(
+            'Verified',
+            style: tt.labelSmall?.copyWith(
+              color: cs.primary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DeliveryChip extends StatelessWidget {
+  const _DeliveryChip({
+    required this.label,
+    required this.icon,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final bg = emphasized
+        ? cs.primary.withValues(alpha: 0.12)
+        : cs.surfaceContainerHigh;
+    final fg = emphasized ? cs.primary : cs.onSurfaceVariant;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: AppBorders.sm,
+        border: Border.all(
+          color: emphasized
+              ? cs.primary.withValues(alpha: 0.25)
+              : cs.outlineVariant,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: fg),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ContactButton extends StatelessWidget {
   const _ContactButton({
     required this.contact,
@@ -623,7 +937,10 @@ class _ContactButton extends StatelessWidget {
     final type = (contact['contact_type']?.toString() ?? 'contact')
         .trim()
         .toLowerCase();
-    final value = contact['value']?.toString().trim() ?? '';
+    final rawValue = contact['value']?.toString().trim() ?? '';
+    final displayValue = type == 'phone'
+        ? formatPakistaniMobileInternational(rawValue)
+        : rawValue;
     final (icon, label) = switch (type) {
       'phone' => (Icons.phone_rounded, 'Call'),
       'email' => (Icons.mail_outline_rounded, 'Email'),
@@ -658,9 +975,9 @@ class _ContactButton extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  if (value.isNotEmpty)
+                  if (displayValue.isNotEmpty)
                     Text(
-                      value,
+                      displayValue,
                       style: tt.labelSmall?.copyWith(
                         color: cs.onSurfaceVariant,
                         fontWeight: FontWeight.w600,
@@ -671,43 +988,6 @@ class _ContactButton extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ChannelChip extends StatelessWidget {
-  const _ChannelChip({
-    required this.label,
-    required this.icon,
-  });
-
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: cs.surfaceContainerHigh,
-        borderRadius: AppBorders.sm,
-        border: Border.all(color: cs.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: cs.onSurfaceVariant),
-          SizedBox(width: 4.w),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
       ),
     );
   }
@@ -726,8 +1006,22 @@ class _CatalogProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final hasDiscount = product['has_discount'] == true;
+    final discountRaw = product['effective_discount_percent'];
+    final discountPercent = discountRaw is num
+        ? discountRaw.toDouble()
+        : double.tryParse('${discountRaw ?? ''}');
+    final hasDiscount = product['has_discount'] == true &&
+        discountPercent != null &&
+        discountPercent > 0;
     final imageUrl = product['image_url']?.toString();
+    final price = formatRs(
+      product['effective_price'] ?? product['base_price'],
+    );
+    final discountLabel = hasDiscount
+        ? (discountPercent == discountPercent.roundToDouble()
+            ? '${discountPercent.toInt()}% off'
+            : '${discountPercent.toStringAsFixed(0)}% off')
+        : null;
     final path = branchId != null
         ? '${AppRoutes.productDetail('${product['id']}')}?branch_id=$branchId'
         : AppRoutes.productDetail('${product['id']}');
@@ -779,9 +1073,9 @@ class _CatalogProductCard extends StatelessWidget {
                       ),
                       SizedBox(height: 6.h),
                       Text(
-                        hasDiscount
-                            ? 'Rs ${product['effective_price']} · ${product['effective_discount_percent']}% off'
-                            : 'Rs ${product['effective_price'] ?? product['base_price']}',
+                        hasDiscount && discountLabel != null
+                            ? '$price · $discountLabel'
+                            : price,
                         style: tt.bodyMedium?.copyWith(
                           color: hasDiscount
                               ? context.appColors.deal

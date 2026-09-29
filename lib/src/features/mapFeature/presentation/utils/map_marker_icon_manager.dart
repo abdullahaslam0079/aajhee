@@ -58,8 +58,10 @@ class MapMarkerIconManager {
       final index = entry.key;
       final branch = entry.value;
       final isSelected = index == selectedIndex;
-      final iconKey = _iconKey(branch.discountPercentInt, isSelected);
+      final pinLabel = branch.mapPinLabel;
+      final iconKey = _iconKey(pinLabel, isSelected);
       final icon = _iconCache[iconKey];
+      final category = branch.categoryName.trim();
 
       return Marker(
         markerId: MarkerId(branch.id.toString()),
@@ -73,8 +75,7 @@ class MapMarkerIconManager {
             ),
         infoWindow: InfoWindow(
           title: branch.displayName,
-          snippet:
-              '${branch.discountPercentInt}% off • ${branch.categoryName}',
+          snippet: category.isNotEmpty ? category : null,
           onTap: () => onMarkerTap(index),
         ),
         onTap: () => onMarkerTap(index),
@@ -83,31 +84,32 @@ class MapMarkerIconManager {
   }
 
   void preloadIcons(MapMarkerTheme theme) {
-    final discounts = branches.map((b) => b.discountPercentInt).toSet();
-    for (final discount in discounts) {
-      _ensureIconLoaded(theme, discount, selected: false);
-      _ensureIconLoaded(theme, discount, selected: true);
+    final labels = branches.map((b) => b.mapPinLabel).toSet();
+    for (final label in labels) {
+      _ensureIconLoaded(theme, label, selected: false);
+      _ensureIconLoaded(theme, label, selected: true);
     }
   }
 
   void ensureSelectedIconsLoaded(MapMarkerTheme theme, int selectedIndex) {
     final branch = branches[selectedIndex];
-    _ensureIconLoaded(theme, branch.discountPercentInt, selected: true);
-    _ensureIconLoaded(theme, branch.discountPercentInt, selected: false);
+    final label = branch.mapPinLabel;
+    _ensureIconLoaded(theme, label, selected: true);
+    _ensureIconLoaded(theme, label, selected: false);
   }
 
   void _ensureIconLoaded(
     MapMarkerTheme theme,
-    int discountPercent, {
+    String label, {
     required bool selected,
   }) {
-    final key = _iconKey(discountPercent, selected);
+    final key = _iconKey(label, selected);
     if (_iconCache.containsKey(key) || _iconLoading.contains(key)) return;
 
     _iconLoading.add(key);
 
     DiscountMarkerIconRenderer.render(
-      discountPercent: discountPercent,
+      label: label,
       selected: selected,
       devicePixelRatio: theme.devicePixelRatio,
       primaryColor: theme.primary,
@@ -126,7 +128,7 @@ class MapMarkerIconManager {
     });
   }
 
-  String _iconKey(int discountPercent, bool selected) {
-    return '$discountPercent-${selected ? 's' : 'n'}';
+  String _iconKey(String label, bool selected) {
+    return '$label-${selected ? 's' : 'n'}';
   }
 }

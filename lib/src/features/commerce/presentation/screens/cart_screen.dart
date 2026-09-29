@@ -1,6 +1,7 @@
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/utils/money_format.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -91,7 +92,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                           ),
                           SizedBox(width: 8.w),
                           Text(
-                            'Rs $subtotal',
+                            formatRs(subtotal),
                             style: tt.titleMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                             ),
@@ -103,7 +104,7 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: _checkout,
-                        child: Text('Checkout · Rs $subtotal'),
+                        child: Text('Checkout · ${formatRs(subtotal)}'),
                       ),
                     ),
                   ],
@@ -270,8 +271,8 @@ class _CartItemCard extends StatelessWidget {
                       SizedBox(height: 6.h),
                       Text(
                         hasDiscount
-                            ? 'Rs $unitPrice · ${product['effective_discount_percent']}% off'
-                            : 'Rs $unitPrice',
+                            ? '${formatRs(unitPrice)} · ${product['effective_discount_percent']}% off'
+                            : formatRs(unitPrice),
                         style: tt.bodyMedium?.copyWith(
                           color: hasDiscount ? appColors.deal : cs.onSurface,
                           fontWeight: FontWeight.w700,
@@ -309,7 +310,7 @@ class _CartItemCard extends StatelessWidget {
                           ),
                           const Spacer(),
                           Text(
-                            'Rs $lineTotal',
+                            formatRs(lineTotal),
                             style: tt.titleSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: cs.onSurface,

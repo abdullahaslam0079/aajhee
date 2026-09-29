@@ -7,7 +7,7 @@ import 'package:aajhee/src/theme/app_fonts.dart';
 
 abstract final class DiscountMarkerIconRenderer {
   static Future<BitmapDescriptor> render({
-    required int discountPercent,
+    required String label,
     required bool selected,
     required double devicePixelRatio,
     required Color primaryColor,
@@ -17,7 +17,7 @@ abstract final class DiscountMarkerIconRenderer {
     required Color borderColor,
     TextStyle? labelStyle,
   }) async {
-    final text = '$discountPercent% off';
+    final text = label.trim().isEmpty ? 'Shop' : label.trim();
     final scale = devicePixelRatio.clamp(1.0, 3.0);
 
     final textStyle = (labelStyle ?? const TextStyle(fontFamily: AppFonts.primary)).copyWith(
@@ -36,7 +36,9 @@ abstract final class DiscountMarkerIconRenderer {
     final tp = TextPainter(
       text: TextSpan(text: text, style: textStyle),
       textDirection: TextDirection.ltr,
-    )..layout();
+      maxLines: 1,
+      ellipsis: '…',
+    )..layout(maxWidth: 120 * scale);
 
     final iconSize = 22.0 * scale;
     final paddingH = 12.0 * scale;
@@ -161,7 +163,7 @@ abstract final class DiscountMarkerIconRenderer {
 
     final iconPainter = TextPainter(
       text: TextSpan(
-        text: String.fromCharCode(Icons.sell.codePoint),
+        text: String.fromCharCode(Icons.storefront.codePoint),
         style: iconStyle,
       ),
       textDirection: TextDirection.ltr,

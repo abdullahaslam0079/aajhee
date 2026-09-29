@@ -1,11 +1,11 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:aajhee/src/features/favorites/presentation/providers/favorite_stores_provider.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/utils/money_format.dart';
 
 class BusinessStoreCard extends ConsumerWidget {
   const BusinessStoreCard({
@@ -26,12 +26,6 @@ class BusinessStoreCard extends ConsumerWidget {
     final muted = isDark
         ? cs.onSurfaceVariant
         : cs.onSurface.withValues(alpha: 0.55);
-    final infoPanelColor = isDark
-        ? cs.surfaceContainerHighest.withValues(alpha: 0.96)
-        : cs.surfaceContainerLowest.withValues(alpha: 0.92);
-    final infoBorderColor = isDark
-        ? cs.outline.withValues(alpha: 0.45)
-        : cs.surfaceContainerLowest;
     final isFavorite = ref.watch(
       favoriteStoresProvider.select(
         (state) => state.isFavorite(branch.id),
@@ -40,257 +34,193 @@ class BusinessStoreCard extends ConsumerWidget {
     final distanceKm = branch.distanceKm ?? _distanceKm(ref);
     final distanceLabel = '${distanceKm.toStringAsFixed(1)} km';
     final category = branch.categoryName.trim();
-    final address = branch.formattedAddress.trim();
-    final branchLabel = branch.name.trim();
-    final showBranchLabel = branchLabel.isNotEmpty &&
-        branchLabel.toLowerCase() != branch.displayName.toLowerCase();
+    final deliveryBadge = branch.deliveryBadgeLabel;
+    final ratingAvg = branch.ratingAvg;
+    final ratingCount = branch.ratingCount;
+    final showRating = ratingAvg != null &&
+        (ratingCount == null || ratingCount > 0);
+    final deliveryFee = branch.deliveryFee;
+    final isOpen = branch.isOpen;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppBorders.card,
-        child: DecoratedBox(
+        child: Ink(
           decoration: BoxDecoration(
             borderRadius: AppBorders.card,
             color: isDark ? cs.surfaceContainer : cs.surfaceContainerHighest,
             boxShadow: AppShadows.subtle,
           ),
-          child: ClipRRect(
-            borderRadius: AppBorders.card,
-            child: SizedBox(
-              height: 204.h,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  NetworkImageWithFallback(
-                    primaryUrl: branch.coverImageUrl,
-                    debugLabel: 'cover ${branch.displayName}',
-                    fit: BoxFit.cover,
-                    errorWidget: ColoredBox(
-                      color: cs.surfaceContainerHighest,
-                      child: Icon(
-                        Icons.storefront_outlined,
-                        color: muted,
-                        size: 36,
-                      ),
-                    ),
-                  ),
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Color(0x14000000),
-                          Color(0x00000000),
-                          Color(0x59000000),
-                        ],
-                        stops: [0, 0.42, 1],
-                      ),
-                    ),
-                  ),
-                  if (branch.highestDiscountPercent > 0)
-                    Positioned(
-                      left: 12.w,
-                      top: 12.h,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: appColors.deal,
-                          borderRadius: AppBorders.full,
-                          boxShadow: AppShadows.subtle,
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 9.w,
-                            vertical: 5.h,
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.sell_rounded,
-                                size: 13,
-                                color: appColors.onDeal,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: 12.w,
+              vertical: 12.h,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                StoreLogoBadge(
+                  name: branch.displayName,
+                  imageUrl: branch.logoUrl,
+                  size: 52,
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              branch.displayName,
+                              style: tt.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.3,
+                                height: 1.15,
                               ),
-                              SizedBox(width: 4.w),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (showRating) ...[
+                            SizedBox(width: 6.w),
+                            Icon(
+                              Icons.star_rounded,
+                              size: 14,
+                              color: appColors.deal,
+                            ),
+                            SizedBox(width: 2.w),
+                            Text(
+                              ratingAvg.toStringAsFixed(1),
+                              style: tt.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                              ),
+                            ),
+                            if (ratingCount != null && ratingCount > 0)
                               Text(
-                                '${branch.highestDiscountPercent.toStringAsFixed(0)}% Off',
+                                ' ($ratingCount)',
                                 style: tt.labelSmall?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: appColors.onDeal,
-                                  height: 1,
-                                  letterSpacing: 0.1,
+                                  color: muted,
+                                  fontWeight: FontWeight.w500,
+                                  height: 1.1,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
+                          ],
+                        ],
                       ),
-                    ),
-                  Positioned(
-                    right: 12.w,
-                    top: 12.h,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: AppBorders.iconButton,
-                        onTap: () => ref
-                            .read(favoriteStoresProvider.notifier)
-                            .toggle(
-                              branch.id,
-                              branch: branch,
+                      SizedBox(height: 4.h),
+                      Row(
+                        children: [
+                          if (category.isNotEmpty)
+                            Flexible(
+                              child: Text(
+                                category,
+                                style: tt.labelSmall?.copyWith(
+                                  color: muted,
+                                  fontWeight: FontWeight.w600,
+                                  height: 1.1,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                        child: Ink(
-                          width: 38.w,
-                          height: 38.w,
-                          decoration: BoxDecoration(
-                            borderRadius: AppBorders.iconButton,
-                            color: isDark
-                                ? cs.surfaceContainerHighest
-                                    .withValues(alpha: 0.95)
-                                : cs.surfaceContainerLowest
-                                    .withValues(alpha: 0.95),
-                            boxShadow: AppShadows.subtle,
+                          if (category.isNotEmpty && deliveryBadge != null)
+                            Text(
+                              ' · ',
+                              style: tt.labelSmall?.copyWith(color: muted),
+                            ),
+                          if (deliveryBadge != null)
+                            Text(
+                              deliveryBadge,
+                              style: tt.labelSmall?.copyWith(
+                                color: cs.primary,
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(height: 4.h),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.near_me_rounded,
+                            size: 12,
+                            color: muted,
                           ),
-                          child: Icon(
-                            isFavorite
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            color: isFavorite
-                                ? appColors.favorite
-                                : cs.onSurface.withValues(alpha: 0.72),
-                            size: 20,
+                          SizedBox(width: 3.w),
+                          Text(
+                            distanceLabel,
+                            style: tt.labelSmall?.copyWith(
+                              color: muted,
+                              fontWeight: FontWeight.w600,
+                              height: 1.1,
+                            ),
                           ),
+                          if (deliveryFee != null) ...[
+                            Text(
+                              ' · ',
+                              style: tt.labelSmall?.copyWith(color: muted),
+                            ),
+                            Text(
+                              formatRs(deliveryFee),
+                              style: tt.labelSmall?.copyWith(
+                                color: muted,
+                                fontWeight: FontWeight.w600,
+                                height: 1.1,
+                              ),
+                            ),
+                          ],
+                          if (isOpen != null) ...[
+                            Text(
+                              ' · ',
+                              style: tt.labelSmall?.copyWith(color: muted),
+                            ),
+                            Text(
+                              isOpen ? 'Open' : 'Closed',
+                              style: tt.labelSmall?.copyWith(
+                                color: isOpen
+                                    ? cs.primary
+                                    : cs.error.withValues(alpha: 0.85),
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: AppBorders.iconButton,
+                    onTap: () => ref.read(favoriteStoresProvider.notifier).toggle(
+                          branch.id,
+                          branch: branch,
                         ),
+                    child: Padding(
+                      padding: EdgeInsets.all(6.w),
+                      child: Icon(
+                        isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: isFavorite
+                            ? appColors.favorite
+                            : cs.onSurface.withValues(alpha: 0.45),
+                        size: 22,
                       ),
                     ),
                   ),
-                  Positioned(
-                    left: 10.w,
-                    right: 10.w,
-                    bottom: 10.h,
-                    child: ClipRRect(
-                      borderRadius: AppBorders.md,
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: infoPanelColor,
-                            borderRadius: AppBorders.md,
-                            border: Border.all(color: infoBorderColor),
-                          ),
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              10.w,
-                              10.h,
-                              8.w,
-                              10.h,
-                            ),
-                            child: Row(
-                              children: [
-                                StoreLogoBadge(
-                                  name: branch.displayName,
-                                  imageUrl: branch.logoUrl,
-                                  size: 44,
-                                ),
-                                SizedBox(width: 10.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        branch.displayName,
-                                        style: tt.titleSmall?.copyWith(
-                                          fontWeight: FontWeight.w800,
-                                          letterSpacing: -0.3,
-                                          height: 1.15,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (showBranchLabel) ...[
-                                        SizedBox(height: 2.h),
-                                        Text(
-                                          branchLabel,
-                                          style: tt.labelSmall?.copyWith(
-                                            color: muted,
-                                            fontWeight: FontWeight.w600,
-                                            height: 1.15,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                      SizedBox(height: 5.h),
-                                      Row(
-                                        children: [
-                                          _MetaChip(
-                                            icon: Icons.near_me_rounded,
-                                            label: distanceLabel,
-                                            foreground: isDark
-                                                ? cs.primary
-                                                : cs.primary,
-                                            background: isDark
-                                                ? cs.primary
-                                                    .withValues(alpha: 0.18)
-                                                : cs.primary
-                                                    .withValues(alpha: 0.1),
-                                          ),
-                                          if (category.isNotEmpty) ...[
-                                            SizedBox(width: 6.w),
-                                            Flexible(
-                                              child: Text(
-                                                category,
-                                                style: tt.labelSmall?.copyWith(
-                                                  color: muted,
-                                                  fontWeight: FontWeight.w600,
-                                                  height: 1.1,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      if (address.isNotEmpty) ...[
-                                        SizedBox(height: 4.h),
-                                        Text(
-                                          address,
-                                          style: tt.labelSmall?.copyWith(
-                                            color: muted.withValues(
-                                              alpha: 0.85,
-                                            ),
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 10.5,
-                                            height: 1.2,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: 4.w),
-                                Icon(
-                                  Icons.chevron_right_rounded,
-                                  size: 22,
-                                  color: cs.onSurface.withValues(alpha: 0.35),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -324,47 +254,4 @@ class BusinessStoreCard extends ConsumerWidget {
   }
 
   double _toRadians(double degrees) => degrees * math.pi / 180;
-}
-
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({
-    required this.icon,
-    required this.label,
-    required this.foreground,
-    required this.background,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color foreground;
-  final Color background;
-
-  @override
-  Widget build(BuildContext context) {
-    final tt = context.theme.textTheme;
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppBorders.full,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: foreground),
-          SizedBox(width: 3.w),
-          Text(
-            label,
-            style: tt.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w700,
-              height: 1.1,
-              fontSize: 10.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

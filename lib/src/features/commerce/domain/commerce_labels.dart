@@ -170,7 +170,23 @@ String formatOrderNumber(String? publicId) {
   return '#$short';
 }
 
+/// Home product list sort / filter chips.
+enum ProductListFilter {
+  all,
+  sameDay,
+  topRated,
+  priceLowToHigh;
+
+  String get label => switch (this) {
+        all => 'All',
+        sameDay => 'Same-day',
+        topRated => 'Top rated',
+        priceLowToHigh => 'Price low to high',
+      };
+}
+
 /// Home product list channel chips: All / In-store / Ecommerce.
+@Deprecated('Replaced by ProductListFilter for marketplace home')
 enum ProductChannelFilter {
   all,
   inStore,

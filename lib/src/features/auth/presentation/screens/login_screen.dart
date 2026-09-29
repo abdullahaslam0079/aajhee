@@ -21,9 +21,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _phoneController = TextEditingController();
   final _phoneFocus = FocusNode();
   var _autovalidateMode = AutovalidateMode.disabled;
-  CountryDialCode _country = kDefaultCountry;
+  late CountryDialCode _country;
   bool _isSending = false;
   bool _isSocialLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _country = countryFromDeviceLocale();
+  }
 
   @override
   void dispose() {

@@ -42,3 +42,14 @@ String formatPakistaniMobileLocal(String? e164) {
   final national = '0${normalized.substring(3)}'; // 03XXXXXXXXX
   return '${national.substring(0, 4)} ${national.substring(4)}';
 }
+
+/// Display helper: +923001234567 → +92 300 1234567
+String formatPakistaniMobileInternational(String? value) {
+  final normalized = normalizePakistaniMobile(value);
+  if (normalized == null) {
+    final raw = value?.trim() ?? '';
+    return raw;
+  }
+  final rest = normalized.substring(3); // 3XXXXXXXXX
+  return '+92 ${rest.substring(0, 3)} ${rest.substring(3)}';
+}

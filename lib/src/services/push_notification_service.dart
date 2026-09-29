@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:aajhee/src/features/notifications/data/push_notification_payload.dart';
 import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
 import 'package:aajhee/src/routing/global_navigator.dart';
@@ -34,8 +35,12 @@ class PushNotificationService {
 
   bool _initialized = false;
   bool _firebaseReady = false;
+
+  /// Called when a push is opened (tap) or cold-started from a notification.
   void Function(Map<String, dynamic> data)? onNotificationOpened;
-  void Function()? onForegroundMessage;
+
+  /// Called when a push arrives while the app is in the foreground.
+  void Function(Map<String, dynamic> data)? onForegroundMessage;
 
   Future<void> init() async {
     if (_initialized) return;
@@ -167,10 +172,9 @@ class PushNotificationService {
     await _localNotifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: (response) {
-        final payload = response.payload;
-        if (payload == null || payload.isEmpty) return;
-        // Payload is notification id only for local taps; open inbox.
-        _openNotificationsScreen();
+        final data = decodeLocalNotificationPayload(response.payload);
+        onNotificationOpened?.call(data);
+        _navigateFromPushData(data);
       },
     );
 
@@ -188,7 +192,8 @@ class PushNotificationService {
   }
 
   Future<void> _onForegroundMessage(RemoteMessage message) async {
-    onForegroundMessage?.call();
+    final data = Map<String, dynamic>.from(message.data);
+    onForegroundMessage?.call(data);
 
     final notification = message.notification;
     if (notification == null) return;
@@ -207,19 +212,38 @@ class PushNotificationService {
         ),
         iOS: DarwinNotificationDetails(),
       ),
-      payload: message.data['notification_id']?.toString(),
+      payload: encodeLocalNotificationPayload(data),
     );
   }
 
   void _handleOpenedMessage(RemoteMessage message) {
     final data = Map<String, dynamic>.from(message.data);
     onNotificationOpened?.call(data);
-    _openNotificationsScreen();
+    _navigateFromPushData(data);
   }
 
-  void _openNotificationsScreen() {
+  void _navigateFromPushData(Map<String, dynamic> data) {
     final context = rootContext;
-    if (context == null) return;
+    if (context == null) {
+      // Router may not be ready yet (cold start); retry shortly.
+      Future<void>.delayed(const Duration(milliseconds: 400), () {
+        if (rootContext != null) _navigateFromPushData(data);
+      });
+      return;
+    }
+
+    final orderPublicId = orderPublicIdFromPushData(data);
+    if (orderPublicId != null) {
+      context.push(AppRoutes.orderDetail(orderPublicId));
+      return;
+    }
+
+    final productRoute = productRouteFromPushData(data);
+    if (productRoute != null) {
+      context.push(productRoute);
+      return;
+    }
+
     context.push(AppRoutes.notifications);
   }
 

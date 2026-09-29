@@ -36,15 +36,15 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _OnboardingSlide(
       titleKey: 'onboarding.onboarding_title_1',
       subtitleKey: 'onboarding.onboarding_subtitle_1',
-      illustration: OnboardingIllustrationType.discoverDeals,
+      illustration: OnboardingIllustrationType.localShops,
       accentColor: AppBrandColors.lightPrimary,
-      secondaryColor: AppBrandColors.lightDeal,
+      secondaryColor: AppBrandColors.lightSecondary,
       backgroundTint: AppBrandColors.lightPrimary,
     ),
     _OnboardingSlide(
       titleKey: 'onboarding.onboarding_title_2',
       subtitleKey: 'onboarding.onboarding_subtitle_2',
-      illustration: OnboardingIllustrationType.exploreMap,
+      illustration: OnboardingIllustrationType.sameDayDelivery,
       accentColor: AppBrandColors.lightSecondary,
       secondaryColor: AppBrandColors.lightPrimary,
       backgroundTint: AppBrandColors.lightSecondary,
@@ -52,10 +52,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
     _OnboardingSlide(
       titleKey: 'onboarding.onboarding_title_3',
       subtitleKey: 'onboarding.onboarding_subtitle_3',
-      illustration: OnboardingIllustrationType.orderDelivery,
-      accentColor: AppBrandColors.lightDeal,
-      secondaryColor: AppBrandColors.lightPrimary,
-      backgroundTint: AppBrandColors.lightDeal,
+      illustration: OnboardingIllustrationType.orderPayOnDelivery,
+      accentColor: AppBrandColors.lightPrimary,
+      secondaryColor: AppBrandColors.lightDeal,
+      backgroundTint: AppBrandColors.lightPrimary,
     ),
   ];
 
