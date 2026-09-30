@@ -72,7 +72,29 @@ class AppConfig {
           }
 
           if (error.response?.statusCode == 401 &&
-              !_isPublicAuthPath(error.requestOptions.path)) {
+              !_isPublicAuthPath(error.requestOptions.path) &&
+              error.requestOptions.extra['auth_retry'] != true) {
+            final refreshed = await AuthService.instance.refreshAccessToken();
+            if (refreshed) {
+              final options = error.requestOptions;
+              options.extra['auth_retry'] = true;
+              final token = await AuthService.instance.getAccessToken();
+              if (token != null && token.isNotEmpty) {
+                options.headers['Authorization'] = 'Bearer $token';
+              }
+              try {
+                final response = await dio.fetch<dynamic>(options);
+                return handler.resolve(response);
+              } catch (retryError) {
+                if (retryError is DioException) {
+                  if (retryError.response?.statusCode == 401) {
+                    await AuthService.instance.handleSessionExpired();
+                  }
+                  return handler.next(retryError);
+                }
+                return handler.next(error);
+              }
+            }
             await AuthService.instance.handleSessionExpired();
           }
           return handler.next(error);

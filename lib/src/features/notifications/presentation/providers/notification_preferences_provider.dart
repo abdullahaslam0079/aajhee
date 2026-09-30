@@ -1,6 +1,7 @@
 import 'package:aajhee/src/features/auth/presentation/providers/session_provider.dart';
 import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
 import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
+import 'package:aajhee/src/services/push_notification_service.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'notification_preferences_provider.g.dart';
@@ -74,9 +75,18 @@ class NotificationPreferences extends _$NotificationPreferences {
     state = state.copyWith(pushEnabled: enabled, isSaving: true);
 
     final result = await _service.setPushEnabled(enabled);
-    result.fold(
-      (_) => state = state.copyWith(pushEnabled: previous, isSaving: false),
-      (value) => state = state.copyWith(pushEnabled: value, isSaving: false),
+    await result.fold(
+      (_) async {
+        state = state.copyWith(pushEnabled: previous, isSaving: false);
+      },
+      (value) async {
+        state = state.copyWith(pushEnabled: value, isSaving: false);
+        if (!value) {
+          await PushNotificationService.instance.unregisterCurrentDevice();
+        } else {
+          await PushNotificationService.instance.syncForAuthenticatedUser();
+        }
+      },
     );
   }
 }

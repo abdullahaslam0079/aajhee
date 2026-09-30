@@ -8,3 +8,4 @@ The checked-in `google-services.json` / `GoogleService-Info.plist` were string-u
    - `android/app/google-services.json`
    - `ios/Runner/GoogleService-Info.plist`
 4. See `aajhee-backend/AAJHEE_INFRA_CHECKLIST.md` (will move to `aajhee-backend`) for the full infra list.
+5. iOS push: `Runner.entitlements` sets `aps-environment` to `development` for debug. For App Store / TestFlight, enable the Push Notifications capability in Xcode (switches to `production`) and upload an APNs key to Firebase Cloud Messaging.

@@ -20,6 +20,7 @@ class AuthService {
   String? _cachedAccessToken;
   var _isHandlingSessionExpiry = false;
   var _explicitLogout = false;
+  Future<bool>? _ongoingRefresh;
 
   Dio get _dio => AppConfig.dio;
 
@@ -142,8 +143,11 @@ class AuthService {
       }
 
       if (_isTokenExpired(token)) {
-        await handleSessionExpired();
-        return null;
+        final refreshed = await refreshAccessToken();
+        if (!refreshed) {
+          await handleSessionExpired();
+          return null;
+        }
       }
 
       return _readStoredUser();
@@ -169,6 +173,47 @@ class AuthService {
       );
       _authStateController.add(sessionUser);
     });
+  }
+
+  /// Exchange the stored refresh JWT for a new access (and rotated refresh) token.
+  ///
+  /// Returns true when tokens were updated. Concurrent callers share one in-flight request.
+  Future<bool> refreshAccessToken() async {
+    if (_ongoingRefresh != null) {
+      return _ongoingRefresh!;
+    }
+    final future = _refreshAccessTokenInternal();
+    _ongoingRefresh = future;
+    try {
+      return await future;
+    } finally {
+      _ongoingRefresh = null;
+    }
+  }
+
+  Future<bool> _refreshAccessTokenInternal() async {
+    final refreshToken = await _readRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      return false;
+    }
+
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        '/api/auth/token/refresh',
+        data: {'refresh': refreshToken},
+        options: Options(
+          extra: const {'auth_retry': true},
+        ),
+      );
+      final data = response.data;
+      if (data == null) return false;
+      await _persistSession(data);
+      return await getAccessToken() != null;
+    } catch (error, stackTrace) {
+      AppLogger.warning('Token refresh failed: $error');
+      AppLogger.error('Token refresh details', [error, stackTrace]);
+      return false;
+    }
   }
 
   Future<void> handleSessionExpired() async {
