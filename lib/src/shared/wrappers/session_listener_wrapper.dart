@@ -65,7 +65,17 @@ class _SessionListenerWrapperState extends ConsumerState<SessionListenerWrapper>
     if (_pushHandlersAttached) return;
     _pushHandlersAttached = true;
 
-    PushNotificationService.instance.syncForAuthenticatedUser();
+    unawaited(() async {
+      final ok =
+          await PushNotificationService.instance.syncForAuthenticatedUser();
+      if (!ok) {
+        showGlobalToast(
+          message:
+              'Push setup incomplete. Order banners may not appear until this device is registered.',
+          status: 'warning',
+        );
+      }
+    }());
     PushNotificationService.instance.onForegroundMessage = (data) {
       unawaited(_handlePushData(data, opened: false));
     };

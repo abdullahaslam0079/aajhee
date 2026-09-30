@@ -2,7 +2,7 @@ export 'package:fpdart/fpdart.dart' hide State;
 export 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 export 'package:flutter_screenutil/flutter_screenutil.dart';
 export 'package:equatable/equatable.dart';
-export 'package:flutter_riverpod/flutter_riverpod.dart' hide describeIdentity, shortHash;
+export 'package:flutter_riverpod/flutter_riverpod.dart';
 export 'package:go_router/go_router.dart';
 export 'package:dio/dio.dart';
 export 'package:cached_network_image/cached_network_image.dart';

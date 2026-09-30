@@ -52,14 +52,20 @@ class NotificationService {
   FutureEither<void> registerDevice({
     required String token,
     required String platform,
+    String? apnsToken,
   }) async {
     return runTask(() async {
+      final data = <String, dynamic>{
+        'token': token,
+        'platform': platform,
+      };
+      final apns = apnsToken?.trim();
+      if (apns != null && apns.isNotEmpty) {
+        data['apns_token'] = apns;
+      }
       await _dio.post<Map<String, dynamic>>(
         '/api/devices',
-        data: {
-          'token': token,
-          'platform': platform,
-        },
+        data: data,
       );
     }, requiresNetwork: true);
   }

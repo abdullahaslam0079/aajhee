@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:aajhee/src/features/notifications/data/push_notification_payload.dart';
 import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
@@ -13,6 +15,7 @@ import 'package:aajhee/src/services/secure_storage_service.dart';
 import 'package:aajhee/src/utils/logger.dart';
 import 'package:go_router/go_router.dart';
 
+/// Must remain a top-level function for the background isolate.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   try {
@@ -20,6 +23,55 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   } catch (_) {
     // Placeholder Firebase config may fail; ignore in background isolate.
   }
+
+  // Notification+data messages are displayed by the OS when backgrounded.
+  // Data-only messages need a local notification here.
+  if (message.notification != null) return;
+
+  final title = message.data['title']?.toString();
+  final body = message.data['body']?.toString();
+  if (title == null && body == null) return;
+
+  final plugin = FlutterLocalNotificationsPlugin();
+  const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+  const iosInit = DarwinInitializationSettings(
+    requestAlertPermission: false,
+    requestBadgePermission: false,
+    requestSoundPermission: false,
+  );
+  await plugin.initialize(
+    const InitializationSettings(android: androidInit, iOS: iosInit),
+  );
+
+  final androidPlugin = plugin.resolvePlatformSpecificImplementation<
+      AndroidFlutterLocalNotificationsPlugin>();
+  await androidPlugin?.createNotificationChannel(
+    const AndroidNotificationChannel(
+      PushNotificationService.androidChannelId,
+      PushNotificationService.androidChannelName,
+      description: 'Orders and account updates',
+      importance: Importance.high,
+    ),
+  );
+
+  await plugin.show(
+    message.hashCode,
+    title,
+    body,
+    const NotificationDetails(
+      android: AndroidNotificationDetails(
+        PushNotificationService.androidChannelId,
+        PushNotificationService.androidChannelName,
+        channelDescription: 'Orders and account updates',
+        importance: Importance.high,
+        priority: Priority.high,
+      ),
+      iOS: DarwinNotificationDetails(),
+    ),
+    payload: encodeLocalNotificationPayload(
+      Map<String, dynamic>.from(message.data),
+    ),
+  );
 }
 
 class PushNotificationService {
@@ -27,20 +79,54 @@ class PushNotificationService {
   static final PushNotificationService instance = PushNotificationService._();
 
   static const _tokenStorageKey = 'fcm_device_token';
-  static const _androidChannelId = 'aajhee_default';
-  static const _androidChannelName = 'Aajhee';
+  static const androidChannelId = 'aajhee_default';
+  static const androidChannelName = 'Aajhee';
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
+  static const _nativeLogChannel = MethodChannel('aajhee/push_debug');
+  static const _tokenDebugFileName = 'fcm_token.txt';
+
   bool _initialized = false;
   bool _firebaseReady = false;
+  bool _backgroundHandlerRegistered = false;
 
   /// Called when a push is opened (tap) or cold-started from a notification.
   void Function(Map<String, dynamic> data)? onNotificationOpened;
 
   /// Called when a push arrives while the app is in the foreground.
   void Function(Map<String, dynamic> data)? onForegroundMessage;
+
+  /// Register before [runApp]. Safe to call multiple times.
+  void registerBackgroundHandler() {
+    if (_backgroundHandlerRegistered) return;
+    _backgroundHandlerRegistered = true;
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  }
+
+  /// Mirror push diagnostics to iOS NSLog (visible via `devicectl --console`).
+  Future<void> _deviceLog(String message) async {
+    debugPrint(message);
+    // ignore: avoid_print — release device testing
+    print(message);
+    if (!Platform.isIOS) return;
+    try {
+      await _nativeLogChannel.invokeMethod<void>('log', message);
+    } catch (_) {
+      // Channel may not be ready yet; print() above still applies.
+    }
+  }
+
+  Future<void> _writeDebugTokenFile(
+    String token, {
+    String fileName = _tokenDebugFileName,
+  }) async {
+    try {
+      final dir = await getApplicationDocumentsDirectory();
+      await File('${dir.path}/$fileName').writeAsString(token);
+    } catch (_) {}
+  }
 
   Future<void> init() async {
     if (_initialized) return;
@@ -49,15 +135,15 @@ class PushNotificationService {
     try {
       await Firebase.initializeApp();
       _firebaseReady = true;
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      debugPrint('[Aajhee] Firebase initialized');
+      registerBackgroundHandler();
+      await _deviceLog('[Aajhee] Firebase initialized');
     } catch (error, stackTrace) {
       AppLogger.warning(
         'Firebase not configured; push notifications disabled until '
         'google-services.json / GoogleService-Info.plist are added. $error',
       );
       AppLogger.error('Firebase init failed', [error, stackTrace]);
-      debugPrint('[Aajhee] Firebase init failed: $error');
+      await _deviceLog('[Aajhee] Firebase init failed: $error');
       return;
     }
 
@@ -83,8 +169,8 @@ class PushNotificationService {
     });
   }
 
-  Future<void> syncForAuthenticatedUser() async {
-    if (!_firebaseReady) return;
+  Future<bool> syncForAuthenticatedUser() async {
+    if (!_firebaseReady) return false;
 
     try {
       final messaging = FirebaseMessaging.instance;
@@ -100,48 +186,67 @@ class PushNotificationService {
               settings.authorizationStatus == AuthorizationStatus.provisional;
       if (!authorized) {
         AppLogger.info('Push permission not granted.');
-        debugPrint(
+        await _deviceLog(
           '[Aajhee] Push permission not granted: ${settings.authorizationStatus}',
         );
-        return;
+        return false;
       }
 
+      // Android 13+: runtime POST_NOTIFICATIONS is required for trays/banners.
+      if (Platform.isAndroid) {
+        final androidPlugin = _localNotifications
+            .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin>();
+        final granted = await androidPlugin?.requestNotificationsPermission();
+        await _deviceLog('[Aajhee] Android notification permission: $granted');
+        if (granted == false) {
+          AppLogger.info('Android notification permission denied.');
+          return false;
+        }
+      }
+
+      String? apnsToken;
       if (Platform.isIOS) {
         // APNs requires paid Apple Developer + Push capability.
         // Without it, getToken() throws — skip FCM registration cleanly.
-        String? apns;
-        for (var i = 0; i < 10; i++) {
-          apns = await messaging.getAPNSToken();
-          if (apns != null && apns.isNotEmpty) break;
+        for (var i = 0; i < 15; i++) {
+          apnsToken = await messaging.getAPNSToken();
+          if (apnsToken != null && apnsToken.isNotEmpty) break;
           await Future<void>.delayed(const Duration(milliseconds: 500));
         }
-        debugPrint('[Aajhee] APNs token ready: ${apns != null && apns.isNotEmpty}');
-        if (apns == null || apns.isEmpty) {
+        await _deviceLog(
+          '[Aajhee] APNs token ready: ${apnsToken != null && apnsToken.isNotEmpty}',
+        );
+        if (apnsToken == null || apnsToken.isEmpty) {
           AppLogger.warning(
             'APNs token unavailable; skipping iOS FCM registration. '
             'In-app inbox still works. Enable Push Notifications with a '
             'paid Apple Developer account for OS banners.',
           );
-          debugPrint(
+          await _deviceLog(
             '[Aajhee] Skipping FCM on iOS (no APNs). Inbox notifications still work.',
           );
-          return;
+          return false;
         }
+        await _writeDebugTokenFile(apnsToken, fileName: 'apns_token.txt');
       }
 
       final token = await messaging.getToken();
       if (token == null || token.isEmpty) {
         AppLogger.warning('FCM token unavailable.');
-        debugPrint('[Aajhee] FCM token unavailable');
-        return;
+        await _deviceLog('[Aajhee] FCM token unavailable');
+        return false;
       }
 
-      debugPrint('[Aajhee] FCM token acquired (${token.length} chars)');
-      await _persistAndRegisterToken(token);
+      await _writeDebugTokenFile(token);
+      await _deviceLog('[Aajhee] FCM token acquired (${token.length} chars)');
+      await _deviceLog('[Aajhee] FCM token: $token');
+      return _persistAndRegisterToken(token, apnsToken: apnsToken);
     } catch (error, stackTrace) {
       AppLogger.warning('Push sync skipped: $error');
       AppLogger.error('Push sync failed', [error, stackTrace]);
-      debugPrint('[Aajhee] Push sync skipped: $error');
+      await _deviceLog('[Aajhee] Push sync skipped: $error');
+      return false;
     }
   }
 
@@ -163,11 +268,18 @@ class PushNotificationService {
 
   Future<void> _initLocalNotifications() async {
     const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const iosInit = DarwinInitializationSettings();
+    const iosInit = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
     const initSettings = InitializationSettings(
       android: androidInit,
       iOS: iosInit,
     );
+
+    final launchDetails =
+        await _localNotifications.getNotificationAppLaunchDetails();
 
     await _localNotifications.initialize(
       initSettings,
@@ -183,12 +295,24 @@ class PushNotificationService {
             AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(
       const AndroidNotificationChannel(
-        _androidChannelId,
-        _androidChannelName,
+        androidChannelId,
+        androidChannelName,
         description: 'Orders and account updates',
         importance: Importance.high,
       ),
     );
+
+    // Cold-start from a local notification tap (foreground-shown pushes).
+    if (launchDetails?.didNotificationLaunchApp ?? false) {
+      final data =
+          decodeLocalNotificationPayload(launchDetails!.notificationResponse?.payload);
+      if (data.isNotEmpty) {
+        Future<void>.delayed(const Duration(milliseconds: 500), () {
+          onNotificationOpened?.call(data);
+          _navigateFromPushData(data);
+        });
+      }
+    }
   }
 
   Future<void> _onForegroundMessage(RemoteMessage message) async {
@@ -204,8 +328,8 @@ class PushNotificationService {
       notification.body,
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          _androidChannelId,
-          _androidChannelName,
+          androidChannelId,
+          androidChannelName,
           channelDescription: 'Orders and account updates',
           importance: Importance.high,
           priority: Priority.high,
@@ -247,7 +371,10 @@ class PushNotificationService {
     context.push(AppRoutes.notifications);
   }
 
-  Future<void> _persistAndRegisterToken(String token) async {
+  Future<bool> _persistAndRegisterToken(
+    String token, {
+    String? apnsToken,
+  }) async {
     await SecureStorageService.instance.write(_tokenStorageKey, token);
     final platform = defaultTargetPlatform == TargetPlatform.iOS
         ? 'ios'
@@ -255,17 +382,22 @@ class PushNotificationService {
     final result = await NotificationService.instance.registerDevice(
       token: token,
       platform: platform,
+      apnsToken: apnsToken,
     );
-    result.fold(
+    return result.fold(
       (failure) {
         AppLogger.warning(
           'Failed to register device token: ${failure.message}',
         );
-        debugPrint('[Aajhee] Device register failed: ${failure.message}');
+        unawaited(
+          _deviceLog('[Aajhee] Device register failed: ${failure.message}'),
+        );
+        return false;
       },
       (_) {
         AppLogger.info('Device token registered for push.');
-        debugPrint('[Aajhee] Device token registered for push');
+        unawaited(_deviceLog('[Aajhee] Device token registered for push'));
+        return true;
       },
     );
   }

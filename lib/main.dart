@@ -1,7 +1,8 @@
+import 'package:sentry_flutter/sentry_flutter.dart';
+
 import 'src/imports/core_imports.dart';
 import 'src/imports/packages_imports.dart';
 import 'src/app.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> main() async {
   final WidgetsBinding widgetsBinding =
@@ -13,17 +14,19 @@ Future<void> main() async {
 
   await AppConfig.init();
   await StorageService.instance.init();
+  // Register the FCM background handler as early as possible (before runApp).
+  PushNotificationService.instance.registerBackgroundHandler();
   await PushNotificationService.instance.init();
 
   final sentryDsn = dotenv.get('SENTRY_DSN', fallback: '').trim();
+  const app = LocalizationWrapper(
+    child: StateWrapper(
+      child: App(),
+    ),
+  );
+
   if (sentryDsn.isEmpty) {
-    runApp(
-      const LocalizationWrapper(
-        child: StateWrapper(
-          child: App(),
-        ),
-      ),
-    );
+    runApp(app);
     return;
   }
 
@@ -38,12 +41,6 @@ Future<void> main() async {
           0.1;
       options.sendDefaultPii = false;
     },
-    appRunner: () => runApp(
-      const LocalizationWrapper(
-        child: StateWrapper(
-          child: App(),
-        ),
-      ),
-    ),
+    appRunner: () => runApp(app),
   );
 }

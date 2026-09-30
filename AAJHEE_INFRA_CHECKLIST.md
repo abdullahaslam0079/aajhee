@@ -15,6 +15,7 @@ Complete these dashboard steps after the code rename lands. Product is not live 
    - `GoogleService-Info.plist` → consumer Flutter `ios/Runner/`
    - Web config → `aajhee-web` `.env.local` as `NEXT_PUBLIC_FIREBASE_*`
    - Service account JSON → Render env `FIREBASE_CREDENTIALS_JSON` (minified one line) and local `secrets/firebase-adminsdk.json`
+   - Grant that service account **Firebase Cloud Messaging Admin** in GCP IAM (`firebase-adminsdk-fbsvc@aajhee.iam.gserviceaccount.com`), and enable the FCM API. Without this, inbox rows still create but OS banners never leave the server.
 5. Add Android SHA-1 / SHA-256 for debug/release keystores.
 6. Restrict Google Maps API keys to `com.aajhee.app` / `com.aajhee.business` / `com.aajhee.admin` and `aajhee.com`.
 
