@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:aajhee/src/config/launch_cities.dart';
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/commerce_labels.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/product_search_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/widgets/commerce_product_card.dart';
 import 'package:aajhee/src/features/commerce/presentation/widgets/commerce_search_bar.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
@@ -18,8 +18,6 @@ import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart'
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
-import 'package:aajhee/src/shared/widgets/store_logo_badge.dart';
-import 'package:aajhee/src/utils/money_format.dart';
 
 class HomeCommerceScreen extends ConsumerStatefulWidget {
   const HomeCommerceScreen({super.key});
@@ -255,12 +253,6 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     return 'Add address';
   }
 
-  String _cityForBanner(SavedAddress? address) {
-    final city = address?.city.trim() ?? '';
-    if (city.isNotEmpty) return city;
-    return primaryCityName;
-  }
-
   void _openSearch() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -274,6 +266,28 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
       AppRoutes.productDetail('${product['id']}'),
       extra: product,
     );
+  }
+
+  Future<void> _addProductToCart(Map<String, dynamic> product) async {
+    final productId = _asInt(product['id']);
+    if (productId == null) return;
+    final branchId = _asInt(product['branch_id']);
+    final ok = await ref.read(cartProvider.notifier).addProduct(
+          productId: productId,
+          branchId: branchId,
+        );
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    if (ok) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Added to bag')),
+      );
+    } else {
+      final message = ref.read(cartProvider).errorMessage;
+      messenger.showSnackBar(
+        SnackBar(content: Text(message ?? 'Could not add to bag')),
+      );
+    }
   }
 
   void _openBranch(MapBranchModel branch) {
@@ -304,10 +318,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
 
     final branches = feed.filteredBranches;
     final sameDayIds = _sameDayBusinessIds(branches);
-    final hasSameDayShops = sameDayIds.isNotEmpty;
-    final cityLabel = _cityForBanner(addresses.selectedAddress);
     final locationText = _locationText(addresses.selectedAddress);
-
     final todayProducts = _productsForBusinessIds(sameDayIds);
     final visibleProducts = _applyListFilter(
       _products,
@@ -376,15 +387,15 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
-                          height: 40.h,
+                          height: CategoryWidget.rowHeight,
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             physics: const BouncingScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
                               AppSpacing.ms.w,
-                              4.h,
+                              2.h,
                               AppSpacing.ms.w,
-                              4.h,
+                              0,
                             ),
                             itemCount: categoryLabels.length,
                             itemBuilder: (context, index) {
@@ -395,7 +406,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                                 index: index,
                                 label: label,
                                 icon: index == 0
-                                    ? Icons.apps_rounded
+                                    ? Icons.grid_view_rounded
                                     : categoryIconForName(label),
                                 onTap: () => ref
                                     .read(homeFeedProvider.notifier)
@@ -406,7 +417,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         ),
                         if (feed.selectedSubcategories.isNotEmpty)
                           SizedBox(
-                            height: 36.h,
+                            height: CategoryWidget.compactRowHeight,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
@@ -414,19 +425,19 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                                 AppSpacing.ms.w,
                                 0,
                                 AppSpacing.ms.w,
-                                4.h,
+                                0,
                               ),
                               itemCount: feed.selectedSubcategories.length + 1,
                               itemBuilder: (context, index) {
                                 if (index == 0) {
-                                  final root = feed.selectedRoot;
                                   return CategoryWidget(
+                                    compact: true,
                                     selectedCategoryIndex:
                                         feed.selectedSubcategoryId == null
                                             ? 0
                                             : -1,
                                     index: 0,
-                                    label: 'All ${root?.name ?? ''}'.trim(),
+                                    label: 'All',
                                     icon: Icons.grid_view_rounded,
                                     onTap: () => ref
                                         .read(homeFeedProvider.notifier)
@@ -438,6 +449,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                                 final selected =
                                     feed.selectedSubcategoryId == sub.id;
                                 return CategoryWidget(
+                                  compact: true,
                                   selectedCategoryIndex: selected ? index : -1,
                                   index: index,
                                   label: sub.name,
@@ -450,20 +462,6 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                             ),
                           ),
                       ],
-                    ),
-                  ),
-                if (hasSameDayShops)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        AppSpacing.ms.w,
-                        AppSpacing.sm.h,
-                        AppSpacing.ms.w,
-                        AppSpacing.xs.h,
-                      ),
-                      child: _SameDayBanner(
-                        label: labelSameDayDelivery(cityLabel),
-                      ),
                     ),
                   ),
                 if (todayProducts.isNotEmpty) ...[
@@ -486,9 +484,11 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         separatorBuilder: (_, __) => SizedBox(width: 10.w),
                         itemBuilder: (context, index) {
                           final product = todayProducts[index];
-                          return _TodayProductCard(
+                          return CommerceProductCard(
                             product: product,
+                            width: 126.w,
                             onTap: () => _openProduct(product),
+                            onAddTap: () => _addProductToCart(product),
                           );
                         },
                       ),
@@ -503,24 +503,35 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 132.h,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.ms.w,
-                        ),
-                        itemCount: branches.length,
-                        separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                        itemBuilder: (context, index) {
-                          final branch = branches[index];
-                          return _NearbyShopCard(
-                            branch: branch,
-                            onTap: () => _openBranch(branch),
-                          );
-                        },
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        const imageHeight = 72.0;
+                        const imageWidth = 58.0;
+                        final pad = 8.w;
+                        final cardHeight = imageHeight.w + (pad * 2);
+                        return SizedBox(
+                          height: cardHeight,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.ms.w,
+                            ),
+                            itemCount: branches.length,
+                            separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                            itemBuilder: (context, index) {
+                              final branch = branches[index];
+                              return _NearbyShopCard(
+                                branch: branch,
+                                imageHeight: imageHeight,
+                                imageWidth: imageWidth,
+                                padding: pad,
+                                onTap: () => _openBranch(branch),
+                              );
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -574,14 +585,15 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10.h,
                         crossAxisSpacing: 10.w,
-                        childAspectRatio: 0.72,
+                        childAspectRatio: 0.78,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
                           final product = visibleProducts[index];
-                          return _ProductGridCard(
+                          return CommerceProductCard(
                             product: product,
                             onTap: () => _openProduct(product),
+                            onAddTap: () => _addProductToCart(product),
                           );
                         },
                         childCount: visibleProducts.length,
@@ -681,9 +693,9 @@ class _PinnedSearchBarDelegate extends SliverPersistentHeaderDelegate {
   final Color backgroundColor;
   final VoidCallback onTap;
 
-  double get _topPad => 4.h.ceilToDouble();
-  double get _bottomPad => 4.h.ceilToDouble();
-  double get _barHeight => (13.h * 2 + 20).ceilToDouble();
+  double get _topPad => 2.h.ceilToDouble();
+  double get _bottomPad => 2.h.ceilToDouble();
+  double get _barHeight => (12.h * 2 + 18).ceilToDouble();
   double get _extent => (_topPad + _barHeight + _bottomPad).ceilToDouble();
 
   @override
@@ -737,9 +749,9 @@ class _PinnedFiltersDelegate extends SliverPersistentHeaderDelegate {
   final ProductListFilter listFilter;
   final ValueChanged<ProductListFilter> onFilterSelected;
 
-  double get _topPad => AppSpacing.sm.h.ceilToDouble();
-  double get _titleGap => AppSpacing.xs.h.ceilToDouble();
-  double get _bottomPad => AppSpacing.xs.h.ceilToDouble();
+  double get _topPad => AppSpacing.xs.h.ceilToDouble();
+  double get _titleGap => 2.h.ceilToDouble();
+  double get _bottomPad => 2.h.ceilToDouble();
   double get _titleHeight => 20.h.ceilToDouble();
   double get _chipsHeight => 34.h.ceilToDouble();
   double get _shadowPad => 8;
@@ -940,56 +952,21 @@ class _SectionTitle extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.ms.w,
-        AppSpacing.sm.h,
-        AppSpacing.ms.w,
         AppSpacing.xs.h,
+        AppSpacing.ms.w,
+        2.h,
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: cs.primary),
-          SizedBox(width: 6.w),
+          Icon(icon, size: 18, color: cs.primary),
+          SizedBox(width: 5.w),
           Expanded(
             child: Text(
               title,
               style: tt.titleSmall?.copyWith(
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.2,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SameDayBanner extends StatelessWidget {
-  const _SameDayBanner({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-      decoration: BoxDecoration(
-        color: cs.primary.withValues(alpha: 0.1),
-        borderRadius: AppBorders.md,
-        border: Border.all(color: cs.primary.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.local_shipping_outlined, size: 20, color: cs.primary),
-          SizedBox(width: 10.w),
-          Expanded(
-            child: Text(
-              label,
-              style: tt.labelLarge?.copyWith(
-                color: cs.primary,
-                fontWeight: FontWeight.w700,
+                fontSize: 14.sp,
                 height: 1.2,
               ),
             ),
@@ -1000,119 +977,20 @@ class _SameDayBanner extends StatelessWidget {
   }
 }
 
-class _TodayProductCard extends StatelessWidget {
-  const _TodayProductCard({
-    required this.product,
-    required this.onTap,
-  });
-
-  final Map<String, dynamic> product;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final discount = _discountLabel(product);
-    final imageUrl = product['image_url']?.toString();
-    final businessName = product['business_name']?.toString() ?? '';
-    final price = formatRs(product['effective_price'] ?? product['base_price']);
-    final basePrice = formatRsOrNull(product['base_price']);
-    final showStrike = discount != null &&
-        basePrice != null &&
-        basePrice != price;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppBorders.md,
-        child: Ink(
-          width: 124.w,
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLowest,
-            borderRadius: AppBorders.md,
-            border: Border.all(color: cs.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                      child: _ProductThumb(imageUrl: imageUrl),
-                    ),
-                    Positioned(
-                      top: 6.h,
-                      left: 6.w,
-                      child: const _TodayBadge(),
-                    ),
-                    if (discount != null)
-                      Positioned(
-                        left: 6.w,
-                        bottom: 6.h,
-                        child: _DiscountBadge(label: discount),
-                      ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(8.w, 6.h, 8.w, 8.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (businessName.isNotEmpty)
-                      Text(
-                        businessName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.labelSmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                          height: 1.1,
-                        ),
-                      ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      product['name']?.toString() ?? '',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: tt.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.15,
-                        color: cs.onSurface,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    _PriceRow(
-                      price: price,
-                      basePrice: showStrike ? basePrice : null,
-                      emphasize: discount != null,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _NearbyShopCard extends StatelessWidget {
   const _NearbyShopCard({
     required this.branch,
     required this.onTap,
+    required this.imageHeight,
+    required this.imageWidth,
+    required this.padding,
   });
 
   final MapBranchModel branch;
   final VoidCallback onTap;
+  final double imageHeight;
+  final double imageWidth;
+  final double padding;
 
   @override
   Widget build(BuildContext context) {
@@ -1120,215 +998,53 @@ class _NearbyShopCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final badge = branch.deliveryBadgeLabel;
     final distance = branch.distanceKm;
-    final fee = branch.deliveryFee;
-    final rating = branch.ratingAvg;
+    final category = branch.categoryName.trim();
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.md,
+        borderRadius: AppBorders.card,
         child: Ink(
-          width: 168.w,
-          padding: EdgeInsets.all(10.w),
+          width: 252.w,
+          padding: EdgeInsets.all(padding),
           decoration: BoxDecoration(
             color: cs.surfaceContainerLowest,
-            borderRadius: AppBorders.md,
-            border: Border.all(color: cs.outlineVariant),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  StoreLogoBadge(
-                    name: branch.displayName,
-                    imageUrl: branch.logoUrl,
-                    size: 36,
-                  ),
-                  SizedBox(width: 8.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          branch.displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: tt.labelLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            height: 1.15,
-                          ),
-                        ),
-                        if (branch.categoryName.trim().isNotEmpty)
-                          Text(
-                            branch.categoryName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: tt.labelSmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              height: 1.15,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              if (rating != null && rating > 0)
-                Row(
-                  children: [
-                    Icon(
-                      Icons.star_rounded,
-                      size: 14,
-                      color: context.appColors.deal,
-                    ),
-                    SizedBox(width: 2.w),
-                    Text(
-                      rating.toStringAsFixed(1),
-                      style: tt.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
-                ),
-              SizedBox(height: 4.h),
-              Wrap(
-                spacing: 6.w,
-                runSpacing: 4.h,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  if (badge != null)
-                    _MetaChip(
-                      label: badge,
-                      emphasized: badge == 'Same-day',
-                    ),
-                  if (distance != null)
-                    Text(
-                      '${distance.toStringAsFixed(1)} km',
-                      style: tt.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        height: 1.1,
-                      ),
-                    ),
-                  if (fee != null)
-                    Text(
-                      formatRs(fee),
-                      style: tt.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant,
-                        height: 1.1,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({
-    required this.label,
-    this.emphasized = false,
-  });
-
-  final String label;
-  final bool emphasized;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final bg = emphasized
-        ? cs.primary.withValues(alpha: 0.12)
-        : cs.surfaceContainerHighest;
-    final fg = emphasized ? cs.primary : cs.onSurfaceVariant;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: AppBorders.full,
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w700,
-              fontSize: 10,
-              height: 1.1,
+            borderRadius: AppBorders.card,
+            border: Border.all(
+              color: cs.outlineVariant.withValues(alpha: 0.65),
             ),
-      ),
-    );
-  }
-}
-
-class _ProductGridCard extends StatelessWidget {
-  const _ProductGridCard({
-    required this.product,
-    required this.onTap,
-  });
-
-  final Map<String, dynamic> product;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-    final discount = _discountLabel(product);
-    final imageUrl = product['image_url']?.toString();
-    final businessName = product['business_name']?.toString() ?? '';
-    final price = formatRs(product['effective_price'] ?? product['base_price']);
-    final basePrice = formatRsOrNull(product['base_price']);
-    final showStrike = discount != null &&
-        basePrice != null &&
-        basePrice != price;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppBorders.md,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLowest,
-            borderRadius: AppBorders.md,
-            border: Border.all(color: cs.outlineVariant),
+            boxShadow: AppShadows.subtle,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(12),
-                      ),
-                      child: _ProductThumb(imageUrl: imageUrl),
-                    ),
-                    if (discount != null)
-                      Positioned(
-                        left: 6.w,
-                        bottom: 6.h,
-                        child: _DiscountBadge(label: discount),
-                      ),
-                  ],
-                ),
+              StoreLogoBadge(
+                name: branch.displayName,
+                imageUrl: branch.logoUrl,
+                size: imageHeight,
+                width: imageWidth,
               ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(8.w, 7.h, 8.w, 8.h),
+              SizedBox(width: 8.w),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    if (businessName.isNotEmpty)
+                    Text(
+                      branch.displayName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: tt.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    if (category.isNotEmpty) ...[
+                      SizedBox(height: 2.h),
                       Text(
-                        businessName,
+                        category,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: tt.labelSmall?.copyWith(
@@ -1337,25 +1053,46 @@ class _ProductGridCard extends StatelessWidget {
                           height: 1.1,
                         ),
                       ),
-                    SizedBox(height: 3.h),
-                    Text(
-                      product['name']?.toString() ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: tt.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        height: 1.2,
-                        color: cs.onSurface,
-                      ),
-                    ),
+                    ],
                     SizedBox(height: 6.h),
-                    _PriceRow(
-                      price: price,
-                      basePrice: showStrike ? basePrice : null,
-                      emphasize: discount != null,
+                    Row(
+                      children: [
+                        if (distance != null) ...[
+                          Icon(
+                            Icons.near_me_outlined,
+                            size: 12,
+                            color: cs.onSurfaceVariant,
+                          ),
+                          SizedBox(width: 3.w),
+                          Text(
+                            '${distance.toStringAsFixed(1)} km',
+                            style: tt.labelSmall?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                              height: 1.1,
+                              fontSize: 11,
+                            ),
+                          ),
+                          if (badge != null) SizedBox(width: 6.w),
+                        ],
+                        if (badge != null)
+                          Flexible(
+                            fit: FlexFit.loose,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: _SameDayDeliveryChip(label: badge),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: cs.onSurfaceVariant.withValues(alpha: 0.75),
               ),
             ],
           ),
@@ -1365,130 +1102,66 @@ class _ProductGridCard extends StatelessWidget {
   }
 }
 
-class _ProductThumb extends StatelessWidget {
-  const _ProductThumb({required this.imageUrl});
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    if (imageUrl != null && imageUrl!.isNotEmpty) {
-      return Image.network(
-        imageUrl!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => ColoredBox(
-          color: cs.surfaceContainerHighest,
-          child: Icon(Icons.image_outlined, color: cs.onSurfaceVariant),
-        ),
-      );
-    }
-    return ColoredBox(
-      color: cs.surfaceContainerHighest,
-      child: Icon(Icons.image_outlined, color: cs.onSurfaceVariant),
-    );
-  }
-}
-
-class _PriceRow extends StatelessWidget {
-  const _PriceRow({
-    required this.price,
-    required this.emphasize,
-    this.basePrice,
-  });
-
-  final String price;
-  final String? basePrice;
-  final bool emphasize;
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final tt = Theme.of(context).textTheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      children: [
-        Flexible(
-          child: Text(
-            price,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: tt.labelLarge?.copyWith(
-              color: emphasize ? context.appColors.deal : cs.onSurface,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
-            ),
-          ),
-        ),
-        if (basePrice != null && basePrice!.isNotEmpty) ...[
-          SizedBox(width: 5.w),
-          Flexible(
-            child: Text(
-              basePrice!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: tt.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant,
-                decoration: TextDecoration.lineThrough,
-                height: 1.1,
-              ),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _TodayBadge extends StatelessWidget {
-  const _TodayBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-      decoration: BoxDecoration(
-        color: cs.primary,
-        borderRadius: AppBorders.full,
-      ),
-      child: Text(
-        'Today',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: cs.onPrimary,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
-              fontSize: 9,
-            ),
-      ),
-    );
-  }
-}
-
-class _DiscountBadge extends StatelessWidget {
-  const _DiscountBadge({required this.label});
+class _SameDayDeliveryChip extends StatelessWidget {
+  const _SameDayDeliveryChip({required this.label});
 
   final String label;
 
   @override
   Widget build(BuildContext context) {
-    final appColors = context.appColors;
+    final cs = Theme.of(context).colorScheme;
+    final isSameDay = label == 'Same-day';
+    final icon = isSameDay
+        ? Icons.delivery_dining_rounded
+        : Icons.local_shipping_outlined;
+
+    final base = HSLColor.fromColor(cs.primary);
+    final light = base
+        .withLightness((base.lightness + 0.16).clamp(0.0, 1.0))
+        .withSaturation((base.saturation + 0.06).clamp(0.0, 1.0))
+        .toColor();
+    final mid = cs.primary;
+    final dark = base
+        .withLightness((base.lightness - 0.14).clamp(0.0, 1.0))
+        .withSaturation((base.saturation + 0.04).clamp(0.0, 1.0))
+        .toColor();
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: appColors.deal,
         borderRadius: AppBorders.full,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [light, mid, dark],
+          stops: const [0.0, 0.48, 1.0],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primary.withValues(alpha: 0.28),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: appColors.onDeal,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
-              fontSize: 9,
-            ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: cs.onPrimary),
+          SizedBox(width: 4.w),
+          Text(
+            label,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.fade,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: cs.onPrimary,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                  fontSize: 10,
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -1539,32 +1212,30 @@ class _MarketplaceSkeleton extends StatelessWidget {
               itemBuilder: (_, __) => box(height: 34.h, width: 78.w),
             ),
           ),
-          SizedBox(height: AppSpacing.sm.h),
-          box(height: 48.h),
-          SizedBox(height: AppSpacing.md.h),
+          SizedBox(height: AppSpacing.xs.h),
           box(height: 16.h, width: 120.w),
           SizedBox(height: AppSpacing.xs.h),
           SizedBox(
-            height: 150.h,
+            height: 168.h,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 3,
               separatorBuilder: (_, __) => SizedBox(width: 10.w),
-              itemBuilder: (_, __) => box(height: 150.h, width: 120.w),
+              itemBuilder: (_, __) => box(height: 168.h, width: 126.w),
             ),
           ),
-          SizedBox(height: AppSpacing.md.h),
+          SizedBox(height: AppSpacing.sm.h),
           box(height: 16.h, width: 140.w),
           SizedBox(height: AppSpacing.xs.h),
           SizedBox(
-            height: 120.h,
+            height: 72.w + 16.w,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 3,
               separatorBuilder: (_, __) => SizedBox(width: 10.w),
-              itemBuilder: (_, __) => box(height: 120.h, width: 160.w),
+              itemBuilder: (_, __) => box(height: 72.w + 16.w, width: 252.w),
             ),
           ),
           SizedBox(height: AppSpacing.md.h),
@@ -1583,13 +1254,3 @@ class _MarketplaceSkeleton extends StatelessWidget {
   }
 }
 
-String? _discountLabel(Map<String, dynamic> product) {
-  if (product['has_discount'] != true) return null;
-  final raw = product['effective_discount_percent'];
-  final parsed = raw is num ? raw.toDouble() : double.tryParse('$raw');
-  if (parsed == null || parsed <= 0) return null;
-  final label = parsed == parsed.roundToDouble()
-      ? '${parsed.toInt()}%'
-      : '${parsed.toStringAsFixed(0)}%';
-  return '$label off';
-}

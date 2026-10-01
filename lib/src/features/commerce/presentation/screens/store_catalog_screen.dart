@@ -1,6 +1,7 @@
 import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/pakistani_phone.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
+import 'package:aajhee/src/features/commerce/presentation/widgets/commerce_product_card.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
@@ -1046,15 +1047,9 @@ class _CatalogProductCard extends StatelessWidget {
                   child: SizedBox(
                     width: 76.w,
                     height: 76.w,
-                    child: imageUrl != null && imageUrl.isNotEmpty
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : ColoredBox(
-                            color: cs.surfaceContainerHighest,
-                            child: Icon(
-                              Icons.image_outlined,
-                              color: cs.onSurfaceVariant,
-                            ),
-                          ),
+                    child: CommerceProductImage(
+                      imageUrl: resolveMediaUrl(imageUrl),
+                    ),
                   ),
                 ),
                 SizedBox(width: 12.w),

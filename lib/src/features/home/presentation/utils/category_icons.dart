@@ -10,7 +10,7 @@ IconData categoryIconForName(String name) {
       Icons.restaurant_rounded,
     'electronics' || 'mobiles' || 'laptops' || 'audio' || 'accessories' ||
     'home appliances' || 'electronics accessories' =>
-      Icons.devices_outlined,
+      Icons.smartphone_outlined,
     'fashion' || 'fasion' || 'men' || 'women' || 'kids' || 'footwear' ||
     'bags & accessories' =>
       Icons.checkroom_outlined,
@@ -18,7 +18,8 @@ IconData categoryIconForName(String name) {
       Icons.home_outlined,
     'beauty' || 'beauty & cosmetics' || 'makeup' || 'skincare' || 'haircare' ||
     'fragrance' =>
-      Icons.spa_outlined,
+      Icons.brush_outlined,
+    'more' => Icons.apps_outlined,
     'gifts' || 'gift & specialty' || 'flowers' || 'personalized' || 'occasions' =>
       Icons.card_giftcard_outlined,
     'health' || 'heatlth' || 'pharmacy' || 'wellness' || 'personal care' =>

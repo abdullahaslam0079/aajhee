@@ -6,16 +6,13 @@
     "android/.gradle"
   ],
   "files.exclude": {
-    "**/build/**": true,
-    "**/.dart_tool/**": true
+    "**/build/**": true
   },
   "files.watcherExclude": {
     "**/build/**": true,
-    "**/.dart_tool/**": true,
     "**/ios/Pods/**": true
   },
   "search.exclude": {
-    "**/build/**": true,
-    "**/.dart_tool/**": true
+    "**/build/**": true
   }
 }

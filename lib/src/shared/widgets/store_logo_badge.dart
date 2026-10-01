@@ -7,31 +7,38 @@ class StoreLogoBadge extends StatelessWidget {
     required this.name,
     this.imageUrl,
     this.size = 48,
+    this.width,
     this.borderRadius,
   });
 
   final String name;
   final String? imageUrl;
+
+  /// Height (and width when [width] is null).
   final double size;
+
+  /// Optional width. When null, the badge stays square using [size].
+  final double? width;
   final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final radius = borderRadius ?? AppBorders.md;
-    final side = size.w;
-    final fallback = _businessIconBadge(context, cs, side);
+    final h = size.w;
+    final w = (width ?? size).w;
+    final fallback = _businessIconBadge(context, cs, w, h);
 
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return SizedBox(
-        width: side,
-        height: side,
+        width: w,
+        height: h,
         child: ClipRRect(
           borderRadius: radius,
           child: CommonImage(
             imageUrl: imageUrl!,
-            width: side,
-            height: side,
+            width: w,
+            height: h,
             fit: BoxFit.cover,
             borderRadius: radius,
             onError: (url, error) {
@@ -49,10 +56,15 @@ class StoreLogoBadge extends StatelessWidget {
     return fallback;
   }
 
-  Widget _businessIconBadge(BuildContext context, ColorScheme cs, double side) {
+  Widget _businessIconBadge(
+    BuildContext context,
+    ColorScheme cs,
+    double w,
+    double h,
+  ) {
     return Container(
-      width: side,
-      height: side,
+      width: w,
+      height: h,
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest,
         borderRadius: borderRadius ?? AppBorders.md,
@@ -63,7 +75,7 @@ class StoreLogoBadge extends StatelessWidget {
       alignment: Alignment.center,
       child: Icon(
         Icons.storefront_outlined,
-        size: (side * 0.48).clamp(12.0, 28.0),
+        size: (h * 0.48).clamp(12.0, 28.0),
         color: cs.onSurfaceVariant,
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:aajhee/src/features/home/data/models/branch_discount_summary.dart';
+import 'package:aajhee/src/features/home/data/models/branch_top_product_model.dart';
 import 'package:aajhee/src/features/home/data/models/category_model.dart';
 import 'package:aajhee/src/utils/api_value_parsers.dart';
 import 'package:aajhee/src/utils/media_url_utils.dart';
@@ -28,6 +29,8 @@ class MapBranchModel {
     this.deliveryFee,
     this.isOpen,
     this.openingHours,
+    this.productsCount = 0,
+    this.topProducts = const [],
   });
 
   final int id;
@@ -55,6 +58,12 @@ class MapBranchModel {
   final double? deliveryFee;
   final bool? isOpen;
   final String? openingHours;
+
+  /// Total active catalog products for this branch (from map list API).
+  final int productsCount;
+
+  /// Up to 8 preview products embedded on the branch list payload.
+  final List<BranchTopProductModel> topProducts;
 
   String get displayName => businessName.isNotEmpty ? businessName : name;
 
@@ -118,6 +127,8 @@ class MapBranchModel {
     double? deliveryFee,
     bool? isOpen,
     String? openingHours,
+    int? productsCount,
+    List<BranchTopProductModel>? topProducts,
   }) {
     return MapBranchModel(
       id: id ?? this.id,
@@ -145,6 +156,8 @@ class MapBranchModel {
       deliveryFee: deliveryFee ?? this.deliveryFee,
       isOpen: isOpen ?? this.isOpen,
       openingHours: openingHours ?? this.openingHours,
+      productsCount: productsCount ?? this.productsCount,
+      topProducts: topProducts ?? this.topProducts,
     );
   }
 
@@ -222,6 +235,22 @@ class MapBranchModel {
       openingHours: parseApiString(
         json['opening_hours'] ?? json['hours'] ?? json['business_hours'],
       ),
+      productsCount: parseApiInt(
+        json['products_count'] ?? json['product_count'],
+      ),
+      topProducts: _parseTopProducts(json['top_products']),
     );
+  }
+
+  static List<BranchTopProductModel> _parseTopProducts(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map(
+          (item) => BranchTopProductModel.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
+        .toList(growable: false);
   }
 }

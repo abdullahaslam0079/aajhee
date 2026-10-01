@@ -1,5 +1,7 @@
 import 'package:aajhee/src/features/businessStore/presentation/widgets/business_store_card.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/product_search_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/widgets/commerce_search_bar.dart';
 import 'package:aajhee/src/features/home/data/models/category_model.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:aajhee/src/features/home/presentation/utils/category_icons.dart';
@@ -26,6 +28,14 @@ class StoresTabScreen extends ConsumerStatefulWidget {
 
 class _StoresTabScreenState extends ConsumerState<StoresTabScreen> {
   _ShopsViewMode _viewMode = _ShopsViewMode.list;
+
+  void _openSearch() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => const ProductSearchScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +79,7 @@ class _StoresTabScreenState extends ConsumerState<StoresTabScreen> {
               onFavoritesTap: () => context.push(AppRoutes.favorites),
               onNotificationsTap: () => context.push(AppRoutes.notifications),
               onCartTap: () => context.push(AppRoutes.cart),
+              onSearchTap: _openSearch,
             ),
             if (homeFeedState.isLoading && homeFeedState.branches.isEmpty)
               const Expanded(
@@ -98,49 +109,42 @@ class _StoresTabScreenState extends ConsumerState<StoresTabScreen> {
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.ms.w,
-                  4.h,
-                  AppSpacing.ms.w,
                   8.h,
+                  AppSpacing.ms.w,
+                  10.h,
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: Text(
-                        isMap ? 'Map' : 'Nearby shops',
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.15,
-                          color: colorScheme.onSurface.withValues(alpha: 0.9),
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isMap ? 'Map' : 'Nearby shops',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.3,
+                              color: colorScheme.onSurface,
+                            ),
+                          ),
+                          if (!isMap) ...[
+                            SizedBox(height: 2.h),
+                            Text(
+                              'Discover great stores near you',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurface
+                                    .withValues(alpha: 0.5),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
-                    SegmentedButton<_ShopsViewMode>(
-                      segments: const [
-                        ButtonSegment(
-                          value: _ShopsViewMode.list,
-                          icon: Icon(Icons.view_list_rounded, size: 18),
-                          label: Text('List'),
-                        ),
-                        ButtonSegment(
-                          value: _ShopsViewMode.map,
-                          icon: Icon(Icons.map_outlined, size: 18),
-                          label: Text('Map'),
-                        ),
-                      ],
-                      selected: {_viewMode},
-                      onSelectionChanged: (selected) {
-                        setState(() => _viewMode = selected.first);
-                      },
-                      style: ButtonStyle(
-                        visualDensity: VisualDensity.compact,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        textStyle: WidgetStatePropertyAll(
-                          textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      showSelectedIcon: false,
+                    _ListMapToggle(
+                      mode: _viewMode,
+                      onChanged: (mode) => setState(() => _viewMode = mode),
                     ),
                   ],
                 ),
@@ -198,7 +202,7 @@ class _StoresTabScreenState extends ConsumerState<StoresTabScreen> {
                                   itemCount: branches.length +
                                       (homeFeedState.isLoadingMore ? 1 : 0),
                                   separatorBuilder: (_, __) =>
-                                      SizedBox(height: AppSpacing.sm.h),
+                                      SizedBox(height: 14.h),
                                   itemBuilder: (context, index) {
                                     if (index >= branches.length) {
                                       return Padding(
@@ -234,6 +238,109 @@ class _StoresTabScreenState extends ConsumerState<StoresTabScreen> {
   }
 }
 
+class _ListMapToggle extends StatelessWidget {
+  const _ListMapToggle({
+    required this.mode,
+    required this.onChanged,
+  });
+
+  final _ShopsViewMode mode;
+  final ValueChanged<_ShopsViewMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = context.theme.colorScheme;
+    final tt = context.theme.textTheme;
+
+    return Container(
+      padding: EdgeInsets.all(3.w),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: AppBorders.full,
+        boxShadow: AppShadows.subtle,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ToggleChip(
+            selected: mode == _ShopsViewMode.list,
+            icon: Icons.view_list_rounded,
+            label: 'List',
+            onTap: () => onChanged(_ShopsViewMode.list),
+            textTheme: tt,
+            colorScheme: cs,
+          ),
+          _ToggleChip(
+            selected: mode == _ShopsViewMode.map,
+            icon: Icons.map_outlined,
+            label: 'Map',
+            onTap: () => onChanged(_ShopsViewMode.map),
+            textTheme: tt,
+            colorScheme: cs,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToggleChip extends StatelessWidget {
+  const _ToggleChip({
+    required this.selected,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.textTheme,
+    required this.colorScheme,
+  });
+
+  final bool selected;
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final TextTheme textTheme;
+  final ColorScheme colorScheme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected
+          ? colorScheme.primaryContainer.withValues(alpha: 0.85)
+          : Colors.transparent,
+      borderRadius: AppBorders.full,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppBorders.full,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 15,
+                color: selected
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withValues(alpha: 0.45),
+              ),
+              SizedBox(width: 4.w),
+              Text(
+                label,
+                style: textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: selected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PinnedStoresHeader extends StatelessWidget {
   const _PinnedStoresHeader({
     required this.locationText,
@@ -244,6 +351,7 @@ class _PinnedStoresHeader extends StatelessWidget {
     required this.onFavoritesTap,
     required this.onNotificationsTap,
     required this.onCartTap,
+    required this.onSearchTap,
   });
 
   final String locationText;
@@ -254,19 +362,36 @@ class _PinnedStoresHeader extends StatelessWidget {
   final VoidCallback onFavoritesTap;
   final VoidCallback onNotificationsTap;
   final VoidCallback onCartTap;
+  final VoidCallback onSearchTap;
 
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
       color: backgroundColor,
-      child: HomeHeader(
-        locationText: locationText,
-        onLocationTap: onLocationTap,
-        onFavoritesTap: onFavoritesTap,
-        onNotificationsTap: onNotificationsTap,
-        onCartTap: onCartTap,
-        notificationUnreadCount: unreadCount,
-        cartItemCount: cartItemCount,
+      child: Column(
+        children: [
+          HomeHeader(
+            locationText: locationText,
+            onLocationTap: onLocationTap,
+            onFavoritesTap: onFavoritesTap,
+            onNotificationsTap: onNotificationsTap,
+            onCartTap: onCartTap,
+            notificationUnreadCount: unreadCount,
+            cartItemCount: cartItemCount,
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.ms.w,
+              6.h,
+              AppSpacing.ms.w,
+              8.h,
+            ),
+            child: CommerceSearchBar(
+              onTap: onSearchTap,
+              hintText: 'Search for products, brands and more...',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -330,15 +455,18 @@ class _StoresCategoriesHeader extends StatelessWidget {
   final TextTheme textTheme;
   final Color backgroundColor;
 
-  static const double _chipRowHeight = 36;
-  static const double _verticalPad = 8;
+  static const double _verticalPad = 4;
 
   @override
   Widget build(BuildContext context) {
     final pad = _verticalPad.h.ceilToDouble();
-    final chipHeight = _chipRowHeight.h.ceilToDouble();
+    final mainHeight = CategoryWidget.rowHeight.ceilToDouble();
+    final subHeight = CategoryWidget.compactRowHeight.ceilToDouble();
     final rows = subcategories.isEmpty ? 1 : 2;
-    final extent = (pad + (chipHeight * rows) + (rows > 1 ? 4.h : 0) + pad)
+    final extent = (pad +
+            mainHeight +
+            (rows > 1 ? 4.h + subHeight : 0) +
+            pad)
         .ceilToDouble();
 
     return SizedBox(
@@ -350,7 +478,7 @@ class _StoresCategoriesHeader extends StatelessWidget {
           child: Column(
             children: [
               SizedBox(
-                height: chipHeight,
+                height: mainHeight,
                 child: Stack(
                   children: [
                     ListView.builder(
@@ -364,7 +492,7 @@ class _StoresCategoriesHeader extends StatelessWidget {
                         return CategoryWidget(
                           label: label,
                           icon: index == 0
-                              ? Icons.apps_rounded
+                              ? Icons.grid_view_rounded
                               : categoryIconForName(label),
                           onTap: () => onCategoryTap(index),
                           selectedCategoryIndex: selectedCategoryIndex,
@@ -398,7 +526,7 @@ class _StoresCategoriesHeader extends StatelessWidget {
               if (subcategories.isNotEmpty) ...[
                 SizedBox(height: 4.h),
                 SizedBox(
-                  height: chipHeight,
+                  height: subHeight,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
@@ -407,6 +535,7 @@ class _StoresCategoriesHeader extends StatelessWidget {
                     itemBuilder: (context, index) {
                       if (index == 0) {
                         return CategoryWidget(
+                          compact: true,
                           label: 'All',
                           icon: Icons.grid_view_rounded,
                           onTap: () => onSubcategoryTap(null),
@@ -418,6 +547,7 @@ class _StoresCategoriesHeader extends StatelessWidget {
                       final sub = subcategories[index - 1];
                       final selected = selectedSubcategoryId == sub.id;
                       return CategoryWidget(
+                        compact: true,
                         label: sub.name,
                         icon: categoryIconForName(sub.name),
                         onTap: () => onSubcategoryTap(sub.id),

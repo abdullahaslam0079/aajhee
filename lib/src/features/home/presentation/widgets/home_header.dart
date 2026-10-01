@@ -47,16 +47,16 @@ class HomeHeader extends StatelessWidget {
             icon: Icons.favorite_border_rounded,
             onPressed: onFavoritesTap,
           ),
-          SizedBox(width: 6.w),
+          SizedBox(width: 8.w),
           _HeaderIconButton(
             icon: Icons.notifications_none_rounded,
             onPressed: onNotificationsTap,
-            badgeCount: notificationUnreadCount,
+            showDot: notificationUnreadCount > 0,
           ),
           if (onCartTap != null) ...[
-            SizedBox(width: 6.w),
+            SizedBox(width: 8.w),
             _HeaderIconButton(
-              icon: Icons.shopping_bag_outlined,
+              icon: Icons.shopping_cart_outlined,
               onPressed: onCartTap!,
               badgeCount: cartItemCount,
             ),
@@ -93,23 +93,27 @@ class _LocationBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Deliver to',
-                style: textTheme.labelSmall?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.48),
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.2,
-                ),
-              ),
-              SizedBox(height: 2.h),
               Row(
                 children: [
                   Icon(
                     Icons.location_on_rounded,
                     color: colorScheme.primary,
-                    size: 15,
+                    size: 14,
                   ),
-                  SizedBox(width: 4.w),
+                  SizedBox(width: 3.w),
+                  Text(
+                    'Deliver to',
+                    style: textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.48),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 2.h),
+              Row(
+                children: [
                   Flexible(
                     child: Text(
                       locationText,
@@ -142,11 +146,13 @@ class _HeaderIconButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.badgeCount = 0,
+    this.showDot = false,
   });
 
   final IconData icon;
   final VoidCallback onPressed;
   final int badgeCount;
+  final bool showDot;
 
   static const double _size = 40;
 
@@ -157,15 +163,13 @@ class _HeaderIconButton extends StatelessWidget {
     final label = badgeCount > 99 ? '99+' : '$badgeCount';
 
     return Material(
-      color: cs.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppBorders.iconButton,
-        side: BorderSide(color: cs.outlineVariant),
-      ),
-      clipBehavior: Clip.antiAlias,
+      color: cs.surface,
+      shape: const CircleBorder(),
+      elevation: 1.5,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: AppBorders.iconButton,
+        customBorder: const CircleBorder(),
         child: SizedBox(
           width: _size.w,
           height: _size.w,
@@ -178,12 +182,27 @@ class _HeaderIconButton extends StatelessWidget {
                 size: 20,
                 color: cs.onSurface.withValues(alpha: 0.78),
               ),
+              if (showDot && !showBadge)
+                Positioned(
+                  top: 9,
+                  right: 10,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: cs.error,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: cs.surface, width: 1.5),
+                    ),
+                  ),
+                ),
               if (showBadge)
                 Positioned(
-                  top: 6,
-                  right: 6,
+                  top: 4,
+                  right: 4,
                   child: Container(
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    constraints:
+                        const BoxConstraints(minWidth: 16, minHeight: 16),
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     decoration: BoxDecoration(
                       color: cs.error,
