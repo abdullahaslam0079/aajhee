@@ -13,7 +13,10 @@ class DiscoveryService {
 
   FutureEither<List<CategoryModel>> getCategories() async {
     return runTask(() async {
-      final response = await _dio.get<List<dynamic>>('/api/categories/tree');
+      final response = await _dio.get<List<dynamic>>(
+        '/api/categories/tree',
+        queryParameters: const {'populated': '1'},
+      );
       final data = response.data ?? const [];
       return data
           .map((item) => CategoryModel.fromJson(item as Map<String, dynamic>))
