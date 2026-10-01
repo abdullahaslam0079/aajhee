@@ -12,6 +12,7 @@ class HomeFeedState {
     this.categories = const [],
     this.branches = const [],
     this.selectedCategoryIndex = 0,
+    this.selectedSubcategoryId,
     this.page = 0,
     this.hasMore = false,
     this.isLoading = false,
@@ -21,7 +22,10 @@ class HomeFeedState {
 
   final List<CategoryModel> categories;
   final List<MapBranchModel> branches;
+  /// 0 = All, 1..n = root categories.
   final int selectedCategoryIndex;
+  /// Optional L2 under the selected root; null means whole root.
+  final int? selectedSubcategoryId;
   final int page;
   final bool hasMore;
   final bool isLoading;
@@ -32,6 +36,8 @@ class HomeFeedState {
     List<CategoryModel>? categories,
     List<MapBranchModel>? branches,
     int? selectedCategoryIndex,
+    int? selectedSubcategoryId,
+    bool clearSubcategory = false,
     int? page,
     bool? hasMore,
     bool? isLoading,
@@ -44,6 +50,9 @@ class HomeFeedState {
       branches: branches ?? this.branches,
       selectedCategoryIndex:
           selectedCategoryIndex ?? this.selectedCategoryIndex,
+      selectedSubcategoryId: clearSubcategory
+          ? null
+          : (selectedSubcategoryId ?? this.selectedSubcategoryId),
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
       isLoading: isLoading ?? this.isLoading,
@@ -52,7 +61,7 @@ class HomeFeedState {
     );
   }
 
-  /// Branches are already filtered server-side by [selectedCategoryIndex].
+  /// Branches are already filtered server-side by business vertical.
   List<MapBranchModel> get filteredBranches => branches;
 
   String? logoUrlForBusiness(int businessId) {
@@ -70,12 +79,24 @@ class HomeFeedState {
         ...categories.map((category) => category.name),
       ];
 
-  int? get selectedCategoryId {
+  CategoryModel? get selectedRoot {
     if (selectedCategoryIndex <= 0) return null;
     final categoryIndex = selectedCategoryIndex - 1;
     if (categoryIndex < 0 || categoryIndex >= categories.length) return null;
-    return categories[categoryIndex].id;
+    return categories[categoryIndex];
   }
+
+  List<CategoryModel> get selectedSubcategories =>
+      selectedRoot?.children ?? const [];
+
+  /// Product / listing filter id (root or L2).
+  int? get selectedCategoryId {
+    if (selectedSubcategoryId != null) return selectedSubcategoryId;
+    return selectedRoot?.id;
+  }
+
+  /// Store / map filter id — always a business vertical root.
+  int? get selectedBusinessCategoryId => selectedRoot?.id;
 }
 
 @Riverpod(keepAlive: true)
@@ -105,7 +126,8 @@ class HomeFeed extends _$HomeFeed {
     Future.microtask(() => load(addressId: addressId));
   }
 
-  Future<void> load({String? addressId}) => _fetch(reset: true, addressId: addressId);
+  Future<void> load({String? addressId}) =>
+      _fetch(reset: true, addressId: addressId);
 
   Future<void> loadMore() async {
     if (!state.hasMore || state.isLoading || state.isLoadingMore) return;
@@ -137,7 +159,8 @@ class HomeFeed extends _$HomeFeed {
         final categoriesResult = await _discoveryService.getCategories();
         if (!ref.mounted || requestId != _requestId) return;
 
-        final failed = categoriesResult.fold<String?>((f) => f.message, (_) => null);
+        final failed =
+            categoriesResult.fold<String?>((f) => f.message, (_) => null);
         if (failed != null) {
           state = state.copyWith(
             isLoading: false,
@@ -200,8 +223,25 @@ class HomeFeed extends _$HomeFeed {
   }
 
   void selectCategory(int index) {
-    if (index == state.selectedCategoryIndex) return;
-    state = state.copyWith(selectedCategoryIndex: index);
+    if (index == state.selectedCategoryIndex &&
+        state.selectedSubcategoryId == null) {
+      return;
+    }
+    state = state.copyWith(
+      selectedCategoryIndex: index,
+      clearSubcategory: true,
+    );
+    Future.microtask(() => load());
+  }
+
+  void selectSubcategory(int? subcategoryId) {
+    if (subcategoryId == state.selectedSubcategoryId) return;
+    state = state.copyWith(
+      selectedSubcategoryId: subcategoryId,
+      clearSubcategory: subcategoryId == null,
+    );
+    // Store map uses root only; product screens listen to selectedCategoryId.
+    // Still refresh branches so UI stays consistent when clearing filters.
     Future.microtask(() => load());
   }
 }

@@ -58,6 +58,15 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     super.dispose();
   }
 
+  int? _lastProductCategoryId;
+
+  void _syncProductsToCategory(HomeFeedState feed) {
+    final categoryId = feed.selectedCategoryId;
+    if (categoryId == _lastProductCategoryId && _products.isNotEmpty) return;
+    _lastProductCategoryId = categoryId;
+    unawaited(_load());
+  }
+
   void _ensureHomeFeedLoaded() {
     final feed = ref.read(homeFeedProvider);
     if (feed.categories.isEmpty && !feed.isLoading) {
@@ -80,7 +89,13 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     });
 
     _ensureHomeFeedLoaded();
-    final productsResult = await _api.listProducts(page: 1, pageSize: 20);
+    final categoryId = ref.read(homeFeedProvider).selectedCategoryId;
+    _lastProductCategoryId = categoryId;
+    final productsResult = await _api.listProducts(
+      page: 1,
+      pageSize: 20,
+      categoryId: categoryId,
+    );
     unawaited(ref.read(cartProvider.notifier).refresh());
     if (!mounted) return;
 
@@ -109,7 +124,12 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     if (_loadingMore || !_hasMore) return;
     setState(() => _loadingMore = true);
     final nextPage = _page + 1;
-    final result = await _api.listProducts(page: nextPage, pageSize: 20);
+    final categoryId = ref.read(homeFeedProvider).selectedCategoryId;
+    final result = await _api.listProducts(
+      page: nextPage,
+      pageSize: 20,
+      categoryId: categoryId,
+    );
     if (!mounted) return;
     result.fold(
       (_) => setState(() => _loadingMore = false),
@@ -172,28 +192,12 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
     };
   }
 
-  static Set<int> _businessIds(List<MapBranchModel> branches) {
-    return {
-      for (final branch in branches)
-        if (branch.businessId > 0) branch.businessId,
-    };
-  }
-
   List<Map<String, dynamic>> _productsForBusinessIds(Set<int> businessIds) {
     if (businessIds.isEmpty) return const [];
     return _products.where((product) {
       final id = _asInt(product['business_id']);
       return id != null && businessIds.contains(id);
     }).toList();
-  }
-
-  List<Map<String, dynamic>> _categoryScopedProducts({
-    required int selectedCategoryIndex,
-    required Set<int> categoryBusinessIds,
-  }) {
-    if (selectedCategoryIndex <= 0) return _products;
-    if (categoryBusinessIds.isEmpty) return const [];
-    return _productsForBusinessIds(categoryBusinessIds);
   }
 
   List<Map<String, dynamic>> _applyListFilter(
@@ -282,6 +286,10 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
       if (!next.selectedLocationChangedFrom(previous)) return;
       _load();
     });
+    ref.listen(homeFeedProvider, (previous, next) {
+      if (previous?.selectedCategoryId == next.selectedCategoryId) return;
+      _syncProductsToCategory(next);
+    });
 
     final addresses = ref.watch(savedAddressesProvider);
     final feed = ref.watch(homeFeedProvider);
@@ -296,18 +304,13 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
 
     final branches = feed.filteredBranches;
     final sameDayIds = _sameDayBusinessIds(branches);
-    final categoryBusinessIds = _businessIds(branches);
     final hasSameDayShops = sameDayIds.isNotEmpty;
     final cityLabel = _cityForBanner(addresses.selectedAddress);
     final locationText = _locationText(addresses.selectedAddress);
 
     final todayProducts = _productsForBusinessIds(sameDayIds);
-    final scopedProducts = _categoryScopedProducts(
-      selectedCategoryIndex: feed.selectedCategoryIndex,
-      categoryBusinessIds: categoryBusinessIds,
-    );
     final visibleProducts = _applyListFilter(
-      scopedProducts,
+      _products,
       sameDayBusinessIds: sameDayIds,
     );
 
@@ -369,34 +372,84 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen> {
               else ...[
                 if (categoryLabels.isNotEmpty)
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 40.h,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.fromLTRB(
-                          AppSpacing.ms.w,
-                          4.h,
-                          AppSpacing.ms.w,
-                          4.h,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          height: 40.h,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(
+                              AppSpacing.ms.w,
+                              4.h,
+                              AppSpacing.ms.w,
+                              4.h,
+                            ),
+                            itemCount: categoryLabels.length,
+                            itemBuilder: (context, index) {
+                              final label = categoryLabels[index];
+                              return CategoryWidget(
+                                selectedCategoryIndex:
+                                    feed.selectedCategoryIndex,
+                                index: index,
+                                label: label,
+                                icon: index == 0
+                                    ? Icons.apps_rounded
+                                    : categoryIconForName(label),
+                                onTap: () => ref
+                                    .read(homeFeedProvider.notifier)
+                                    .selectCategory(index),
+                              );
+                            },
+                          ),
                         ),
-                        itemCount: categoryLabels.length,
-                        itemBuilder: (context, index) {
-                          final label = categoryLabels[index];
-                          return CategoryWidget(
-                            selectedCategoryIndex:
-                                feed.selectedCategoryIndex,
-                            index: index,
-                            label: label,
-                            icon: index == 0
-                                ? Icons.apps_rounded
-                                : categoryIconForName(label),
-                            onTap: () => ref
-                                .read(homeFeedProvider.notifier)
-                                .selectCategory(index),
-                          );
-                        },
-                      ),
+                        if (feed.selectedSubcategories.isNotEmpty)
+                          SizedBox(
+                            height: 36.h,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              physics: const BouncingScrollPhysics(),
+                              padding: EdgeInsets.fromLTRB(
+                                AppSpacing.ms.w,
+                                0,
+                                AppSpacing.ms.w,
+                                4.h,
+                              ),
+                              itemCount: feed.selectedSubcategories.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == 0) {
+                                  final root = feed.selectedRoot;
+                                  return CategoryWidget(
+                                    selectedCategoryIndex:
+                                        feed.selectedSubcategoryId == null
+                                            ? 0
+                                            : -1,
+                                    index: 0,
+                                    label: 'All ${root?.name ?? ''}'.trim(),
+                                    icon: Icons.grid_view_rounded,
+                                    onTap: () => ref
+                                        .read(homeFeedProvider.notifier)
+                                        .selectSubcategory(null),
+                                  );
+                                }
+                                final sub =
+                                    feed.selectedSubcategories[index - 1];
+                                final selected =
+                                    feed.selectedSubcategoryId == sub.id;
+                                return CategoryWidget(
+                                  selectedCategoryIndex: selected ? index : -1,
+                                  index: index,
+                                  label: sub.name,
+                                  icon: categoryIconForName(sub.name),
+                                  onTap: () => ref
+                                      .read(homeFeedProvider.notifier)
+                                      .selectSubcategory(sub.id),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 if (hasSameDayShops)

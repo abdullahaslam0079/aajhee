@@ -31,6 +31,7 @@ class CommerceApiService {
     int page = 1,
     int pageSize = 20,
     String? query,
+    int? categoryId,
   }) async {
     final result = await _dio.get(
       '/api/products',
@@ -38,6 +39,7 @@ class CommerceApiService {
         'page': page,
         'page_size': pageSize,
         if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+        if (categoryId != null) 'category_id': categoryId,
       },
     );
     return result.fold(

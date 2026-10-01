@@ -1,5 +1,6 @@
 import 'package:aajhee/src/features/businessStore/presentation/widgets/business_store_card.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
+import 'package:aajhee/src/features/home/data/models/category_model.dart';
 import 'package:aajhee/src/features/home/presentation/providers/home_feed_provider.dart';
 import 'package:aajhee/src/features/home/presentation/utils/category_icons.dart';
 import 'package:aajhee/src/features/home/presentation/widgets/category_widget.dart';
@@ -85,8 +86,12 @@ class _StoresTabScreenState extends ConsumerState<StoresTabScreen> {
               _StoresCategoriesHeader(
                 selectedCategoryIndex: homeFeedState.selectedCategoryIndex,
                 categoryLabels: categoryLabels,
+                subcategories: homeFeedState.selectedSubcategories,
+                selectedSubcategoryId: homeFeedState.selectedSubcategoryId,
                 onCategoryTap: (index) =>
                     ref.read(homeFeedProvider.notifier).selectCategory(index),
+                onSubcategoryTap: (id) =>
+                    ref.read(homeFeedProvider.notifier).selectSubcategory(id),
                 textTheme: textTheme,
                 backgroundColor: homeCanvasOf(context),
               ),
@@ -308,14 +313,20 @@ class _StoresCategoriesHeader extends StatelessWidget {
   const _StoresCategoriesHeader({
     required this.selectedCategoryIndex,
     required this.categoryLabels,
+    required this.subcategories,
+    required this.selectedSubcategoryId,
     required this.onCategoryTap,
+    required this.onSubcategoryTap,
     required this.textTheme,
     required this.backgroundColor,
   });
 
   final int selectedCategoryIndex;
   final List<String> categoryLabels;
+  final List<CategoryModel> subcategories;
+  final int? selectedSubcategoryId;
   final ValueChanged<int> onCategoryTap;
+  final ValueChanged<int?> onSubcategoryTap;
   final TextTheme textTheme;
   final Color backgroundColor;
 
@@ -326,7 +337,9 @@ class _StoresCategoriesHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final pad = _verticalPad.h.ceilToDouble();
     final chipHeight = _chipRowHeight.h.ceilToDouble();
-    final extent = (pad + chipHeight + pad).ceilToDouble();
+    final rows = subcategories.isEmpty ? 1 : 2;
+    final extent = (pad + (chipHeight * rows) + (rows > 1 ? 4.h : 0) + pad)
+        .ceilToDouble();
 
     return SizedBox(
       height: extent,
@@ -334,50 +347,88 @@ class _StoresCategoriesHeader extends StatelessWidget {
         decoration: BoxDecoration(color: backgroundColor),
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: pad),
-          child: SizedBox(
-            height: chipHeight,
-            child: Stack(
-              children: [
-                ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
-                  itemCount: categoryLabels.length,
-                  itemBuilder: (context, index) {
-                    final label = categoryLabels[index];
-                    return CategoryWidget(
-                      label: label,
-                      icon: index == 0
-                          ? Icons.apps_rounded
-                          : categoryIconForName(label),
-                      onTap: () => onCategoryTap(index),
-                      selectedCategoryIndex: selectedCategoryIndex,
-                      index: index,
-                    );
-                  },
-                ),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: AppSpacing.ms.w + 12,
-                  child: IgnorePointer(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                          colors: [
-                            backgroundColor.withValues(alpha: 0),
-                            backgroundColor,
-                          ],
+          child: Column(
+            children: [
+              SizedBox(
+                height: chipHeight,
+                child: Stack(
+                  children: [
+                    ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
+                      itemCount: categoryLabels.length,
+                      itemBuilder: (context, index) {
+                        final label = categoryLabels[index];
+                        return CategoryWidget(
+                          label: label,
+                          icon: index == 0
+                              ? Icons.apps_rounded
+                              : categoryIconForName(label),
+                          onTap: () => onCategoryTap(index),
+                          selectedCategoryIndex: selectedCategoryIndex,
+                          index: index,
+                        );
+                      },
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: AppSpacing.ms.w + 12,
+                      child: IgnorePointer(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                backgroundColor.withValues(alpha: 0),
+                                backgroundColor,
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              if (subcategories.isNotEmpty) ...[
+                SizedBox(height: 4.h),
+                SizedBox(
+                  height: chipHeight,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.ms.w),
+                    itemCount: subcategories.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return CategoryWidget(
+                          label: 'All',
+                          icon: Icons.grid_view_rounded,
+                          onTap: () => onSubcategoryTap(null),
+                          selectedCategoryIndex:
+                              selectedSubcategoryId == null ? 0 : -1,
+                          index: 0,
+                        );
+                      }
+                      final sub = subcategories[index - 1];
+                      final selected = selectedSubcategoryId == sub.id;
+                      return CategoryWidget(
+                        label: sub.name,
+                        icon: categoryIconForName(sub.name),
+                        onTap: () => onSubcategoryTap(sub.id),
+                        selectedCategoryIndex: selected ? index : -1,
+                        index: index,
+                      );
+                    },
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         ),
       ),
