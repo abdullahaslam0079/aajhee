@@ -9,21 +9,28 @@ part 'notification_preferences_provider.g.dart';
 class NotificationPreferencesState {
   const NotificationPreferencesState({
     this.pushEnabled = true,
+    this.marketingPushEnabled = true,
     this.isLoading = false,
     this.isSaving = false,
   });
 
+  /// Transactional push master (`notifications_enabled`).
   final bool pushEnabled;
+
+  /// Marketing / offer pushes (`marketing_notifications_enabled`).
+  final bool marketingPushEnabled;
   final bool isLoading;
   final bool isSaving;
 
   NotificationPreferencesState copyWith({
     bool? pushEnabled,
+    bool? marketingPushEnabled,
     bool? isLoading,
     bool? isSaving,
   }) {
     return NotificationPreferencesState(
       pushEnabled: pushEnabled ?? this.pushEnabled,
+      marketingPushEnabled: marketingPushEnabled ?? this.marketingPushEnabled,
       isLoading: isLoading ?? this.isLoading,
       isSaving: isSaving ?? this.isSaving,
     );
@@ -60,11 +67,12 @@ class NotificationPreferences extends _$NotificationPreferences {
     }
 
     state = state.copyWith(isLoading: true);
-    final result = await _service.fetchPushEnabled();
+    final result = await _service.fetchNotificationPreferences();
     result.fold(
       (_) => state = state.copyWith(isLoading: false),
-      (enabled) => state = state.copyWith(
-        pushEnabled: enabled,
+      (prefs) => state = state.copyWith(
+        pushEnabled: prefs.pushEnabled,
+        marketingPushEnabled: prefs.marketingPushEnabled,
         isLoading: false,
       ),
     );
@@ -86,6 +94,29 @@ class NotificationPreferences extends _$NotificationPreferences {
         } else {
           await PushNotificationService.instance.syncForAuthenticatedUser();
         }
+      },
+    );
+  }
+
+  Future<void> setMarketingPushEnabled(bool enabled) async {
+    if (!state.pushEnabled) return;
+
+    final previous = state.marketingPushEnabled;
+    state = state.copyWith(marketingPushEnabled: enabled, isSaving: true);
+
+    final result = await _service.setMarketingPushEnabled(enabled);
+    await result.fold(
+      (_) async {
+        state = state.copyWith(
+          marketingPushEnabled: previous,
+          isSaving: false,
+        );
+      },
+      (value) async {
+        state = state.copyWith(
+          marketingPushEnabled: value,
+          isSaving: false,
+        );
       },
     );
   }

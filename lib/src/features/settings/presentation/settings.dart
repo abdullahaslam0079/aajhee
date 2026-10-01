@@ -113,8 +113,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     _SettingsTile(
                       icon: Icons.notifications_outlined,
                       iconColor: colorScheme.primary,
-                      title: 'Push notifications',
-                      subtitle: 'Orders & shopping updates',
+                      title: 'Order & account updates',
+                      subtitle: 'Push for orders, status, and replies',
                       trailing: Switch.adaptive(
                         value: pushPrefs.pushEnabled,
                         onChanged: pushPrefs.isSaving
@@ -124,6 +124,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   notificationPreferencesProvider.notifier,
                                 )
                                 .setPushEnabled(v),
+                      ),
+                    ),
+                    _divider(context),
+                    _SettingsTile(
+                      icon: Icons.local_offer_outlined,
+                      iconColor: colorScheme.tertiary,
+                      title: 'Offers from saved stores',
+                      subtitle: pushPrefs.pushEnabled
+                          ? 'New offers from stores you like'
+                          : 'Turn on order updates to enable',
+                      trailing: Switch.adaptive(
+                        value: pushPrefs.pushEnabled &&
+                            pushPrefs.marketingPushEnabled,
+                        onChanged: (!pushPrefs.pushEnabled ||
+                                pushPrefs.isSaving)
+                            ? null
+                            : (v) => ref
+                                .read(
+                                  notificationPreferencesProvider.notifier,
+                                )
+                                .setMarketingPushEnabled(v),
                       ),
                     ),
                     _divider(context),
@@ -360,6 +381,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         );
       },
       (_) async {
+        // Invalidate FCM before wiping the local session (backend already
+        // deleted DeviceToken rows with the account).
+        await PushNotificationService.instance.clearOnSessionEnd();
         await AuthService.instance.logout();
         if (!mounted) return;
         setState(() => _deletingAccount = false);

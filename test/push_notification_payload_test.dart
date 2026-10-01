@@ -17,6 +17,19 @@ void main() {
       );
     });
 
+    test('encode normalizes order_id alias into order_public_id', () {
+      final encoded = encodeLocalNotificationPayload({
+        PushDataKeys.type: 'order_status_changed',
+        'order_id': 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        PushDataKeys.notificationId: 7,
+      });
+      final decoded = decodeLocalNotificationPayload(encoded);
+      expect(
+        decoded[PushDataKeys.orderPublicId],
+        'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      );
+    });
+
     test('detects order-related pushes', () {
       expect(
         isOrderRelatedPush({'type': 'order_status_changed'}),

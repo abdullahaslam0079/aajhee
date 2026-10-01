@@ -3,6 +3,16 @@ import 'package:aajhee/src/config/app_config.dart';
 import 'package:aajhee/src/features/notifications/data/models/app_notification.dart';
 import 'package:aajhee/src/utils/utils.dart';
 
+class NotificationPushPreferences {
+  const NotificationPushPreferences({
+    required this.pushEnabled,
+    required this.marketingPushEnabled,
+  });
+
+  final bool pushEnabled;
+  final bool marketingPushEnabled;
+}
+
 class NotificationService {
   NotificationService._();
   static final NotificationService instance = NotificationService._();
@@ -78,12 +88,17 @@ class NotificationService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<bool> fetchPushEnabled() async {
+  FutureEither<NotificationPushPreferences> fetchNotificationPreferences() async {
     return runTask(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/user/preferences',
       );
-      return response.data?['notifications_enabled'] as bool? ?? true;
+      final data = response.data ?? const <String, dynamic>{};
+      return NotificationPushPreferences(
+        pushEnabled: data['notifications_enabled'] as bool? ?? true,
+        marketingPushEnabled:
+            data['marketing_notifications_enabled'] as bool? ?? true,
+      );
     }, requiresNetwork: true);
   }
 
@@ -94,6 +109,17 @@ class NotificationService {
         data: {'notifications_enabled': enabled},
       );
       return response.data?['notifications_enabled'] as bool? ?? enabled;
+    }, requiresNetwork: true);
+  }
+
+  FutureEither<bool> setMarketingPushEnabled(bool enabled) async {
+    return runTask(() async {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        '/api/user/preferences',
+        data: {'marketing_notifications_enabled': enabled},
+      );
+      return response.data?['marketing_notifications_enabled'] as bool? ??
+          enabled;
     }, requiresNetwork: true);
   }
 

@@ -48,6 +48,9 @@ String? productRouteFromPushData(Map<String, dynamic> data) {
 }
 
 /// Encode a compact payload for local-notification taps.
+///
+/// Normalizes UUID order aliases (`order_id` / `public_id`) into
+/// [PushDataKeys.orderPublicId] so foreground taps keep order deep links.
 String encodeLocalNotificationPayload(Map<String, dynamic> data) {
   final compact = <String, String>{};
   for (final key in [
@@ -64,6 +67,12 @@ String encodeLocalNotificationPayload(Map<String, dynamic> data) {
       compact[key] = value.toString();
     }
   }
+
+  final orderPublicId = orderPublicIdFromPushData(data);
+  if (orderPublicId != null) {
+    compact[PushDataKeys.orderPublicId] = orderPublicId;
+  }
+
   return jsonEncode(compact);
 }
 

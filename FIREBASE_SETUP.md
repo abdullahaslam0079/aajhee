@@ -32,14 +32,14 @@ Use a **physical iPhone**. Simulator is not reliable for APNs.
 
 ### 1. Confirm registration
 
-1. `flutter run --release` (keeps `aps-environment` = development).
+1. `flutter run` (debug) or a debug build — token files and console token dumps are **debug-only** (`kDebugMode`). Release/Profile use `RunnerRelease.entitlements` (`aps-environment=production`).
 2. Log in and allow notification permission.
 3. In console (`xcrun devicectl device process launch --device <id> --console com.aajhee.app`
    or Xcode), look for:
    - `[Aajhee] APNs token ready: true`
    - `[Aajhee] FCM token: <token>`
    - `[Aajhee] Device token registered for push`
-4. Optional: pull the debug token file written after sync:
+4. Optional: pull the debug token file written after sync (**debug builds only**):
 
 ```bash
 xcrun devicectl device copy from \

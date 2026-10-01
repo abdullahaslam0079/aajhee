@@ -22,6 +22,9 @@ class AuthService {
   var _explicitLogout = false;
   Future<bool>? _ongoingRefresh;
 
+  /// Best-effort push cleanup before local session wipe (set by PushNotificationService).
+  Future<void> Function()? onBeforeClearSession;
+
   Dio get _dio => AppConfig.dio;
 
   final StreamController<Map<String, dynamic>?> _authStateController =
@@ -351,6 +354,15 @@ class AuthService {
   }
 
   Future<void> _clearSession() async {
+    final pushClear = onBeforeClearSession;
+    if (pushClear != null) {
+      try {
+        await pushClear();
+      } catch (_) {
+        // Never block session clear on push cleanup failures.
+      }
+    }
+
     _cachedAccessToken = null;
     await SecureStorageService.instance.deleteAll();
     final cacheResult = await CacheService.instance.clearAll();

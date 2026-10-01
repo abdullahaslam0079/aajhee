@@ -11,6 +11,7 @@ import 'package:aajhee/src/features/notifications/data/push_notification_payload
 import 'package:aajhee/src/features/notifications/data/services/notification_service.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
 import 'package:aajhee/src/routing/global_navigator.dart';
+import 'package:aajhee/src/services/auth_service.dart';
 import 'package:aajhee/src/services/secure_storage_service.dart';
 import 'package:aajhee/src/utils/logger.dart';
 import 'package:go_router/go_router.dart';
@@ -105,16 +106,15 @@ class PushNotificationService {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
   }
 
-  /// Mirror push diagnostics to iOS NSLog (visible via `devicectl --console`).
+  /// Mirror push diagnostics to iOS NSLog (debug builds only).
   Future<void> _deviceLog(String message) async {
+    if (!kDebugMode) return;
     debugPrint(message);
-    // ignore: avoid_print — release device testing
-    print(message);
     if (!Platform.isIOS) return;
     try {
       await _nativeLogChannel.invokeMethod<void>('log', message);
     } catch (_) {
-      // Channel may not be ready yet; print() above still applies.
+      // Channel may not be ready yet; debugPrint above still applies.
     }
   }
 
@@ -122,6 +122,7 @@ class PushNotificationService {
     String token, {
     String fileName = _tokenDebugFileName,
   }) async {
+    if (!kDebugMode) return;
     try {
       final dir = await getApplicationDocumentsDirectory();
       await File('${dir.path}/$fileName').writeAsString(token);
@@ -131,6 +132,10 @@ class PushNotificationService {
   Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
+
+    // Hook session wipe so expiry/logout always clears FCM (avoids import cycle
+    // if AuthService imported this service directly).
+    AuthService.instance.onBeforeClearSession = clearOnSessionEnd;
 
     try {
       await Firebase.initializeApp();
@@ -150,10 +155,11 @@ class PushNotificationService {
     await _initLocalNotifications();
 
     final messaging = FirebaseMessaging.instance;
+    // Avoid iOS double banners: OS presentation alert off; local plugin shows.
     await messaging.setForegroundNotificationPresentationOptions(
-      alert: true,
+      alert: false,
       badge: true,
-      sound: true,
+      sound: false,
     );
 
     FirebaseMessaging.onMessage.listen(_onForegroundMessage);
@@ -165,8 +171,18 @@ class PushNotificationService {
     }
 
     messaging.onTokenRefresh.listen((token) {
-      unawaited(_persistAndRegisterToken(token));
+      unawaited(_onTokenRefresh(token));
     });
+  }
+
+  Future<void> _onTokenRefresh(String token) async {
+    String? apnsToken;
+    if (Platform.isIOS && _firebaseReady) {
+      try {
+        apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+      } catch (_) {}
+    }
+    await _persistAndRegisterToken(token, apnsToken: apnsToken);
   }
 
   Future<bool> syncForAuthenticatedUser() async {
@@ -240,7 +256,9 @@ class PushNotificationService {
 
       await _writeDebugTokenFile(token);
       await _deviceLog('[Aajhee] FCM token acquired (${token.length} chars)');
-      await _deviceLog('[Aajhee] FCM token: $token');
+      if (kDebugMode) {
+        await _deviceLog('[Aajhee] FCM token: $token');
+      }
       return _persistAndRegisterToken(token, apnsToken: apnsToken);
     } catch (error, stackTrace) {
       AppLogger.warning('Push sync skipped: $error');
@@ -250,11 +268,41 @@ class PushNotificationService {
     }
   }
 
+  /// Best-effort backend unregister + always invalidate local FCM token.
+  ///
+  /// Safe to call when the JWT may already be expired (session expiry).
+  Future<void> clearOnSessionEnd() async {
+    final tokenResult =
+        await SecureStorageService.instance.read(_tokenStorageKey);
+    final token = tokenResult.fold((_) => null, (value) => value);
+    if (token != null && token.isNotEmpty) {
+      try {
+        await NotificationService.instance.unregisterDevice(token);
+      } catch (_) {}
+    }
+
+    await SecureStorageService.instance.delete(_tokenStorageKey);
+
+    if (_firebaseReady) {
+      try {
+        await FirebaseMessaging.instance.deleteToken();
+      } catch (_) {}
+    }
+  }
+
   Future<void> unregisterCurrentDevice() async {
     final tokenResult =
         await SecureStorageService.instance.read(_tokenStorageKey);
     final token = tokenResult.fold((_) => null, (value) => value);
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) {
+      // Still invalidate FCM so the OS token cannot receive stale pushes.
+      if (_firebaseReady) {
+        try {
+          await FirebaseMessaging.instance.deleteToken();
+        } catch (_) {}
+      }
+      return;
+    }
 
     await NotificationService.instance.unregisterDevice(token);
     await SecureStorageService.instance.delete(_tokenStorageKey);
@@ -285,6 +333,7 @@ class PushNotificationService {
       initSettings,
       onDidReceiveNotificationResponse: (response) {
         final data = decodeLocalNotificationPayload(response.payload);
+        unawaited(_markInboxReadFromPushData(data));
         onNotificationOpened?.call(data);
         _navigateFromPushData(data);
       },
@@ -308,6 +357,7 @@ class PushNotificationService {
           decodeLocalNotificationPayload(launchDetails!.notificationResponse?.payload);
       if (data.isNotEmpty) {
         Future<void>.delayed(const Duration(milliseconds: 500), () {
+          unawaited(_markInboxReadFromPushData(data));
           onNotificationOpened?.call(data);
           _navigateFromPushData(data);
         });
@@ -342,8 +392,18 @@ class PushNotificationService {
 
   void _handleOpenedMessage(RemoteMessage message) {
     final data = Map<String, dynamic>.from(message.data);
+    unawaited(_markInboxReadFromPushData(data));
     onNotificationOpened?.call(data);
     _navigateFromPushData(data);
+  }
+
+  Future<void> _markInboxReadFromPushData(Map<String, dynamic> data) async {
+    final raw = data[PushDataKeys.notificationId];
+    final id = int.tryParse(raw?.toString() ?? '');
+    if (id == null) return;
+    try {
+      await NotificationService.instance.markRead(id);
+    } catch (_) {}
   }
 
   void _navigateFromPushData(Map<String, dynamic> data) {
