@@ -119,7 +119,9 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/translations/
-    - .env
+    # Committed defaults only. Real secrets stay in the gitignored `.env`
+    # locally for editors/scripts; the app loads this example asset at runtime.
+    - .env.example
 
   fonts:
     - family: Inter

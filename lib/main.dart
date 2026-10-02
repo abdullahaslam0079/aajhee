@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -15,7 +17,7 @@ Future<void> main() async {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   await EasyLocalization.ensureInitialized();
-  await dotenv.load(fileName: '.env');
+  await _loadEnv();
 
   await AppConfig.init();
   await StorageService.instance.init();
@@ -48,4 +50,32 @@ Future<void> main() async {
     },
     appRunner: () => runApp(app),
   );
+}
+
+/// Loads committed defaults, then overlays a local gitignored `.env` in debug.
+Future<void> _loadEnv() async {
+  await dotenv.load(fileName: '.env.example');
+  if (!kDebugMode) return;
+  try {
+    final file = File('.env');
+    if (!file.existsSync()) return;
+    dotenv.env.addAll(_parseEnvFile(file.readAsStringSync()));
+  } catch (_) {
+    // Keep example values when the local override is missing or unreadable.
+  }
+}
+
+Map<String, String> _parseEnvFile(String raw) {
+  final values = <String, String>{};
+  for (final line in raw.split('\n')) {
+    final trimmed = line.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+    final separator = trimmed.indexOf('=');
+    if (separator <= 0) continue;
+    final key = trimmed.substring(0, separator).trim();
+    final value = trimmed.substring(separator + 1).trim();
+    if (key.isEmpty) continue;
+    values[key] = value;
+  }
+  return values;
 }
