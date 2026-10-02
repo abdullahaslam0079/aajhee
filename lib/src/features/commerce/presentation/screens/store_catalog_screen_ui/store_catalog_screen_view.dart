@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/commerce/presentation/screens/store_catalog
 
 class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
     with StoreCatalogScreenController {
+  @override
   Widget build(BuildContext context) {
     ref.listen(savedAddressesProvider, (previous, next) {
       if (!next.selectedLocationChangedFrom(previous)) return;

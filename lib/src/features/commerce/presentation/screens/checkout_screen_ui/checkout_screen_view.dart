@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/commerce/presentation/screens/checkout_scre
 
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen>
     with CheckoutScreenController {
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;

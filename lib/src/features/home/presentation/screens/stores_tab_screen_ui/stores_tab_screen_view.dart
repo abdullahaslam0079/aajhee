@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/home/presentation/screens/stores_tab_screen
 
 class _StoresTabScreenState extends ConsumerState<StoresTabScreen>
     with StoresTabScreenController {
+  @override
   Widget build(BuildContext context) {
     final textTheme = context.theme.textTheme;
     final colorScheme = context.theme.colorScheme;

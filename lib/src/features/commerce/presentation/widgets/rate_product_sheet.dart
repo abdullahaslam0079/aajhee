@@ -30,7 +30,7 @@ Future<bool> showRateProductSheet({
       item: item,
     ),
   );
-  return result == true;
+  return result ?? false;
 }
 
 class _RateProductSheet extends StatefulWidget {
@@ -186,7 +186,7 @@ class _RateProductSheetState extends State<_RateProductSheet> {
               maxLines: 4,
               maxLength: 1000,
               enabled: !_submitting,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'Share details (optional)',
                 border: OutlineInputBorder(borderRadius: AppBorders.md),
               ),

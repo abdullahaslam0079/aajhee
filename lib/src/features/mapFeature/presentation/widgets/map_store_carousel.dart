@@ -2,7 +2,6 @@ import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/mapFeature/presentation/constants/map_constants.dart';
 import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_store_card.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
-import 'package:aajhee/src/imports/packages_imports.dart';
 
 class MapStoreCarousel extends StatelessWidget {
   const MapStoreCarousel({
@@ -24,7 +23,7 @@ class MapStoreCarousel extends StatelessWidget {
     void scroll() {
       if (!controller.hasClients) return;
 
-      final itemStride =
+      const itemStride =
           MapConstants.storeCardWidth + MapConstants.carouselSeparator;
       final cardLeft =
           MapConstants.carouselPadding + index * itemStride;
@@ -88,7 +87,7 @@ class MapStoreCarousel extends StatelessWidget {
               child: ListView.separated(
                 controller: scrollController,
                 clipBehavior: Clip.none,
-                padding: EdgeInsets.fromLTRB(
+                padding: const EdgeInsets.fromLTRB(
                   MapConstants.carouselPadding,
                   MapConstants.storeCardOuterInset,
                   MapConstants.carouselPadding,

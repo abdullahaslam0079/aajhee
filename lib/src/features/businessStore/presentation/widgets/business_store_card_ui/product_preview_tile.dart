@@ -33,8 +33,8 @@ class _ProductPreviewTile extends StatelessWidget {
             width: imageSize,
             height: imageSize,
             child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F1F1),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF3F1F1),
                 borderRadius: AppBorders.sm,
               ),
               child: ClipRRect(

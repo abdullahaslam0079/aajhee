@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/settings/presentation/settings.dart';
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen>
     with SettingsScreenController {
+  @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(userProfileProvider);
     final profile = profileState.profile;

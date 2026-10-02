@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/commerce/presentation/screens/product_searc
 
 class _ProductSearchScreenState extends ConsumerState<ProductSearchScreen>
     with ProductSearchScreenController {
+  @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;

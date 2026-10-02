@@ -14,8 +14,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(bottomNavBarControllerProvider);
-    final activeOrdersCount =
-        ref.watch(activeOrdersBadgeProvider).value ?? 0;
+    final activeOrdersCount = ref.watch(activeOrdersBadgeProvider).value ?? 0;
 
     return Scaffold(
       backgroundColor: homeCanvasOf(context),
@@ -50,7 +49,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                 selected: selectedIndex == 0,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
-                    .setSelectedIndex(0),
+                    .selectedIndex = 0,
               ),
             ),
             Expanded(
@@ -62,7 +61,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                 selected: selectedIndex == 1,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
-                    .setSelectedIndex(1),
+                    .selectedIndex = 1,
               ),
             ),
             Expanded(
@@ -75,7 +74,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                 badgeCount: activeOrdersCount,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
-                    .setSelectedIndex(2),
+                    .selectedIndex = 2,
               ),
             ),
             Expanded(
@@ -87,7 +86,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
                 selected: selectedIndex == 3,
                 onTap: () => ref
                     .read(bottomNavBarControllerProvider.notifier)
-                    .setSelectedIndex(3),
+                    .selectedIndex = 3,
               ),
             ),
           ],

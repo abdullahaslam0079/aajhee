@@ -38,7 +38,7 @@ class _DistanceDeliveryRow extends StatelessWidget {
           Flexible(
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: AppBrandColors.primaryContainer,
                 borderRadius: AppBorders.full,
               ),

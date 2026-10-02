@@ -9,11 +9,15 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+plugins:
+  riverpod_lint: ^3.1.4
+
 analyzer:
   errors:
     inference_failure_on_untyped_parameter: ignore
-  plugins:
-    - custom_lint
+    # .env is gitignored and only created locally / in CI. Pubspec still lists it
+    # as an asset so dotenv can load it at runtime.
+    asset_does_not_exist: ignore
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"

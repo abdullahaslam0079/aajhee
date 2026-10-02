@@ -262,7 +262,7 @@ class PushNotificationService {
       if (kDebugMode) {
         await _deviceLog('[Aajhee] FCM token: $token');
       }
-      return _persistAndRegisterToken(token, apnsToken: apnsToken);
+      return await _persistAndRegisterToken(token, apnsToken: apnsToken);
     } catch (error, stackTrace) {
       AppLogger.warning('Push sync skipped: $error');
       AppLogger.error('Push sync failed', [error, stackTrace]);

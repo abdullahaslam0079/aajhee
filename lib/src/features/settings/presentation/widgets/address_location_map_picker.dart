@@ -41,7 +41,7 @@ class _AddressLocationMapPickerState extends State<AddressLocationMapPicker> {
 
   /// Claim map gestures so a parent [ScrollView] does not steal pans.
   final Set<Factory<OneSequenceGestureRecognizer>> _gestureRecognizers = {
-    Factory<EagerGestureRecognizer>(EagerGestureRecognizer.new),
+    const Factory<EagerGestureRecognizer>(EagerGestureRecognizer.new),
   };
 
   @override

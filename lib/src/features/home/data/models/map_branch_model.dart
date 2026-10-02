@@ -88,15 +88,15 @@ class MapBranchModel {
   /// True when the API marks same-day, or when unset and this is a local
   /// (non-nationwide) shop — used with city checks at the call site.
   bool get treatsAsSameDay {
-    if (supportsSameDay == true) return true;
+    if (supportsSameDay ?? false) return true;
     if (supportsSameDay == false) return false;
-    if (supportsNationwide == true) return false;
+    if (supportsNationwide ?? false) return false;
     return true; // unset → treat as local same-day candidate
   }
 
   String? get deliveryBadgeLabel {
-    if (supportsSameDay == true) return 'Same-day';
-    if (supportsNationwide == true) return 'Nationwide';
+    if (supportsSameDay ?? false) return 'Same-day';
+    if (supportsNationwide ?? false) return 'Nationwide';
     if (supportsSameDay == null && supportsNationwide == null) {
       return 'Same-day';
     }
@@ -245,7 +245,7 @@ class MapBranchModel {
   static List<BranchTopProductModel> _parseTopProducts(dynamic raw) {
     if (raw is! List) return const [];
     return raw
-        .whereType<Map>()
+        .whereType<Map<dynamic, dynamic>>()
         .map(
           (item) => BranchTopProductModel.fromJson(
             Map<String, dynamic>.from(item),

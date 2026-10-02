@@ -90,7 +90,6 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final feedState = ref.watch(homeFeedProvider);
     final selectedAddress = ref.watch(savedAddressesProvider).selectedAddress;
     final carouselBottomOffset = MapConstants.carouselBottomOffset(context);
-    final carouselBottomPadding = MapConstants.carouselBottomPadding(context);
     final topSafe = MediaQuery.paddingOf(context).top;
     final branches = feedState.branches;
     final isLoading = feedState.isLoading && branches.isEmpty;

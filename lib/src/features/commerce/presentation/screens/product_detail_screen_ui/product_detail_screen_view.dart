@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/commerce/presentation/screens/product_detai
 
 class _ProductDetailScreenState extends ConsumerState<ProductDetailScreen>
     with ProductDetailScreenController {
+  @override
   Widget build(BuildContext context) {
     final product = _product;
     final hasDiscountFlag = product?['has_discount'] == true;

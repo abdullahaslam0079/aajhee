@@ -26,7 +26,7 @@ class MapMarkerTheme {
   final TextStyle? labelStyle;
 
   String get cacheKey =>
-      '${primary.value}-${onPrimary.value}-${surface.value}-${onSurface.value}-${outlineVariant.value}-${brightness.name}';
+      '${primary.toARGB32()}-${onPrimary.toARGB32()}-${surface.toARGB32()}-${onSurface.toARGB32()}-${outlineVariant.toARGB32()}-${brightness.name}';
 }
 
 class MapMarkerIconManager {
@@ -66,7 +66,7 @@ class MapMarkerIconManager {
       return Marker(
         markerId: MarkerId(branch.id.toString()),
         position: branch.mapPosition,
-        anchor: const Offset(0.5, 1.0),
+        anchor: const Offset(0.5, 1),
         icon: icon ??
             BitmapDescriptor.defaultMarkerWithHue(
               isSelected

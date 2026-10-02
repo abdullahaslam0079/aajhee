@@ -1,8 +1,9 @@
 part of 'theme.dart';
 
-ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) {
+ThemeData _buildTheme(
+    ColorScheme colorScheme, AppColorsExtension customColors) {
   final textTheme = buildTextTheme();
-  
+
   return ThemeData(
     useMaterial3: true,
     fontFamily: AppFonts.primary,
@@ -14,7 +15,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       customColors,
       AppDesignTokens.fallback,
     ],
-    
+
     // --- Basic Elements ---
     scaffoldBackgroundColor: colorScheme.surface,
     dividerTheme: DividerThemeData(
@@ -30,7 +31,7 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       color: colorScheme.primary,
       circularTrackColor: colorScheme.primary.withValues(alpha: 0.15),
     ),
-    
+
     // --- Widget Themes ---
 
     // App Bar Theme
@@ -131,9 +132,12 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         borderRadius: AppBorders.input,
         borderSide: BorderSide(color: colorScheme.error, width: 1.5),
       ),
-      floatingLabelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.primary),
-      labelStyle: textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-      hintStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
+      floatingLabelStyle:
+          textTheme.labelMedium?.copyWith(color: colorScheme.primary),
+      labelStyle:
+          textTheme.labelMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+      hintStyle: textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.7)),
     ),
 
     // Navigation Bar Theme
@@ -152,7 +156,8 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
             fontWeight: FontWeight.w700,
           );
         }
-        return textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant);
+        return textTheme.labelSmall
+            ?.copyWith(color: colorScheme.onSurfaceVariant);
       }),
     ),
 
@@ -161,8 +166,10 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       backgroundColor: colorScheme.surface,
       indicatorColor: colorScheme.secondaryContainer,
       labelType: NavigationRailLabelType.all,
-      unselectedLabelTextStyle: textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
-      selectedLabelTextStyle: textTheme.labelSmall?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
+      unselectedLabelTextStyle:
+          textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant),
+      selectedLabelTextStyle: textTheme.labelSmall
+          ?.copyWith(color: colorScheme.primary, fontWeight: FontWeight.bold),
     ),
 
     // Tab Bar Theme
@@ -212,8 +219,8 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
     ),
 
     // Checkbox Theme
-    checkboxTheme: CheckboxThemeData(
-      shape: const RoundedRectangleBorder(borderRadius: AppBorders.xs),
+    checkboxTheme: const CheckboxThemeData(
+      shape: RoundedRectangleBorder(borderRadius: AppBorders.xs),
     ),
 
     // Switch Theme
@@ -223,7 +230,9 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         return colorScheme.outline;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return colorScheme.primaryContainer;
+        if (states.contains(WidgetState.selected)) {
+          return colorScheme.primaryContainer;
+        }
         return colorScheme.surfaceContainerHighest;
       }),
     ),
@@ -234,7 +243,8 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       shape: const RoundedRectangleBorder(borderRadius: AppBorders.md),
       elevation: 4,
       backgroundColor: colorScheme.inverseSurface,
-      contentTextStyle: textTheme.bodyMedium?.copyWith(color: colorScheme.onInverseSurface),
+      contentTextStyle:
+          textTheme.bodyMedium?.copyWith(color: colorScheme.onInverseSurface),
     ),
 
     // Dialog Theme
@@ -242,7 +252,8 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       shape: const RoundedRectangleBorder(borderRadius: AppBorders.dialog),
       elevation: 0,
       backgroundColor: colorScheme.surfaceContainerLowest,
-      titleTextStyle: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+      titleTextStyle:
+          textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       contentTextStyle: textTheme.bodyMedium?.copyWith(
         color: colorScheme.onSurfaceVariant,
       ),
@@ -266,8 +277,10 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
       shape: WidgetStateProperty.all(
         const RoundedRectangleBorder(borderRadius: AppBorders.input),
       ),
-      padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 16)),
-      hintStyle: WidgetStateProperty.all(textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
+      padding:
+          WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 16)),
+      hintStyle: WidgetStateProperty.all(
+          textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant)),
     ),
 
     // Badge Theme
@@ -292,8 +305,8 @@ ThemeData _buildTheme(ColorScheme colorScheme, AppColorsExtension customColors) 
         color: colorScheme.inverseSurface.withValues(alpha: 0.92),
         borderRadius: AppBorders.sm,
       ),
-      textStyle: textTheme.labelSmall?.copyWith(color: colorScheme.onInverseSurface),
+      textStyle:
+          textTheme.labelSmall?.copyWith(color: colorScheme.onInverseSurface),
     ),
   );
 }
-

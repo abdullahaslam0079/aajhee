@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/onboarding/presentation/widgets/onboarding_
 
 class _OnboardingIllustrationState extends State<OnboardingIllustration>
     with SingleTickerProviderStateMixin, OnboardingIllustrationController {
+  @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _floatController,

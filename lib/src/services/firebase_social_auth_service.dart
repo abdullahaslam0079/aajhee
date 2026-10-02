@@ -55,7 +55,7 @@ class FirebaseSocialAuthService {
 
       final credential = GoogleAuthProvider.credential(idToken: idToken);
       final result = await _auth.signInWithCredential(credential);
-      return _requireIdToken(result.user);
+      return await _requireIdToken(result.user);
     } catch (error, stackTrace) {
       if (kDebugMode) {
         debugPrint('[Aajhee] Google sign-in failed: $error');

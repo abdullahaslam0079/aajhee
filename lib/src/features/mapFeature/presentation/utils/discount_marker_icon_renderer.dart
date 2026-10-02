@@ -20,7 +20,8 @@ abstract final class DiscountMarkerIconRenderer {
     final text = label.trim().isEmpty ? 'Shop' : label.trim();
     final scale = devicePixelRatio.clamp(1.0, 3.0);
 
-    final textStyle = (labelStyle ?? const TextStyle(fontFamily: AppFonts.primary)).copyWith(
+    final textStyle =
+        (labelStyle ?? const TextStyle(fontFamily: AppFonts.primary)).copyWith(
       fontFamily: AppFonts.primary,
       color: textColor,
       fontWeight: FontWeight.w700,
@@ -192,6 +193,6 @@ abstract final class DiscountMarkerIconRenderer {
     );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     final bytes = Uint8List.view(byteData!.buffer);
-    return BitmapDescriptor.fromBytes(bytes);
+    return BitmapDescriptor.bytes(bytes, imagePixelRatio: scale);
   }
 }

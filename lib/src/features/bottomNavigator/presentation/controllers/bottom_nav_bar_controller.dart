@@ -7,7 +7,7 @@ class BottomNavBarController extends _$BottomNavBarController {
   @override
   int build() => 0;
 
-  void setSelectedIndex(int index) {
+  set selectedIndex(int index) {
     state = index;
   }
 }

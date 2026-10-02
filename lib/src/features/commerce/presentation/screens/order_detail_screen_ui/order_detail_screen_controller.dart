@@ -18,6 +18,7 @@ mixin OrderDetailScreenController
     'cancelled',
   };
 
+  @override
   Duration get refreshInterval => const Duration(seconds: 20);
 
   @override

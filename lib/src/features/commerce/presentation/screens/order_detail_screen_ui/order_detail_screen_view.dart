@@ -5,6 +5,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen>
         WidgetsBindingObserver,
         PeriodicRefreshMixin,
         OrderDetailScreenController {
+  @override
   Widget build(BuildContext context) {
     final tick = ref.watch(commerceRealtimeTickProvider);
     if (tick != _lastRealtimeTick) {

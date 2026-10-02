@@ -2,8 +2,6 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:aajhee/src/config/app_config.dart';
 import 'package:aajhee/src/services/dio_service.dart';
-import 'package:aajhee/src/utils/failure.dart';
-import 'package:aajhee/src/utils/typedefs.dart';
 import 'package:aajhee/src/utils/utils.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -159,7 +157,7 @@ class CommerceApiService {
         formMap['proof_${entry.key}'] = entry.value;
       }
       final result = await runTask(
-        () => AppConfig.dio.post(
+        () => AppConfig.dio.post<dynamic>(
           '/api/checkout/place',
           data: FormData.fromMap(formMap),
           queryParameters: {
@@ -177,12 +175,12 @@ class CommerceApiService {
         if (data is List) {
           return right(
             data
-                .whereType<Map>()
+                .whereType<Map<dynamic, dynamic>>()
                 .map((e) => Map<String, dynamic>.from(e))
                 .toList(),
           );
         }
-        return left(ServerFailure('Unexpected checkout response.'));
+        return left(const ServerFailure('Unexpected checkout response.'));
       });
     }
 
@@ -200,7 +198,7 @@ class CommerceApiService {
     return result.fold(left, (r) {
       final data = r.data;
       if (data is List) return right(data.cast<Map<String, dynamic>>());
-      return left(ServerFailure('Unexpected checkout response.'));
+      return left(const ServerFailure('Unexpected checkout response.'));
     });
   }
 
@@ -220,7 +218,7 @@ class CommerceApiService {
       if (data is Map && data['results'] is List) {
         return right((data['results'] as List).cast<Map<String, dynamic>>());
       }
-      return left(ServerFailure('Unexpected orders response.'));
+      return left(const ServerFailure('Unexpected orders response.'));
     });
   }
 
@@ -270,7 +268,7 @@ class CommerceApiService {
       'note': note,
     });
     final result = await runTask(
-      () => AppConfig.dio.post(
+      () => AppConfig.dio.post<dynamic>(
         '/api/orders/$publicId/payment-proof',
         data: form,
         options: Options(
@@ -302,7 +300,7 @@ class CommerceApiService {
     }
     final form = FormData.fromMap(map);
     final result = await runTask(
-      () => AppConfig.dio.post(
+      () => AppConfig.dio.post<dynamic>(
         '/api/orders/$publicId/items/$itemId/reviews',
         data: form,
         options: Options(
@@ -333,7 +331,7 @@ class CommerceApiService {
     if (images != null && images.isNotEmpty) map['images'] = images;
     final form = FormData.fromMap(map);
     final result = await runTask(
-      () => AppConfig.dio.patch(
+      () => AppConfig.dio.patch<dynamic>(
         '/api/reviews/$reviewId',
         data: form,
         options: Options(

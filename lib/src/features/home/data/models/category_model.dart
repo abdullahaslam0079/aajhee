@@ -24,7 +24,7 @@ class CategoryModel {
     final rawChildren = json['children'];
     final children = rawChildren is List
         ? rawChildren
-            .whereType<Map>()
+            .whereType<Map<dynamic, dynamic>>()
             .map((e) => CategoryModel.fromJson(Map<String, dynamic>.from(e)))
             .toList()
         : const <CategoryModel>[];

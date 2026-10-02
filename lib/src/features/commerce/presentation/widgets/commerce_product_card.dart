@@ -91,20 +91,21 @@ class CommerceProductCard extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    showRating
-                        ? _CompactRating(
-                            rating: ratingAvg,
-                            count: ratingCount,
-                          )
-                        : Text(
-                            'No reviews yet',
-                            style: tt.labelSmall?.copyWith(
-                              color: cs.onSurfaceVariant,
-                              fontWeight: FontWeight.w500,
-                              height: 1.1,
-                              fontSize: 9,
-                            ),
-                          ),
+                    if (showRating)
+                      _CompactRating(
+                        rating: ratingAvg,
+                        count: ratingCount,
+                      )
+                    else
+                      Text(
+                        'No reviews yet',
+                        style: tt.labelSmall?.copyWith(
+                          color: cs.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                          height: 1.1,
+                          fontSize: 9,
+                        ),
+                      ),
                     SizedBox(height: 4.h),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -229,9 +230,8 @@ class _CompactRating extends StatelessWidget {
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    final countLabel = count != null && count! > 0
-        ? ' (${_formatCount(count!)})'
-        : '';
+    final countLabel =
+        count != null && count! > 0 ? ' (${_formatCount(count!)})' : '';
 
     return Row(
       mainAxisSize: MainAxisSize.min,

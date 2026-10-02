@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/commerce/presentation/screens/orders_screen
 
 class _OrdersScreenState extends ConsumerState<OrdersScreen>
     with WidgetsBindingObserver, PeriodicRefreshMixin, OrdersScreenController {
+  @override
   Widget build(BuildContext context) {
     final tick = ref.watch(commerceRealtimeTickProvider);
     if (tick != _lastRealtimeTick) {
@@ -103,7 +104,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen>
                             onAction: () {
                               ref
                                   .read(bottomNavBarControllerProvider.notifier)
-                                  .setSelectedIndex(0);
+                                  .selectedIndex = 0;
                             },
                           )
                         : RefreshIndicator(

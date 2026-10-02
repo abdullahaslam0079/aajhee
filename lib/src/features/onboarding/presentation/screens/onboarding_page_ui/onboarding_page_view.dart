@@ -2,6 +2,7 @@ part of 'package:aajhee/src/features/onboarding/presentation/screens/onboarding_
 
 class _OnboardingPageState extends ConsumerState<OnboardingPage>
     with OnboardingPageController {
+  @override
   Widget build(BuildContext context) {
     final theme = context.theme;
     final colorScheme = theme.colorScheme;
