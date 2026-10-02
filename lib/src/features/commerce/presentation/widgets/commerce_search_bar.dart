@@ -17,31 +17,33 @@ class CommerceSearchBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.theme.colorScheme;
     final textTheme = context.theme.textTheme;
+    final outline = colorScheme.outline.withValues(alpha: 0.55);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: AppBorders.full,
+        borderRadius: AppBorders.input,
         child: Ink(
           decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
-            borderRadius: AppBorders.full,
+            color: AppBrandColors.surface,
+            borderRadius: AppBorders.input,
+            border: Border.all(color: outline),
           ),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 13.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             child: Row(
               children: [
                 Icon(
                   Icons.search_rounded,
-                  size: 20,
+                  size: 18,
                   color: colorScheme.onSurfaceVariant,
                 ),
-                SizedBox(width: 10.w),
+                SizedBox(width: 8.w),
                 Expanded(
                   child: Text(
                     hintText,
-                    style: textTheme.bodyMedium?.copyWith(
+                    style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                       fontWeight: FontWeight.w500,
                     ),

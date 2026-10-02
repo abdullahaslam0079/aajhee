@@ -6,8 +6,8 @@ import 'package:aajhee/src/utils/location_query_params.dart';
 import 'package:aajhee/src/utils/utils.dart';
 
 class DiscoveryService {
-  DiscoveryService._();
-  static final DiscoveryService instance = DiscoveryService._();
+  DiscoveryService();
+  static final DiscoveryService instance = DiscoveryService();
 
   Dio get _dio => AppConfig.dio;
 
@@ -64,7 +64,8 @@ class DiscoveryService {
       page: 1,
       pageSize: 1,
     );
-    return result.map((page) => page.results.isEmpty ? null : page.results.first);
+    return result
+        .map((page) => page.results.isEmpty ? null : page.results.first);
   }
 
   FutureEither<MapBranchModel?> findBranchByBusinessId(
@@ -77,6 +78,7 @@ class DiscoveryService {
       page: 1,
       pageSize: 1,
     );
-    return result.map((page) => page.results.isEmpty ? null : page.results.first);
+    return result
+        .map((page) => page.results.isEmpty ? null : page.results.first);
   }
 }

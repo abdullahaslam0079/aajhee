@@ -6,18 +6,35 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 mixin MapControllerMixin<T extends StatefulWidget> on State<T> {
   final Completer<GoogleMapController> mapController = Completer();
+  GoogleMapController? _googleMapController;
+  var _mapControllerDisposed = false;
 
   void onMapCreated(GoogleMapController controller) {
+    if (_mapControllerDisposed) {
+      controller.dispose();
+      return;
+    }
+    _googleMapController = controller;
     if (!mapController.isCompleted) {
       mapController.complete(controller);
     }
   }
 
+  @override
+  void dispose() {
+    _mapControllerDisposed = true;
+    _googleMapController?.dispose();
+    _googleMapController = null;
+    super.dispose();
+  }
+
   Future<void> withMapController(
     Future<void> Function(GoogleMapController controller) action,
   ) async {
-    if (!mapController.isCompleted) return;
-    await action(await mapController.future);
+    if (_mapControllerDisposed || !mapController.isCompleted) return;
+    final controller = _googleMapController;
+    if (controller == null) return;
+    await action(controller);
   }
 
   Future<void> zoomMapIn() => withMapController(MapCameraActions.zoomIn);

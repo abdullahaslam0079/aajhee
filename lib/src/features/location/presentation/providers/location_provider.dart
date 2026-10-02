@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'location_provider.g.dart';
@@ -62,13 +62,25 @@ class Location extends _$Location {
     return parts.join(', ');
   }
 
+  static const _positionTimeLimit = Duration(seconds: 8);
+
   Future<Position> determinePosition() async {
-    return Geolocator.getCurrentPosition();
+    try {
+      return await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: _positionTimeLimit,
+        ),
+      );
+    } on TimeoutException {
+      final last = await Geolocator.getLastKnownPosition();
+      if (last != null) return last;
+      rethrow;
+    }
   }
 
   Future<String> determineAddress() async {
     final position = await determinePosition();
-    debugPrint('position::::::::: $position');
     return _positionToAddress(position);
   }
 
@@ -98,18 +110,31 @@ class Location extends _$Location {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
-        ),
-      );
+      Position position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: _positionTimeLimit,
+          ),
+        );
+      } on TimeoutException {
+        final last = await Geolocator.getLastKnownPosition();
+        if (last == null) {
+          state = state.copyWith(
+            isLoading: false,
+            errorMessage: 'Timed out waiting for location.',
+          );
+          return;
+        }
+        position = last;
+      }
 
       String locationText =
           'Lat ${position.latitude}, Lng ${position.longitude}';
       try {
         locationText = await _positionToAddress(position);
       } catch (_) {}
-      debugPrint('User location: $locationText');
 
       state = state.copyWith(address: locationText, isLoading: false);
     } catch (e) {

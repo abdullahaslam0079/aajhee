@@ -34,6 +34,11 @@ class UserProfileState {
 }
 
 @Riverpod(keepAlive: true)
+UserProfileService userProfileService(Ref ref) {
+  return UserProfileService.instance;
+}
+
+@Riverpod(keepAlive: true)
 class UserProfile extends _$UserProfile {
   static const _storageKey = 'user_profile';
 
@@ -131,7 +136,7 @@ class UserProfile extends _$UserProfile {
   }
 
   Future<void> _refreshFromServer() async {
-    final result = await UserProfileService.instance.fetchProfile();
+    final result = await ref.read(userProfileServiceProvider).fetchProfile();
     await result.fold(
       (failure) async {
         AppLogger.warning('Failed to refresh profile: ${failure.message}');
@@ -153,10 +158,10 @@ class UserProfile extends _$UserProfile {
 
   Future<void> updateProfile({required String name, String? phone}) async {
     final trimmedName = name.trim();
-    final result = await UserProfileService.instance.updateProfile(
-      name: trimmedName,
-      phone: phone,
-    );
+    final result = await ref.read(userProfileServiceProvider).updateProfile(
+          name: trimmedName,
+          phone: phone,
+        );
 
     await result.fold(
       (failure) async {

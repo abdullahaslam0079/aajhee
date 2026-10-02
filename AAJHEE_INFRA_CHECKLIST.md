@@ -16,7 +16,11 @@ Complete these dashboard steps after the code rename lands. Product is not live 
    - Web config → `aajhee-web` `.env.local` as `NEXT_PUBLIC_FIREBASE_*`
    - Service account JSON → Render env `FIREBASE_CREDENTIALS_JSON` (minified one line) and local `secrets/firebase-adminsdk.json`
    - Grant that service account **Firebase Cloud Messaging Admin** in GCP IAM (`firebase-adminsdk-fbsvc@aajhee.iam.gserviceaccount.com`), and enable the FCM API. Without this, inbox rows still create but OS banners never leave the server.
-5. Add Android SHA-1 / SHA-256 for debug/release keystores.
+5. Add Android SHA-1 / SHA-256 for the debug keystore and for the release upload keystore.
+
+   Debug builds keep the Android debug key. Release builds (`flutter build apk`, `flutter build appbundle`, `flutter run --release`) read `android/key.properties`, which is gitignored. Copy `android/key.properties.example` to `android/key.properties` and set `storePassword`, `keyPassword`, `keyAlias`, and `storeFile` (absolute path, or a path relative to `android/app`). Do not commit `key.properties` or the `.jks`. If `key.properties` is missing, debug builds still work and a release task fails. Release does not fall back to the debug key.
+
+   The current GitHub workflow does not build a release APK. A later release job should write `android/key.properties` and the keystore from CI secrets at build time.
 6. Restrict Google Maps API keys to `com.aajhee.app` / `com.aajhee.business` / `com.aajhee.admin` and `aajhee.com`.
 
 ## 2. Render

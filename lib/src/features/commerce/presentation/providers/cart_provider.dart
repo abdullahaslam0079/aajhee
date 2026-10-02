@@ -1,5 +1,6 @@
-import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
-import 'package:aajhee/src/services/dio_service.dart';
+import 'package:aajhee/src/features/commerce/domain/entities/cart_line.dart';
+import 'package:aajhee/src/features/commerce/domain/repositories/commerce_repository.dart';
+import 'package:aajhee/src/features/commerce/presentation/providers/commerce_repository_provider.dart';
 import 'package:aajhee/src/utils/logger.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -15,22 +16,18 @@ class CartState {
     this.errorMessage,
   });
 
-  final List<Map<String, dynamic>> items;
+  final List<CartLine> items;
   final String? subtotal;
   final bool isLoading;
   final bool isUpdating;
   final int? updatingItemId;
   final String? errorMessage;
 
-  int get totalQuantity => items.fold<int>(0, (sum, item) {
-        final qty = item['quantity'];
-        if (qty is int) return sum + qty;
-        if (qty is num) return sum + qty.toInt();
-        return sum + 1;
-      });
+  int get totalQuantity =>
+      items.fold<int>(0, (sum, item) => sum + item.quantity);
 
   CartState copyWith({
-    List<Map<String, dynamic>>? items,
+    List<CartLine>? items,
     String? subtotal,
     bool? isLoading,
     bool? isUpdating,
@@ -52,51 +49,49 @@ class CartState {
     );
   }
 
-  Map<String, dynamic>? itemForProduct(int productId, {int? branchId}) {
-    for (final item in items) {
-      final product = Map<String, dynamic>.from(item['product'] as Map? ?? {});
-      final pid = product['id'] ?? item['product_id'];
-      final matchesProduct = pid == productId ||
-          (pid is num && pid.toInt() == productId) ||
-          pid?.toString() == '$productId';
-      if (!matchesProduct) continue;
-      if (branchId == null) return item;
-      final itemBranch = item['branch_id'];
-      if (itemBranch == branchId) return item;
-      if (itemBranch is num && itemBranch.toInt() == branchId) return item;
-    }
-    // Fallback: match product only when branch was requested but missing.
-    if (branchId != null) {
-      for (final item in items) {
-        final product =
-            Map<String, dynamic>.from(item['product'] as Map? ?? {});
-        final pid = product['id'] ?? item['product_id'];
-        final matchesProduct = pid == productId ||
-            (pid is num && pid.toInt() == productId) ||
-            pid?.toString() == '$productId';
-        if (matchesProduct) return item;
-      }
-    }
-    return null;
+  CartLine? lineForProduct(int productId, {int? branchId}) {
+    return CartSnapshot(items: items, subtotal: subtotal)
+        .lineForProduct(productId, branchId: branchId);
   }
 }
 
 @Riverpod(keepAlive: true)
 class Cart extends _$Cart {
-  CommerceApiService get _api => CommerceApiService(DioService.instance);
+  CommerceRepository get _commerce => ref.read(commerceRepositoryProvider);
+
+  /// Bumped on every refresh and mutation. A response applies only if no
+  /// newer cart operation started while it was in flight.
+  int _generation = 0;
+
+  /// Mutations and refreshes run one at a time so a slow refresh cannot
+  /// overwrite a quantity change that started after it.
+  Future<void> _tail = Future<void>.value();
 
   @override
   CartState build() {
+    _generation = 0;
+    _tail = Future<void>.value();
     Future.microtask(refresh);
     return const CartState(isLoading: true);
   }
 
-  Future<void> refresh({bool silent = false}) async {
+  Future<T> _enqueue<T>(Future<T> Function() action) {
+    final run = _tail.then((_) => action());
+    _tail = run.then((_) {}, onError: (Object _, StackTrace __) {});
+    return run;
+  }
+
+  Future<void> refresh({bool silent = false}) {
+    return _enqueue(() => _refresh(silent: silent));
+  }
+
+  Future<void> _refresh({required bool silent}) async {
+    final generation = ++_generation;
     if (!silent) {
       state = state.copyWith(isLoading: true, clearError: true);
     }
-    final result = await _api.getCart();
-    if (!ref.mounted) return;
+    final result = await _commerce.getCart();
+    if (!ref.mounted || generation != _generation) return;
     result.fold(
       (failure) {
         AppLogger.error('Failed to load cart', failure.message);
@@ -109,8 +104,8 @@ class Cart extends _$Cart {
       },
       (cart) {
         state = state.copyWith(
-          items: _parseItems(cart['items']),
-          subtotal: cart['subtotal']?.toString(),
+          items: cart.items,
+          subtotal: cart.subtotal,
           isLoading: false,
           isUpdating: false,
           clearUpdatingItem: true,
@@ -124,49 +119,70 @@ class Cart extends _$Cart {
     required int productId,
     int quantity = 1,
     int? branchId,
+  }) {
+    return _enqueue(
+      () => _addProduct(
+        productId: productId,
+        quantity: quantity,
+        branchId: branchId,
+      ),
+    );
+  }
+
+  Future<bool> _addProduct({
+    required int productId,
+    required int quantity,
+    int? branchId,
   }) async {
+    final generation = ++_generation;
     state = state.copyWith(isUpdating: true, clearError: true);
-    final result = await _api.addToCart(
+    final result = await _commerce.addToCart(
       productId: productId,
       quantity: quantity,
       branchId: branchId,
     );
-    if (!ref.mounted) return false;
+    if (!ref.mounted || generation != _generation) return false;
     final failed = result.fold((f) => f.message, (_) => null);
     if (failed != null) {
       state = state.copyWith(isUpdating: false, errorMessage: failed);
       return false;
     }
-    await refresh(silent: true);
+    await _refresh(silent: true);
     return true;
   }
 
-  Future<bool> setQuantity(int itemId, int quantity) async {
-    final previousItems =
-        state.items.map((e) => Map<String, dynamic>.from(e)).toList();
+  Future<bool> setQuantity(int itemId, int quantity) {
+    return _enqueue(() => _setQuantity(itemId, quantity));
+  }
 
-    // Optimistic local update so qty controls feel instant.
+  Future<bool> _setQuantity(int itemId, int quantity) async {
+    final generation = ++_generation;
+    final previousItems = List<CartLine>.from(state.items);
+
     if (quantity < 1) {
       state = state.copyWith(
-        items: state.items.where((item) => item['id'] != itemId).toList(),
+        items: state.items.where((item) => item.id != itemId).toList(),
         isUpdating: true,
         updatingItemId: itemId,
         clearError: true,
       );
     } else {
       state = state.copyWith(
-        items: state.items.map((item) {
-          if (item['id'] != itemId) return item;
-          return {...item, 'quantity': quantity};
-        }).toList(),
+        items: state.items
+            .map(
+              (item) => item.id == itemId
+                  ? item.copyWith(quantity: quantity)
+                  : item,
+            )
+            .toList(),
         isUpdating: true,
         updatingItemId: itemId,
         clearError: true,
       );
     }
 
-    final result = await _api.updateCartItem(itemId, quantity);
-    if (!ref.mounted) return false;
+    final result = await _commerce.updateCartItem(itemId, quantity);
+    if (!ref.mounted || generation != _generation) return false;
     final failed = result.fold((f) => f.message, (_) => null);
     if (failed != null) {
       state = state.copyWith(
@@ -177,7 +193,7 @@ class Cart extends _$Cart {
       );
       return false;
     }
-    await refresh(silent: true);
+    await _refresh(silent: true);
     return true;
   }
 
@@ -188,12 +204,4 @@ class Cart extends _$Cart {
       setQuantity(itemId, currentQuantity - 1);
 
   Future<bool> remove(int itemId) => setQuantity(itemId, 0);
-
-  static List<Map<String, dynamic>> _parseItems(dynamic raw) {
-    if (raw is! List) return const [];
-    return raw
-        .whereType<Map<dynamic, dynamic>>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
-  }
 }

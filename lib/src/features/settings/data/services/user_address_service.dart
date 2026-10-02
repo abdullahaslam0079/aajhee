@@ -4,8 +4,8 @@ import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart'
 import 'package:aajhee/src/utils/utils.dart';
 
 class UserAddressService {
-  UserAddressService._();
-  static final UserAddressService instance = UserAddressService._();
+  UserAddressService();
+  static final UserAddressService instance = UserAddressService();
 
   Dio get _dio => AppConfig.dio;
 

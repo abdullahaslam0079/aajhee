@@ -34,7 +34,10 @@ void main() {
   group('labelPayment', () {
     test('maps known methods', () {
       expect(labelPayment('stripe'), 'Card');
-      expect(labelPayment('jazzcash'), 'JazzCash');
+      expect(
+        labelPayment('jazzcash'),
+        'Mobile wallet (JazzCash / Easypaisa)',
+      );
       expect(labelPayment('bank_transfer'), 'Bank transfer');
     });
   });

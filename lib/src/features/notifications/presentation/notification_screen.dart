@@ -2,6 +2,7 @@ import 'package:aajhee/src/features/notifications/data/models/app_notification.d
 import 'package:aajhee/src/features/notifications/presentation/providers/notifications_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 class NotificationScreen extends ConsumerStatefulWidget {
   const NotificationScreen({super.key});
@@ -127,8 +128,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
             title: 'Could not load notifications',
             subtitle: state.errorMessage,
             actionLabel: 'Retry',
-            onAction: () =>
-                ref.read(notificationsProvider.notifier).refresh(),
+            onAction: () => ref.read(notificationsProvider.notifier).refresh(),
           ),
         ],
       );
@@ -142,8 +142,7 @@ class _NotificationScreenState extends ConsumerState<NotificationScreen> {
           const AppEmptyState(
             icon: Icons.notifications_none_rounded,
             title: 'No notifications yet',
-            subtitle:
-                'Updates about your orders and account will appear here.',
+            subtitle: 'Updates about your orders and account will appear here.',
           ),
         ],
       );

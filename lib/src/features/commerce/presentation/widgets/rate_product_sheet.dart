@@ -1,19 +1,20 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../theme/app_borders.dart';
-import '../../data/commerce_api_service.dart';
+import '../../domain/entities/customer_order.dart';
+import '../../domain/entities/upload_file.dart';
+import '../../domain/repositories/commerce_repository.dart';
 
 /// Bottom sheet for rating a delivered order line item (stars + text + photos).
 Future<bool> showRateProductSheet({
   required BuildContext context,
-  required CommerceApiService api,
+  required CommerceRepository api,
   required String orderPublicId,
-  required Map<String, dynamic> item,
+  required OrderLine item,
 }) async {
   final result = await showModalBottomSheet<bool>(
     context: context,
@@ -39,9 +40,9 @@ class _RateProductSheet extends StatefulWidget {
     required this.item,
   });
 
-  final CommerceApiService api;
+  final CommerceRepository api;
   final String orderPublicId;
-  final Map<String, dynamic> item;
+  final OrderLine item;
 
   @override
   State<_RateProductSheet> createState() => _RateProductSheetState();
@@ -84,7 +85,7 @@ class _RateProductSheetState extends State<_RateProductSheet> {
       _submitting = true;
       _error = null;
     });
-    final itemId = widget.item['id'];
+    final itemId = widget.item.id;
     if (itemId == null) {
       setState(() {
         _submitting = false;
@@ -92,20 +93,18 @@ class _RateProductSheetState extends State<_RateProductSheet> {
       });
       return;
     }
-    final files = <MultipartFile>[];
-    for (final photo in _photos) {
-      files.add(
-        await MultipartFile.fromFile(
-          photo.path,
+    final files = <UploadFile>[
+      for (final photo in _photos)
+        UploadFile(
+          path: photo.path,
           filename: photo.name.isNotEmpty
               ? photo.name
               : photo.path.split(Platform.pathSeparator).last,
         ),
-      );
-    }
+    ];
     final result = await widget.api.createOrderItemReview(
       publicId: widget.orderPublicId,
-      itemId: itemId is int ? itemId : int.parse('$itemId'),
+      itemId: itemId,
       rating: _rating,
       comment: _commentCtrl.text.trim(),
       images: files,
@@ -128,9 +127,8 @@ class _RateProductSheetState extends State<_RateProductSheet> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final name = (widget.item['product_name']?.toString().trim().isNotEmpty ??
-            false)
-        ? widget.item['product_name'].toString()
+    final name = widget.item.productName.isNotEmpty
+        ? widget.item.productName
         : 'Product';
     final bottom = MediaQuery.viewInsetsOf(context).bottom;
 

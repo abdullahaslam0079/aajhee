@@ -26,6 +26,25 @@ import 'package:aajhee/src/features/splash/presentation/splash_screen.dart';
 
 /// Firebase Phone Auth reCAPTCHA redirects via a custom URL scheme.
 /// GoRouter must ignore those callbacks or it shows "Page Not Found".
+/// OTP can only continue with the in-memory verification args.
+/// A restore or cold link without them goes back to login.
+String? verifyOtpFallback(Object? extra) {
+  if (extra is PhoneOtpArgs) return null;
+  return AppRoutes.login;
+}
+
+/// Store details need the branch that was tapped. Without it, open the shell.
+String? businessStoreFallback(Object? extra) {
+  if (extra is StoreCatalogArgs || extra is MapBranchModel) return null;
+  return AppRoutes.bottomNavigator;
+}
+
+/// Edit needs the saved address. Without it, open the address list.
+String? editAddressFallback(Object? extra) {
+  if (extra is SavedAddress) return null;
+  return AppRoutes.addresses;
+}
+
 bool _isFirebaseAuthCallback(GoRouterState state) {
   final uri = state.uri;
   if (uri.host == 'firebaseauth') return true;
@@ -67,12 +86,9 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.verifyOtp,
       name: 'verifyOtp',
+      redirect: (context, state) => verifyOtpFallback(state.extra),
       builder: (context, state) {
-        final args = state.extra;
-        if (args is! PhoneOtpArgs) {
-          throw StateError('VerifyOtpScreen requires PhoneOtpArgs extra.');
-        }
-        return VerifyOtpScreen(args: args);
+        return VerifyOtpScreen(args: state.extra! as PhoneOtpArgs);
       },
     ),
     GoRoute(
@@ -134,18 +150,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.businessStore,
       name: 'businessStore',
+      redirect: (context, state) => businessStoreFallback(state.extra),
       builder: (context, state) {
         final extra = state.extra;
         if (extra is StoreCatalogArgs) {
           return StoreCatalogScreen(args: extra);
         }
-        if (extra is MapBranchModel) {
-          return StoreCatalogScreen(
-            args: StoreCatalogArgs.fromBranch(extra),
-          );
-        }
-        throw StateError(
-          'StoreCatalogScreen requires StoreCatalogArgs or MapBranchModel.',
+        return StoreCatalogScreen(
+          args: StoreCatalogArgs.fromBranch(extra! as MapBranchModel),
         );
       },
     ),
@@ -176,9 +188,11 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'edit',
           name: 'editAddress',
+          redirect: (context, state) => editAddressFallback(state.extra),
           builder: (context, state) {
-            final address = state.extra as SavedAddress?;
-            return AddAddressScreen(addressToEdit: address);
+            return AddAddressScreen(
+              addressToEdit: state.extra! as SavedAddress,
+            );
           },
         ),
       ],

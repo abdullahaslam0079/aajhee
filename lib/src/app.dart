@@ -1,5 +1,7 @@
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_router.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class App extends ConsumerWidget {
   const App({super.key});

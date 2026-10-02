@@ -8,6 +8,8 @@ import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/routing/app_navigation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
+import 'package:aajhee/src/services/push_notification_service.dart';
 
 part 'auth_provider.g.dart';
 
@@ -79,7 +81,8 @@ class AuthController extends _$AuthController {
     result.fold(
       (_) {},
       (_) {
-        showToast(context, message: 'Logged out successfully', status: 'success');
+        showToast(context,
+            message: 'Logged out successfully', status: 'success');
       },
     );
 

@@ -1,31 +1,31 @@
 import 'package:fpdart/fpdart.dart';
 
-import '../imports/core_imports.dart';
+import '../services/internet_connection_service.dart';
+import 'error_handler.dart';
+import 'failure.dart';
+import 'logger.dart';
+import 'typedefs.dart';
 
-/// A reusable generic function to handle potential exceptions in async tasks
-/// and map them to the [Either] type matching [FutureEither<T>].
+const _offlineMessage =
+    'No internet connection. Please check your connection and try again.';
+
+/// Runs [action] and maps a thrown error to [ServerFailure].
 ///
-/// If [requiresNetwork] is `true` and [isNetworkAvailable] returns `false`,
-/// the [action] will not be executed and a [NetworkFailure] will be returned.
+/// When [requiresNetwork] is true and the device is offline, [action] is not
+/// called and a [NetworkFailure] is returned. Screens decide how to show it.
+/// [checkNetwork] is for tests that need a fixed online or offline result.
 FutureEither<T> runTask<T>(
   Future<T> Function() action, {
   bool requiresNetwork = false,
+  Future<bool> Function()? checkNetwork,
 }) async {
   if (requiresNetwork) {
-    final hasNetwork = await InternetConnectionService().hasConnection();
+    final hasNetwork =
+        await (checkNetwork ?? InternetConnectionService().hasConnection)();
 
     if (!hasNetwork) {
       AppLogger.warning('Network unavailable for task');
-      showGlobalToast(
-        message:
-            'No internet connection. Please check your connection and try again.',
-        status: 'warning',
-      );
-      return left(
-        const NetworkFailure(
-          'No internet connection. Please check your connection and try again.',
-        ),
-      );
+      return left(const NetworkFailure(_offlineMessage));
     }
   }
 
@@ -33,10 +33,8 @@ FutureEither<T> runTask<T>(
     final result = await action();
     return right(result);
   } catch (error, stackTrace) {
-    AppLogger.error('Task execution failed $error', [error, stackTrace]);
+    AppLogger.error('Task execution failed $error', error, stackTrace);
     final errorMessage = AppErrorHandler.format(error);
-
-    // Depending on logic, map error strings/types to specific Failure variants
     return left(ServerFailure(errorMessage, error: error));
   }
 }

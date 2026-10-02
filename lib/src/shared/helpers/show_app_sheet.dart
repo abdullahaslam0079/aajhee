@@ -1,5 +1,6 @@
 import 'dart:ui';
 import '../../imports/imports.dart';
+import 'package:aajhee/src/routing/global_navigator.dart';
 
 /// Shows a highly customizable bottom sheet with premium features like backdrop blur.
 ///
@@ -42,9 +43,8 @@ Future<T?> showAppSheet<T>({
       // taps, and absorb taps that land on the sheet body itself.
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: isDismissible
-            ? () => Navigator.of(sheetContext).maybePop()
-            : null,
+        onTap:
+            isDismissible ? () => Navigator.of(sheetContext).maybePop() : null,
         child: GestureDetector(
           onTap: () {},
           child: content,

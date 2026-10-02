@@ -1,5 +1,6 @@
 import '../../imports/core_imports.dart';
 import '../../imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   const AppTopBar({
@@ -54,8 +55,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
         onPressed: handleBack,
         icon: Icon(
           Icons.arrow_back_rounded,
-          color: theme.appBarTheme.iconTheme?.color ??
-              theme.colorScheme.onSurface,
+          color:
+              theme.appBarTheme.iconTheme?.color ?? theme.colorScheme.onSurface,
         ),
       ),
       iconTheme: theme.appBarTheme.iconTheme,

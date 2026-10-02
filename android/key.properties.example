@@ -1,0 +1,22 @@
+# Copy this file to android/key.properties and fill it in.
+# android/key.properties is gitignored. Do not commit passwords or the keystore.
+#
+# Debug builds (flutter run, flutter build apk --debug) do not read this file.
+# They keep using the Android debug keystore.
+#
+# Release builds (flutter build apk, flutter build appbundle, flutter run --release)
+# fail if this file is missing. They do not fall back to the debug key.
+#
+# storeFile is resolved from android/app.
+# Use an absolute path so the keystore can live outside the repo.
+# A relative path such as ../upload-keystore.jks also works.
+# *.jks and *.keystore are gitignored.
+#
+# The current GitHub workflow does not build a release APK.
+# When a release job is added, write key.properties and the keystore from
+# CI secrets at build time. Do not commit either file.
+
+storePassword=REPLACE_ME
+keyPassword=REPLACE_ME
+keyAlias=upload
+storeFile=/absolute/path/to/upload-keystore.jks

@@ -3,6 +3,7 @@ import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart'
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 class AddressesScreen extends ConsumerWidget {
   const AddressesScreen({super.key});
@@ -47,7 +48,8 @@ class AddressesScreen extends ConsumerWidget {
                       96.h,
                     ),
                     itemCount: addresses.length,
-                    separatorBuilder: (_, __) => SizedBox(height: AppSpacing.sm.h),
+                    separatorBuilder: (_, __) =>
+                        SizedBox(height: AppSpacing.sm.h),
                     itemBuilder: (context, index) {
                       final address = addresses[index];
                       return _AddressCard(
@@ -56,8 +58,10 @@ class AddressesScreen extends ConsumerWidget {
                           AppRoutes.editAddress,
                           extra: address,
                         ),
-                        onSetDefault: () => _setDefault(context, ref, address.id),
-                        onDelete: () => _confirmDelete(context, ref, address.id),
+                        onSetDefault: () =>
+                            _setDefault(context, ref, address.id),
+                        onDelete: () =>
+                            _confirmDelete(context, ref, address.id),
                       );
                     },
                   ),
@@ -73,7 +77,8 @@ class AddressesScreen extends ConsumerWidget {
     try {
       await ref.read(savedAddressesProvider.notifier).setDefault(id);
       if (context.mounted) {
-        showToast(context, message: 'Default address updated', status: 'success');
+        showToast(context,
+            message: 'Default address updated', status: 'success');
       }
     } on AddressValidationException catch (e) {
       if (context.mounted) {

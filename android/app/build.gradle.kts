@@ -15,6 +15,16 @@ val secretsProperties = Properties().apply {
     }
 }
 
+// Release credentials live in android/key.properties (gitignored).
+// See android/key.properties.example. Debug builds do not read this file.
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use(::load)
+    }
+}
+val releaseKeystoreFile = keystoreProperties.getProperty("storeFile")?.let { project.file(it) }
+
 android {
     namespace = "com.aajhee.app"
     compileSdk = flutter.compileSdkVersion
@@ -43,13 +53,38 @@ android {
             secretsProperties.getProperty("GOOGLE_MAPS_API_KEY") ?: ""
     }
 
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = releaseKeystoreFile
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
         }
     }
+
+    buildTypes {
+        release {
+            // Debug stays on the default debug keystore. Release never falls
+            // back to that key. A missing key.properties fails the release task
+            // below instead of signing the artifact with the public debug key.
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
+}
+
+val requestedRelease = gradle.startParameter.taskNames.any { name ->
+    name.contains("Release")
+}
+if (requestedRelease && !keystorePropertiesFile.exists()) {
+    throw GradleException(
+        "Release signing requires android/key.properties. " +
+            "Copy android/key.properties.example and point storeFile at your upload keystore. " +
+            "Release builds do not use the debug key.",
+    )
 }
 
 flutter {

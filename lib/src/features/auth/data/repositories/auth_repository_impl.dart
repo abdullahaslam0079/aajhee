@@ -5,6 +5,7 @@ import 'package:aajhee/src/features/auth/domain/repositories/auth_repository.dar
 import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/services/auth_service.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthService _authService = AuthService.instance;

@@ -27,10 +27,12 @@ migrate_working_dir/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+# Any build/ directory: app build, ios/build (Xcode module cache), android builds.
+build/
 /coverage/
 
 # Symbolication related
@@ -43,6 +45,17 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+**/.gradle/
+**/local.properties
+*.apk
+*.aab
+*.ipa
+
+# Xcode user and machine files
+**/*.xcuserstate
+**/xcuserdata/
+**/DerivedData/
+**/.symlinks/
 
 # --- Secrets / local env (never commit) ---
 .env

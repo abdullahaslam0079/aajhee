@@ -3,6 +3,10 @@ import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.da
 import 'package:aajhee/src/features/auth/presentation/widgets/country_code_picker.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
+import 'package:aajhee/src/services/firebase_phone_auth_service.dart';
+import 'package:aajhee/src/services/firebase_social_auth_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 /// Paid Apple Developer Program + Sign In with Apple entitlement required on iOS.
 /// Free personal teams cannot provision `com.apple.developer.applesignin`.
@@ -50,7 +54,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       digits = digits.substring(1);
     }
     final countryDigits = _country.dialCode.replaceAll('+', '');
-    if (digits.startsWith(countryDigits) && digits.length > countryDigits.length) {
+    if (digits.startsWith(countryDigits) &&
+        digits.length > countryDigits.length) {
       return '+$digits';
     }
     return '${_country.dialCode}$digits';

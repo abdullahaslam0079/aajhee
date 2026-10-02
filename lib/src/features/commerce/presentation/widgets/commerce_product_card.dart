@@ -1,3 +1,4 @@
+import 'package:aajhee/src/features/commerce/domain/entities/commerce_product.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/utils/money_format.dart';
@@ -14,7 +15,7 @@ class CommerceProductCard extends StatelessWidget {
     this.onAddTap,
   });
 
-  final Map<String, dynamic> product;
+  final CommerceProduct product;
   final VoidCallback onTap;
   final double? width;
   final VoidCallback? onAddTap;
@@ -23,14 +24,14 @@ class CommerceProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
-    final discount = commerceDiscountLabel(product, short: true);
-    final imageUrl = resolveMediaUrl(product['image_url']?.toString());
-    final price = formatRs(product['effective_price'] ?? product['base_price']);
-    final basePrice = formatRsOrNull(product['base_price']);
+    final discount = product.discountLabel(short: true);
+    final imageUrl = resolveMediaUrl(product.imageUrl);
+    final price = formatRs(product.effectivePrice ?? product.basePrice);
+    final basePrice = formatRsOrNull(product.basePrice);
     final showStrike =
         discount != null && basePrice != null && basePrice != price;
-    final ratingAvg = double.tryParse('${product['rating_avg'] ?? ''}');
-    final ratingCount = int.tryParse('${product['rating_count'] ?? ''}');
+    final ratingAvg = product.ratingAvg;
+    final ratingCount = product.ratingCount;
     final showRating = ratingAvg != null &&
         ratingAvg > 0 &&
         (ratingCount == null || ratingCount > 0);
@@ -79,7 +80,7 @@ class CommerceProductCard extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      product['name']?.toString() ?? '',
+                      product.displayName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: tt.labelSmall?.copyWith(

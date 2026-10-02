@@ -14,8 +14,8 @@ class NotificationPushPreferences {
 }
 
 class NotificationService {
-  NotificationService._();
-  static final NotificationService instance = NotificationService._();
+  NotificationService();
+  static final NotificationService instance = NotificationService();
 
   Dio get _dio => AppConfig.dio;
 
@@ -88,7 +88,8 @@ class NotificationService {
     }, requiresNetwork: true);
   }
 
-  FutureEither<NotificationPushPreferences> fetchNotificationPreferences() async {
+  FutureEither<NotificationPushPreferences>
+      fetchNotificationPreferences() async {
     return runTask(() async {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/user/preferences',

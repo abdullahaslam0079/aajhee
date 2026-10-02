@@ -1,7 +1,9 @@
+import 'package:aajhee/src/features/commerce/domain/entities/cart_line.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/utils/money_format.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 class CartScreen extends ConsumerStatefulWidget {
   const CartScreen({super.key});
@@ -17,14 +19,9 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     Future.microtask(() => ref.read(cartProvider.notifier).refresh());
   }
 
-  Map<String, dynamic> _productOf(Map<String, dynamic> item) {
-    return Map<String, dynamic>.from(item['product'] as Map? ?? {});
-  }
-
-  Future<void> _updateQuantity(Map<String, dynamic> item, int nextQty) async {
-    final id = item['id'];
-    if (id is! int) return;
-    final ok = await ref.read(cartProvider.notifier).setQuantity(id, nextQty);
+  Future<void> _updateQuantity(CartLine item, int nextQty) async {
+    final ok =
+        await ref.read(cartProvider.notifier).setQuantity(item.id, nextQty);
     if (!mounted || ok) return;
     final message = ref.read(cartProvider).errorMessage;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -32,15 +29,14 @@ class _CartScreenState extends ConsumerState<CartScreen> {
     );
   }
 
-  void _openProduct(Map<String, dynamic> item) {
-    final product = _productOf(item);
-    final productId = product['id'] ?? item['product_id'];
+  void _openProduct(CartLine item) {
+    final productId = item.product.id ?? item.productId;
     if (productId == null) return;
-    final branchId = item['branch_id'] as int?;
+    final branchId = item.branchId;
     final path = branchId != null
         ? '${AppRoutes.productDetail('$productId')}?branch_id=$branchId'
         : AppRoutes.productDetail('$productId');
-    context.push(path, extra: product.isEmpty ? null : product);
+    context.push(path, extra: item.product.toJson());
   }
 
   void _checkout() {
@@ -132,26 +128,14 @@ class _CartScreenState extends ConsumerState<CartScreen> {
                     separatorBuilder: (_, __) => SizedBox(height: 12.h),
                     itemBuilder: (context, index) {
                       final item = items[index];
-                      final product = _productOf(item);
                       return _CartItemCard(
                         item: item,
-                        product: product,
                         updating: updating,
                         onOpen: () => _openProduct(item),
-                        onDecrease: () {
-                          final qty = item['quantity'];
-                          final current = qty is int
-                              ? qty
-                              : (qty is num ? qty.toInt() : 1);
-                          _updateQuantity(item, current - 1);
-                        },
-                        onIncrease: () {
-                          final qty = item['quantity'];
-                          final current = qty is int
-                              ? qty
-                              : (qty is num ? qty.toInt() : 1);
-                          _updateQuantity(item, current + 1);
-                        },
+                        onDecrease: () =>
+                            _updateQuantity(item, item.quantity - 1),
+                        onIncrease: () =>
+                            _updateQuantity(item, item.quantity + 1),
                       );
                     },
                   ),
@@ -163,15 +147,13 @@ class _CartScreenState extends ConsumerState<CartScreen> {
 class _CartItemCard extends StatelessWidget {
   const _CartItemCard({
     required this.item,
-    required this.product,
     required this.updating,
     required this.onOpen,
     required this.onDecrease,
     required this.onIncrease,
   });
 
-  final Map<String, dynamic> item;
-  final Map<String, dynamic> product;
+  final CartLine item;
   final bool updating;
   final VoidCallback onOpen;
   final VoidCallback onDecrease;
@@ -183,21 +165,14 @@ class _CartItemCard extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
     final appColors = context.appColors;
 
-    final name = product['name']?.toString().trim();
-    final displayName =
-        (name != null && name.isNotEmpty) ? name : 'Product';
-    final businessName = product['business_name']?.toString().trim() ?? '';
-    final imageUrl = product['image_url']?.toString();
-    final hasDiscount = product['has_discount'] == true;
-    final unitPrice = item['unit_price'] ??
-        product['effective_price'] ??
-        product['base_price'];
-    final lineTotal = item['line_total'] ?? unitPrice;
-    final qty = item['quantity'] is int
-        ? item['quantity'] as int
-        : (item['quantity'] is num
-            ? (item['quantity'] as num).toInt()
-            : 1);
+    final product = item.product;
+    final displayName = product.displayName;
+    final businessName = product.businessName ?? '';
+    final imageUrl = product.imageUrl;
+    final hasDiscount = product.hasDiscount;
+    final unitPrice = item.displayUnitPrice;
+    final lineTotal = item.displayLineTotal;
+    final qty = item.quantity;
 
     return Material(
       color: cs.surfaceContainerLowest,
@@ -271,7 +246,7 @@ class _CartItemCard extends StatelessWidget {
                       SizedBox(height: 6.h),
                       Text(
                         hasDiscount
-                            ? '${formatRs(unitPrice)} · ${product['effective_discount_percent']}% off'
+                            ? '${formatRs(unitPrice)} · ${product.discountLabel() ?? ''}'
                             : formatRs(unitPrice),
                         style: tt.bodyMedium?.copyWith(
                           color: hasDiscount ? appColors.deal : cs.onSurface,

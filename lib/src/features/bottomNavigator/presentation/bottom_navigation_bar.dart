@@ -20,21 +20,7 @@ class BottomNavigationBarScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: homeCanvasOf(context),
       extendBody: true,
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        child: KeyedSubtree(
-          key: ValueKey(selectedIndex),
-          child: selectedIndex == 0
-              ? const HomeCommerceScreen()
-              : selectedIndex == 1
-              ? const StoresTabScreen()
-              : selectedIndex == 2
-              ? const OrdersScreen()
-              : const SettingsScreen(),
-        ),
-      ),
+      body: _KeptTabs(index: selectedIndex.clamp(0, 3)),
       bottomNavigationBar: BottomAppBar(
         color: context.theme.colorScheme.surfaceContainerLowest,
         elevation: 0,
@@ -107,6 +93,41 @@ class BottomNavigationBarScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Builds a tab the first time it is opened, then keeps that instance.
+/// Switching tabs no longer disposes Home, Shops, Orders, or Profile.
+class _KeptTabs extends StatefulWidget {
+  const _KeptTabs({required this.index});
+
+  final int index;
+
+  @override
+  State<_KeptTabs> createState() => _KeptTabsState();
+}
+
+class _KeptTabsState extends State<_KeptTabs> {
+  static const _pages = <Widget>[
+    HomeCommerceScreen(),
+    StoresTabScreen(),
+    OrdersScreen(),
+    SettingsScreen(),
+  ];
+
+  final List<Widget?> _tabs = List<Widget?>.filled(4, null);
+
+  @override
+  Widget build(BuildContext context) {
+    final index = widget.index.clamp(0, _pages.length - 1);
+    _tabs[index] ??= _pages[index];
+    return IndexedStack(
+      index: index,
+      sizing: StackFit.expand,
+      children: [
+        for (final tab in _tabs) tab ?? const SizedBox.shrink(),
+      ],
     );
   }
 }

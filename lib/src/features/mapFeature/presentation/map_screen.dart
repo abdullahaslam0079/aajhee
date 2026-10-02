@@ -13,6 +13,7 @@ import 'package:aajhee/src/features/mapFeature/presentation/widgets/map_store_ca
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 class MapScreen extends ConsumerStatefulWidget {
   const MapScreen({super.key});
@@ -28,8 +29,7 @@ class _MapScreenState extends ConsumerState<MapScreen>
         MapMarkerMixin,
         MapStoreSelectionMixin {
   @override
-  List<MapBranchModel> get mapBranches =>
-      ref.watch(homeFeedProvider).branches;
+  List<MapBranchModel> get mapBranches => ref.watch(homeFeedProvider).branches;
 
   String? _focusedAddressId;
 
@@ -95,9 +95,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
     final branches = feedState.branches;
     final isLoading = feedState.isLoading && branches.isEmpty;
     final hasError = feedState.errorMessage != null && branches.isEmpty;
-    final selectedIndex = branches.isEmpty
-        ? 0
-        : selectedStoreIndex.clamp(0, branches.length - 1);
+    final selectedIndex =
+        branches.isEmpty ? 0 : selectedStoreIndex.clamp(0, branches.length - 1);
     final initialCameraPosition = selectedAddress != null
         ? MapConstants.cameraPositionFor(
             LatLng(selectedAddress.latitude, selectedAddress.longitude),
@@ -169,7 +168,8 @@ class _MapScreenState extends ConsumerState<MapScreen>
               ),
             ),
           if (isLoading)
-            const Positioned.fill(child: AppLoading(message: 'Loading stores...')),
+            const Positioned.fill(
+                child: AppLoading(message: 'Loading stores...')),
           if (hasError)
             Positioned.fill(
               child: ColoredBox(

@@ -15,8 +15,8 @@ class BusinessEngagementResult {
 }
 
 class FavoritesService {
-  FavoritesService._();
-  static final FavoritesService instance = FavoritesService._();
+  FavoritesService();
+  static final FavoritesService instance = FavoritesService();
 
   Dio get _dio => AppConfig.dio;
 
@@ -71,8 +71,7 @@ class FavoriteBranchesPage {
 
   factory FavoriteBranchesPage.fromJson(Map<String, dynamic> json) {
     final page = PaginatedPage.fromJson(json, MapBranchModel.fromJson);
-    final rawBranchIds =
-        json['liked_branch_ids'] as List<dynamic>? ?? const [];
+    final rawBranchIds = json['liked_branch_ids'] as List<dynamic>? ?? const [];
     final likedBranchIds = {
       for (final id in rawBranchIds) parseApiInt(id),
     }..remove(0);

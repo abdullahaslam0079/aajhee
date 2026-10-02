@@ -4,8 +4,8 @@ import 'package:aajhee/src/features/auth/data/models/user_model.dart';
 import 'package:aajhee/src/utils/utils.dart';
 
 class UserProfileService {
-  UserProfileService._();
-  static final UserProfileService instance = UserProfileService._();
+  UserProfileService();
+  static final UserProfileService instance = UserProfileService();
 
   Dio get _dio => AppConfig.dio;
 

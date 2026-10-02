@@ -5,6 +5,8 @@ import 'package:aajhee/src/features/auth/presentation/providers/auth_provider.da
 import 'package:aajhee/src/features/auth/presentation/widgets/otp_code_input.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/services/firebase_phone_auth_service.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class VerifyOtpScreen extends ConsumerStatefulWidget {
   const VerifyOtpScreen({

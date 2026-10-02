@@ -9,6 +9,50 @@ part of 'user_profile_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(userProfileService)
+final userProfileServiceProvider = UserProfileServiceProvider._();
+
+final class UserProfileServiceProvider extends $FunctionalProvider<
+    UserProfileService,
+    UserProfileService,
+    UserProfileService> with $Provider<UserProfileService> {
+  UserProfileServiceProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'userProfileServiceProvider',
+          isAutoDispose: false,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$userProfileServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<UserProfileService> $createElement(
+          $ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  UserProfileService create(Ref ref) {
+    return userProfileService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UserProfileService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UserProfileService>(value),
+    );
+  }
+}
+
+String _$userProfileServiceHash() =>
+    r'a06feae709dd812d548036a2a3759ce78d333578';
+
 @ProviderFor(UserProfile)
 final userProfileProvider = UserProfileProvider._();
 
@@ -41,7 +85,7 @@ final class UserProfileProvider
   }
 }
 
-String _$userProfileHash() => r'63b9aeb44b6a2f8c3bd288fdb4c1441dd46641bc';
+String _$userProfileHash() => r'd0a99454c5e98cecd6624e6a7c8e47caf938f0ff';
 
 abstract class _$UserProfile extends $Notifier<UserProfileState> {
   UserProfileState build();

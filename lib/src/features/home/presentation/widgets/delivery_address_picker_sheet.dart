@@ -2,6 +2,7 @@ import 'package:aajhee/src/features/settings/domain/entities/saved_address.dart'
 import 'package:aajhee/src/features/settings/presentation/providers/saved_addresses_provider.dart';
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:aajhee/src/routing/app_routes.dart';
 
 Future<void> showDeliveryAddressPicker(BuildContext context, WidgetRef ref) {
   return context.showAppBottomSheet(
@@ -152,13 +153,14 @@ class _AddressPickerTile extends StatelessWidget {
     final tt = context.theme.textTheme;
 
     return Material(
-      color: isSelected
-          ? cs.primaryContainer.withValues(alpha: 0.45)
-          : cs.surface,
+      color:
+          isSelected ? cs.primaryContainer.withValues(alpha: 0.45) : cs.surface,
       shape: RoundedRectangleBorder(
         borderRadius: AppBorders.lg,
         side: BorderSide(
-          color: isSelected ? cs.primary.withValues(alpha: 0.35) : cs.outlineVariant,
+          color: isSelected
+              ? cs.primary.withValues(alpha: 0.35)
+              : cs.outlineVariant,
         ),
       ),
       clipBehavior: Clip.antiAlias,

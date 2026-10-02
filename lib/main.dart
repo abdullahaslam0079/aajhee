@@ -1,8 +1,13 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'src/app.dart';
+import 'src/config/app_config.dart';
 import 'src/imports/core_imports.dart';
 import 'src/imports/packages_imports.dart';
-import 'src/app.dart';
+import 'src/services/push_notification_service.dart';
+import 'src/services/storage_service.dart';
 
 Future<void> main() async {
   final WidgetsBinding widgetsBinding =

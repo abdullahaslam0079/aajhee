@@ -1,5 +1,6 @@
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class CountryDialCode {
   const CountryDialCode({
@@ -14,8 +15,7 @@ class CountryDialCode {
   final String dialCode;
   final String flag;
 
-  String get searchHaystack =>
-      '$name $iso2 $dialCode'.toLowerCase();
+  String get searchHaystack => '$name $iso2 $dialCode'.toLowerCase();
 }
 
 const kPakistanCountry = CountryDialCode(
@@ -32,14 +32,17 @@ const kCountryDialCodes = <CountryDialCode>[
   kPakistanCountry,
   CountryDialCode(name: 'Germany', iso2: 'DE', dialCode: '+49', flag: '🇩🇪'),
   CountryDialCode(name: 'Austria', iso2: 'AT', dialCode: '+43', flag: '🇦🇹'),
-  CountryDialCode(name: 'Switzerland', iso2: 'CH', dialCode: '+41', flag: '🇨🇭'),
-  CountryDialCode(name: 'Netherlands', iso2: 'NL', dialCode: '+31', flag: '🇳🇱'),
+  CountryDialCode(
+      name: 'Switzerland', iso2: 'CH', dialCode: '+41', flag: '🇨🇭'),
+  CountryDialCode(
+      name: 'Netherlands', iso2: 'NL', dialCode: '+31', flag: '🇳🇱'),
   CountryDialCode(name: 'Belgium', iso2: 'BE', dialCode: '+32', flag: '🇧🇪'),
   CountryDialCode(name: 'France', iso2: 'FR', dialCode: '+33', flag: '🇫🇷'),
   CountryDialCode(name: 'Italy', iso2: 'IT', dialCode: '+39', flag: '🇮🇹'),
   CountryDialCode(name: 'Spain', iso2: 'ES', dialCode: '+34', flag: '🇪🇸'),
   CountryDialCode(name: 'Portugal', iso2: 'PT', dialCode: '+351', flag: '🇵🇹'),
-  CountryDialCode(name: 'United Kingdom', iso2: 'GB', dialCode: '+44', flag: '🇬🇧'),
+  CountryDialCode(
+      name: 'United Kingdom', iso2: 'GB', dialCode: '+44', flag: '🇬🇧'),
   CountryDialCode(name: 'Ireland', iso2: 'IE', dialCode: '+353', flag: '🇮🇪'),
   CountryDialCode(name: 'Poland', iso2: 'PL', dialCode: '+48', flag: '🇵🇱'),
   CountryDialCode(name: 'Czechia', iso2: 'CZ', dialCode: '+420', flag: '🇨🇿'),
@@ -51,35 +54,41 @@ const kCountryDialCodes = <CountryDialCode>[
   CountryDialCode(name: 'Hungary', iso2: 'HU', dialCode: '+36', flag: '🇭🇺'),
   CountryDialCode(name: 'Romania', iso2: 'RO', dialCode: '+40', flag: '🇷🇴'),
   CountryDialCode(name: 'Turkey', iso2: 'TR', dialCode: '+90', flag: '🇹🇷'),
-  CountryDialCode(name: 'United States', iso2: 'US', dialCode: '+1', flag: '🇺🇸'),
+  CountryDialCode(
+      name: 'United States', iso2: 'US', dialCode: '+1', flag: '🇺🇸'),
   CountryDialCode(name: 'Canada', iso2: 'CA', dialCode: '+1', flag: '🇨🇦'),
   CountryDialCode(name: 'Australia', iso2: 'AU', dialCode: '+61', flag: '🇦🇺'),
   CountryDialCode(name: 'India', iso2: 'IN', dialCode: '+91', flag: '🇮🇳'),
-  CountryDialCode(name: 'United Arab Emirates', iso2: 'AE', dialCode: '+971', flag: '🇦🇪'),
-  CountryDialCode(name: 'Saudi Arabia', iso2: 'SA', dialCode: '+966', flag: '🇸🇦'),
+  CountryDialCode(
+      name: 'United Arab Emirates', iso2: 'AE', dialCode: '+971', flag: '🇦🇪'),
+  CountryDialCode(
+      name: 'Saudi Arabia', iso2: 'SA', dialCode: '+966', flag: '🇸🇦'),
   CountryDialCode(name: 'Brazil', iso2: 'BR', dialCode: '+55', flag: '🇧🇷'),
   CountryDialCode(name: 'Mexico', iso2: 'MX', dialCode: '+52', flag: '🇲🇽'),
   CountryDialCode(name: 'Japan', iso2: 'JP', dialCode: '+81', flag: '🇯🇵'),
-  CountryDialCode(name: 'South Korea', iso2: 'KR', dialCode: '+82', flag: '🇰🇷'),
+  CountryDialCode(
+      name: 'South Korea', iso2: 'KR', dialCode: '+82', flag: '🇰🇷'),
   CountryDialCode(name: 'China', iso2: 'CN', dialCode: '+86', flag: '🇨🇳'),
   CountryDialCode(name: 'Singapore', iso2: 'SG', dialCode: '+65', flag: '🇸🇬'),
-  CountryDialCode(name: 'South Africa', iso2: 'ZA', dialCode: '+27', flag: '🇿🇦'),
+  CountryDialCode(
+      name: 'South Africa', iso2: 'ZA', dialCode: '+27', flag: '🇿🇦'),
   CountryDialCode(name: 'Nigeria', iso2: 'NG', dialCode: '+234', flag: '🇳🇬'),
   CountryDialCode(name: 'Egypt', iso2: 'EG', dialCode: '+20', flag: '🇪🇬'),
-  CountryDialCode(name: 'Luxembourg', iso2: 'LU', dialCode: '+352', flag: '🇱🇺'),
+  CountryDialCode(
+      name: 'Luxembourg', iso2: 'LU', dialCode: '+352', flag: '🇱🇺'),
   CountryDialCode(name: 'Croatia', iso2: 'HR', dialCode: '+385', flag: '🇭🇷'),
   CountryDialCode(name: 'Slovakia', iso2: 'SK', dialCode: '+421', flag: '🇸🇰'),
   CountryDialCode(name: 'Slovenia', iso2: 'SI', dialCode: '+386', flag: '🇸🇮'),
   CountryDialCode(name: 'Bulgaria', iso2: 'BG', dialCode: '+359', flag: '🇧🇬'),
   CountryDialCode(name: 'Ukraine', iso2: 'UA', dialCode: '+380', flag: '🇺🇦'),
-  CountryDialCode(name: 'New Zealand', iso2: 'NZ', dialCode: '+64', flag: '🇳🇿'),
+  CountryDialCode(
+      name: 'New Zealand', iso2: 'NZ', dialCode: '+64', flag: '🇳🇿'),
 ];
 
 /// Prefer the device locale country when it is in [kCountryDialCodes],
 /// otherwise Pakistan (+92).
 CountryDialCode countryFromDeviceLocale([Locale? locale]) {
-  final resolved =
-      locale ?? WidgetsBinding.instance.platformDispatcher.locale;
+  final resolved = locale ?? WidgetsBinding.instance.platformDispatcher.locale;
   final iso = resolved.countryCode?.toUpperCase();
   if (iso != null && iso.isNotEmpty) {
     for (final country in kCountryDialCodes) {

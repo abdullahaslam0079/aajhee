@@ -2,6 +2,7 @@ import 'package:aajhee/src/features/settings/presentation/providers/user_profile
 import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/routing/app_navigation.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 final _namePattern = RegExp(r"^[\p{L}][\p{L}\s.'\-]*$", unicode: true);
 
@@ -64,9 +65,8 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
           : 'auth.complete_profile_error'.tr();
       showToast(
         context,
-        message: message.isNotEmpty
-            ? message
-            : 'auth.complete_profile_error'.tr(),
+        message:
+            message.isNotEmpty ? message : 'auth.complete_profile_error'.tr(),
         status: 'error',
       );
     } finally {

@@ -51,6 +51,11 @@ class FavoriteStoresState {
 }
 
 @Riverpod(keepAlive: true)
+FavoritesService favoritesService(Ref ref) {
+  return FavoritesService.instance;
+}
+
+@Riverpod(keepAlive: true)
 class FavoriteStores extends _$FavoriteStores {
   static const _pageSize = 20;
 
@@ -126,11 +131,12 @@ class FavoriteStores extends _$FavoriteStores {
 
       final addressId =
           ref.read(savedAddressesProvider).selectedAddress?.id.toString();
-      final result = await FavoritesService.instance.getFavoriteBranches(
-        addressId: addressId,
-        page: nextPage,
-        pageSize: _pageSize,
-      );
+      final result =
+          await ref.read(favoritesServiceProvider).getFavoriteBranches(
+                addressId: addressId,
+                page: nextPage,
+                pageSize: _pageSize,
+              );
       if (!ref.mounted || requestId != _requestId) return;
 
       result.fold(
@@ -188,8 +194,7 @@ class FavoriteStores extends _$FavoriteStores {
 
     if (liked) {
       optimisticIds.add(branchId);
-      if (branch != null &&
-          !optimisticBranches.any((b) => b.id == branchId)) {
+      if (branch != null && !optimisticBranches.any((b) => b.id == branchId)) {
         optimisticBranches = [branch, ...optimisticBranches];
       }
     } else {
@@ -204,10 +209,10 @@ class FavoriteStores extends _$FavoriteStores {
       clearError: true,
     );
 
-    final result = await FavoritesService.instance.setBranchLike(
-      branchId,
-      liked: liked,
-    );
+    final result = await ref.read(favoritesServiceProvider).setBranchLike(
+          branchId,
+          liked: liked,
+        );
 
     if (!ref.mounted) return;
 
