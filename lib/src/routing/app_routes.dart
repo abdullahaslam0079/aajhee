@@ -13,6 +13,7 @@ abstract final class AppRoutes {
   static const String completeProfile = '/complete-profile';
   static const String bottomNavigator = '/bottom-navigator';
   static const String businessStore = '/business-store';
+  static const String storeCategories = '/business-store/categories';
   static const String notifications = '/notifications';
   static const String favorites = '/favorites';
   static const String addresses = '/addresses';

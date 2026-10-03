@@ -5,6 +5,8 @@ import 'package:aajhee/src/features/commerce/domain/entities/checkout_preview.da
 import 'package:aajhee/src/features/commerce/domain/entities/customer_order.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/home_feeds.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/product_page.dart';
+import 'package:aajhee/src/features/commerce/domain/entities/store_header.dart';
+import 'package:aajhee/src/features/commerce/domain/entities/store_home.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/upload_file.dart';
 import 'package:aajhee/src/features/commerce/domain/repositories/commerce_repository.dart';
 import 'package:aajhee/src/features/commerce/presentation/providers/cart_provider.dart';
@@ -129,6 +131,44 @@ class _SlowCartRepository implements CommerceRepository {
 
   @override
   FutureEither<Map<String, dynamic>> getBusinessCatalog(int businessId) =>
+      _unused();
+
+  @override
+  FutureEither<StoreHeader> getStoreHeader({
+    int? branchId,
+    int? businessId,
+    String? addressId,
+  }) =>
+      _unused();
+
+  @override
+  FutureEither<StoreHome> getStoreHome({
+    int? branchId,
+    int? businessId,
+    String? addressId,
+    int previewLimit = 8,
+  }) =>
+      _unused();
+
+  @override
+  FutureEither<ProductPage> getStoreDeals({
+    int? branchId,
+    int? businessId,
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) =>
+      _unused();
+
+  @override
+  FutureEither<ProductPage> getStoreCategoryProducts({
+    required int categoryId,
+    int? branchId,
+    int? businessId,
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) =>
       _unused();
 
   @override

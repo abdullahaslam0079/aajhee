@@ -7,9 +7,9 @@ class _StoreProductCarousel extends StatelessWidget {
     required this.onAddTap,
   });
 
-  final List<Map<String, dynamic>> products;
-  final ValueChanged<Map<String, dynamic>> onProductTap;
-  final ValueChanged<Map<String, dynamic>> onAddTap;
+  final List<CommerceProduct> products;
+  final ValueChanged<CommerceProduct> onProductTap;
+  final ValueChanged<CommerceProduct> onAddTap;
 
   @override
   Widget build(BuildContext context) {
@@ -24,15 +24,14 @@ class _StoreProductCarousel extends StatelessWidget {
         itemCount: products.length,
         separatorBuilder: (_, __) => SizedBox(width: 10.w),
         itemBuilder: (context, index) {
-          final raw = products[index];
-          final product = CommerceProduct.fromJson(raw);
+          final product = products[index];
           return CommerceProductCard(
             product: product,
             width: 122.w,
             compact: true,
             primaryAdd: true,
-            onTap: () => onProductTap(raw),
-            onAddTap: () => onAddTap(raw),
+            onTap: () => onProductTap(product),
+            onAddTap: () => onAddTap(product),
           );
         },
       ),

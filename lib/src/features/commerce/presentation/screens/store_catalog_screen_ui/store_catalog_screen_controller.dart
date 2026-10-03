@@ -2,11 +2,11 @@ part of 'package:aajhee/src/features/commerce/presentation/screens/store_catalog
 
 mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
   CommerceRepository get _api => ref.read(commerceRepositoryProvider);
-  Map<String, dynamic>? _catalog;
+  StoreHeader? _header;
+  StoreHome? _home;
   bool _loading = true;
   String? _error;
   int _tabIndex = 0;
-  int _categoryFilterIndex = 0;
 
   static const _whatsAppGreen = Color(0xFF25D366);
 
@@ -21,11 +21,6 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     setState(() => _tabIndex = index);
   }
 
-  void _selectCategoryFilter(int index) {
-    if (_categoryFilterIndex == index) return;
-    setState(() => _categoryFilterIndex = index);
-  }
-
   Future<void> _load() async {
     setState(() {
       _loading = true;
@@ -35,14 +30,7 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     final branchId = widget.args.resolvedBranchId;
     final businessId = widget.args.resolvedBusinessId;
 
-    final result = branchId != null
-        ? await _api.getBranchCatalog(branchId, addressId: addressId)
-        : businessId != null
-            ? await _api.getBusinessCatalog(businessId)
-            : null;
-
-    if (!mounted) return;
-    if (result == null) {
+    if (branchId == null && businessId == null) {
       setState(() {
         _loading = false;
         _error = 'Shop not found.';
@@ -50,16 +38,60 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
       return;
     }
 
-    result.fold(
-      (f) => setState(() {
-        _loading = false;
-        _error = f.message;
-      }),
-      (data) => setState(() {
-        _catalog = data;
-        _loading = false;
-        _categoryFilterIndex = 0;
-      }),
+    final headerFuture = _api.getStoreHeader(
+      branchId: branchId,
+      businessId: businessId,
+      addressId: addressId,
+    );
+    final homeFuture = _api.getStoreHome(
+      branchId: branchId,
+      businessId: businessId,
+      addressId: addressId,
+    );
+
+    final headerResult = await headerFuture;
+    final homeResult = await homeFuture;
+    if (!mounted) return;
+
+    String? error;
+    StoreHeader? header;
+    StoreHome? home;
+
+    headerResult.fold(
+      (f) => error = f.message,
+      (data) => header = data,
+    );
+    homeResult.fold(
+      (f) => error ??= f.message,
+      (data) => home = data,
+    );
+
+    setState(() {
+      _header = header;
+      _home = home;
+      _loading = false;
+      _error = header == null ? (error ?? 'Shop not found.') : null;
+    });
+  }
+
+  void _openCategoryBrowse({
+    required String storeName,
+    required List<StoreBrowseTab> tabs,
+    required int initialIndex,
+    int? branchId,
+    int? businessId,
+  }) {
+    if (tabs.isEmpty) return;
+    final max = tabs.length - 1;
+    context.push(
+      AppRoutes.storeCategories,
+      extra: StoreCategoryBrowseArgs(
+        storeName: storeName,
+        tabs: tabs,
+        branchId: branchId,
+        businessId: businessId,
+        initialIndex: initialIndex.clamp(0, max),
+      ),
     );
   }
 
@@ -106,23 +138,23 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     }
   }
 
-  void _openProduct(Map<String, dynamic> product, int? branchId) {
-    final id = product['id'];
+  void _openProduct(CommerceProduct product, int? branchId) {
+    final id = product.id;
     if (id == null) return;
     final path = branchId != null
         ? '${AppRoutes.productDetail('$id')}?branch_id=$branchId'
         : AppRoutes.productDetail('$id');
-    context.push(path, extra: product);
+    context.push(path, extra: product.toJson());
   }
 
   Future<void> _addProductToCart(
-    Map<String, dynamic> product, {
+    CommerceProduct product, {
     int? branchId,
   }) async {
-    final productId = _asInt(product['id']);
+    final productId = product.id;
     if (productId == null) return;
     final resolvedBranch =
-        _asInt(product['branch_id']) ?? branchId ?? widget.args.resolvedBranchId;
+        product.branchId ?? branchId ?? widget.args.resolvedBranchId;
     final ok = await ref.read(cartProvider.notifier).addProduct(
           productId: productId,
           branchId: resolvedBranch,
@@ -161,76 +193,24 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     return null;
   }
 
-  bool _isTrulyDiscounted(Map<String, dynamic> product) {
-    if (product['has_discount'] != true) return false;
-    final raw = product['effective_discount_percent'];
-    final percent =
-        raw is num ? raw.toDouble() : double.tryParse('${raw ?? ''}');
-    return percent != null && percent > 0;
-  }
-
   String? _pickHours({
-    required Map<String, dynamic> business,
-    required Map<String, dynamic> branchData,
+    required StoreHeader? header,
     MapBranchModel? feedBranch,
   }) {
-    for (final source in [branchData, business]) {
-      for (final key in ['opening_hours', 'hours', 'business_hours']) {
-        final value = source[key]?.toString().trim() ?? '';
-        if (value.isNotEmpty) return value;
-      }
-    }
+    final hours = header?.business.businessHours;
+    if (hours is String && hours.trim().isNotEmpty) return hours.trim();
     final fromBranch = feedBranch?.openingHours?.trim();
     if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
-    return null;
+    return widget.args.branch?.openingHours?.trim().isNotEmpty == true
+        ? widget.args.branch!.openingHours!.trim()
+        : null;
   }
 
-  String? _pickCategoryName({
-    required Map<String, dynamic> business,
-    required Map<String, dynamic> branchData,
-    MapBranchModel? feedBranch,
-  }) {
-    for (final source in [branchData, business]) {
-      for (final key in ['category_name', 'business_category', 'category']) {
-        final value = source[key];
-        if (value is Map) {
-          final name = value['name']?.toString().trim() ?? '';
-          if (name.isNotEmpty) return name;
-        } else {
-          final name = value?.toString().trim() ?? '';
-          if (name.isNotEmpty && name != 'null') return name;
-        }
-      }
-    }
+  String? _pickCategoryName(MapBranchModel? feedBranch) {
     final fromBranch = feedBranch?.categoryName.trim();
     if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
     final argsCategory = widget.args.branch?.categoryName.trim();
     if (argsCategory?.isNotEmpty ?? false) return argsCategory;
-    return null;
-  }
-
-  String? _coverImageUrl({
-    required Map<String, dynamic> business,
-    required Map<String, dynamic> branchData,
-    required List<Map<String, dynamic>> discounted,
-    MapBranchModel? feedBranch,
-  }) {
-    for (final source in [branchData, business]) {
-      for (final key in [
-        'cover_image_url',
-        'banner_url',
-        'cover_url',
-        'image_url',
-      ]) {
-        final resolved = resolveMediaUrl(source[key]?.toString());
-        if (resolved != null) return resolved;
-      }
-    }
-    final fromFeed = resolveMediaUrl(feedBranch?.coverImageUrl);
-    if (fromFeed != null) return fromFeed;
-    if (discounted.isNotEmpty) {
-      return resolveMediaUrl(discounted.first['image_url']?.toString());
-    }
     return null;
   }
 
@@ -241,50 +221,44 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     final selected = ref.read(savedAddressesProvider).selectedAddress;
     final lat = selected?.latitude;
     final lng = selected?.longitude;
-    final branchLat = feedBranch?.latitude ?? widget.args.branch?.latitude;
-    final branchLng = feedBranch?.longitude ?? widget.args.branch?.longitude;
+    final branchLat =
+        feedBranch?.latitude ?? _header?.branch?.latitude ?? widget.args.branch?.latitude;
+    final branchLng = feedBranch?.longitude ??
+        _header?.branch?.longitude ??
+        widget.args.branch?.longitude;
     if (lat == null || lng == null || branchLat == null || branchLng == null) {
       return null;
     }
     return GeoDistanceUtils.haversineKm(lat, lng, branchLat, branchLng);
   }
 
-  bool? _flagFromMaps(
-    List<Map<String, dynamic>> maps,
-    List<String> keys,
-  ) {
-    for (final map in maps) {
-      for (final key in keys) {
-        final value = map[key];
-        if (value == true) return true;
-        if (value == false) return false;
+  bool _supportsSameDay({
+    required StoreHeader header,
+    MapBranchModel? feedBranch,
+  }) {
+    for (final option in header.deliveryOptions) {
+      final type = option['fulfillment_type']?.toString();
+      if (type == 'local_same_day' && option['available'] != false) {
+        return true;
       }
     }
-    return null;
+    return feedBranch?.treatsAsSameDay ??
+        widget.args.branch?.treatsAsSameDay ??
+        false;
   }
 
-
-  bool _listHasSameDay(dynamic fulfillment) {
-    if (fulfillment is! List) return false;
-    return fulfillment.any((e) => e.toString() == 'local_same_day');
-  }
-
-  bool _listHasNationwide(dynamic fulfillment) {
-    if (fulfillment is! List) return false;
-    return fulfillment.any((e) => e.toString() == 'nationwide');
-  }
-
-  int? _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
-  }
-
-  double? _asDouble(dynamic value) {
-    if (value is double) return value;
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
+  bool _supportsNationwide({
+    required StoreHeader header,
+    MapBranchModel? feedBranch,
+  }) {
+    for (final option in header.deliveryOptions) {
+      final type = option['fulfillment_type']?.toString();
+      if (type == 'nationwide' && option['available'] != false) {
+        return true;
+      }
+    }
+    return feedBranch?.supportsNationwide ??
+        widget.args.branch?.supportsNationwide ??
+        false;
   }
 }

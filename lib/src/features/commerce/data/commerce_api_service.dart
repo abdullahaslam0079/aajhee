@@ -70,6 +70,97 @@ class CommerceApiService {
     );
   }
 
+  FutureEither<Map<String, dynamic>> getStoreHeader({
+    int? branchId,
+    int? businessId,
+    String? addressId,
+  }) async {
+    final path = branchId != null
+        ? '/api/stores/branch/$branchId/header'
+        : '/api/stores/business/$businessId/header';
+    final result = await _dio.get(
+      path,
+      queryParameters: {
+        if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
+      },
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> getStoreHome({
+    int? branchId,
+    int? businessId,
+    String? addressId,
+    int previewLimit = 8,
+  }) async {
+    final path = branchId != null
+        ? '/api/stores/branch/$branchId/home'
+        : '/api/stores/business/$businessId/home';
+    final result = await _dio.get(
+      path,
+      queryParameters: {
+        'preview_limit': previewLimit,
+        if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
+      },
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> getStoreDeals({
+    int? branchId,
+    int? businessId,
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final path = branchId != null
+        ? '/api/stores/branch/$branchId/deals'
+        : '/api/stores/business/$businessId/deals';
+    final result = await _dio.get(
+      path,
+      queryParameters: {
+        'page': page,
+        'page_size': pageSize,
+        if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
+      },
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
+  FutureEither<Map<String, dynamic>> getStoreCategoryProducts({
+    required int categoryId,
+    int? branchId,
+    int? businessId,
+    String? addressId,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final path = branchId != null
+        ? '/api/stores/branch/$branchId/categories/$categoryId/products'
+        : '/api/stores/business/$businessId/categories/$categoryId/products';
+    final result = await _dio.get(
+      path,
+      queryParameters: {
+        'page': page,
+        'page_size': pageSize,
+        if (addressId != null && addressId.isNotEmpty) 'address_id': addressId,
+      },
+    );
+    return result.fold(
+      left,
+      (r) => right(Map<String, dynamic>.from(r.data as Map)),
+    );
+  }
+
   FutureEither<Map<String, dynamic>> getProduct(
     int productId, {
     int? branchId,

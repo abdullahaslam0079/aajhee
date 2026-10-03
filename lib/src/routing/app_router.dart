@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:aajhee/src/features/bottomNavigator/presentation/bottom_navigation_bar.dart';
 import 'package:aajhee/src/features/commerce/presentation/screens/store_catalog_screen.dart';
+import 'package:aajhee/src/features/commerce/presentation/screens/store_category_browse_screen.dart';
 import 'package:aajhee/src/features/home/data/models/map_branch_model.dart';
 import 'package:aajhee/src/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:aajhee/src/features/notifications/presentation/notification_screen.dart';
@@ -36,6 +37,11 @@ String? verifyOtpFallback(Object? extra) {
 /// Store details need the branch that was tapped. Without it, open the shell.
 String? businessStoreFallback(Object? extra) {
   if (extra is StoreCatalogArgs || extra is MapBranchModel) return null;
+  return AppRoutes.bottomNavigator;
+}
+
+String? storeCategoriesFallback(Object? extra) {
+  if (extra is StoreCategoryBrowseArgs) return null;
   return AppRoutes.bottomNavigator;
 }
 
@@ -158,6 +164,16 @@ final GoRouter appRouter = GoRouter(
         }
         return StoreCatalogScreen(
           args: StoreCatalogArgs.fromBranch(extra! as MapBranchModel),
+        );
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.storeCategories,
+      name: 'storeCategories',
+      redirect: (context, state) => storeCategoriesFallback(state.extra),
+      builder: (context, state) {
+        return StoreCategoryBrowseScreen(
+          args: state.extra! as StoreCategoryBrowseArgs,
         );
       },
     ),
