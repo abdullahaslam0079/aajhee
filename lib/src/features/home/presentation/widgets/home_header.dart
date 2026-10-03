@@ -162,7 +162,7 @@ class _HeaderIconButton extends StatelessWidget {
     final showBadge = badgeCount > 0;
     final label = badgeCount > 99 ? '99+' : '$badgeCount';
     final outline = cs.outline.withValues(alpha: 0.55);
-    final fill = AppBrandColors.surface;
+    const fill = AppBrandColors.surface;
 
     return Material(
       color: Colors.transparent,

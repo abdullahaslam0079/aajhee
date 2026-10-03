@@ -120,7 +120,7 @@ class _StoreHero extends StatelessWidget {
                   foregroundColor: isFavorite
                       ? appColors.favorite
                       : cs.onSurfaceVariant,
-                  shape: RoundedRectangleBorder(
+                  shape: const RoundedRectangleBorder(
                     borderRadius: AppBorders.iconButton,
                   ),
                 ),
@@ -150,10 +150,10 @@ class _StoreHero extends StatelessWidget {
           SizedBox(height: 8.h),
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.star_rounded,
                 size: 15,
-                color: const Color(0xFFE6A817),
+                color: Color(0xFFE6A817),
               ),
               SizedBox(width: 4.w),
               Text(

@@ -204,9 +204,9 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     }
     final fromBranch = feedBranch?.categoryName.trim();
     if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
-    return widget.args.branch?.categoryName.trim().isNotEmpty == true
-        ? widget.args.branch!.categoryName.trim()
-        : null;
+    final argsCategory = widget.args.branch?.categoryName.trim();
+    if (argsCategory?.isNotEmpty ?? false) return argsCategory;
+    return null;
   }
 
   String? _coverImageUrl({
@@ -263,13 +263,6 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     return null;
   }
 
-  dynamic _feeFromMaps(List<Map<String, dynamic>> maps) {
-    for (final map in maps) {
-      final fee = map['delivery_fee'] ?? map['same_day_delivery_fee'];
-      if (fee != null) return fee;
-    }
-    return null;
-  }
 
   bool _listHasSameDay(dynamic fulfillment) {
     if (fulfillment is! List) return false;

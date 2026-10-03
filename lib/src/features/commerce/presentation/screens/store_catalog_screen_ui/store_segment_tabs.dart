@@ -16,7 +16,7 @@ class _StoreSegmentTabs extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final tabs = [
-      productCount > 0 ? 'Products ($productCount)' : 'Products',
+      if (productCount > 0) 'Products ($productCount)' else 'Products',
       'About',
     ];
 

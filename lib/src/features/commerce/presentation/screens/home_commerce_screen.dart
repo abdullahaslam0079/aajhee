@@ -31,7 +31,6 @@ part 'home_commerce_screen_ui/pinned_search_bar_delegate.dart';
 part 'home_commerce_screen_ui/section_title.dart';
 part 'home_commerce_screen_ui/explore_category_chips.dart';
 part 'home_commerce_screen_ui/nearby_shop_card.dart';
-part 'home_commerce_screen_ui/same_day_delivery_chip.dart';
 part 'home_commerce_screen_ui/product_carousel.dart';
 part 'home_commerce_screen_ui/shop_carousel.dart';
 part 'home_commerce_screen_ui/marketplace_skeleton.dart';
