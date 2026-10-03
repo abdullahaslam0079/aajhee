@@ -154,25 +154,29 @@ class _HeaderIconButton extends StatelessWidget {
   final int badgeCount;
   final bool showDot;
 
-  static const double _size = 40;
+  static const double _size = 38;
 
   @override
   Widget build(BuildContext context) {
     final cs = context.theme.colorScheme;
     final showBadge = badgeCount > 0;
     final label = badgeCount > 99 ? '99+' : '$badgeCount';
+    final outline = cs.outline.withValues(alpha: 0.55);
+    final fill = AppBrandColors.surface;
 
     return Material(
-      color: cs.surface,
-      shape: const CircleBorder(),
-      elevation: 1.5,
-      shadowColor: Colors.black.withValues(alpha: 0.12),
+      color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        customBorder: const CircleBorder(),
-        child: SizedBox(
+        borderRadius: AppBorders.iconButton,
+        child: Ink(
           width: _size.w,
           height: _size.w,
+          decoration: BoxDecoration(
+            color: fill,
+            borderRadius: AppBorders.iconButton,
+            border: Border.all(color: outline),
+          ),
           child: Stack(
             clipBehavior: Clip.none,
             alignment: Alignment.center,
@@ -180,26 +184,26 @@ class _HeaderIconButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: cs.onSurface.withValues(alpha: 0.78),
+                color: cs.onSurface.withValues(alpha: 0.88),
               ),
               if (showDot && !showBadge)
                 Positioned(
-                  top: 9,
-                  right: 10,
+                  top: 7,
+                  right: 8,
                   child: Container(
                     width: 8,
                     height: 8,
                     decoration: BoxDecoration(
                       color: cs.error,
                       shape: BoxShape.circle,
-                      border: Border.all(color: cs.surface, width: 1.5),
+                      border: Border.all(color: fill, width: 1.5),
                     ),
                   ),
                 ),
               if (showBadge)
                 Positioned(
-                  top: 4,
-                  right: 4,
+                  top: 2,
+                  right: 2,
                   child: Container(
                     constraints:
                         const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -207,7 +211,7 @@ class _HeaderIconButton extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: cs.error,
                       borderRadius: AppBorders.full,
-                      border: Border.all(color: cs.surface, width: 1.5),
+                      border: Border.all(color: fill, width: 1.5),
                     ),
                     alignment: Alignment.center,
                     child: Text(

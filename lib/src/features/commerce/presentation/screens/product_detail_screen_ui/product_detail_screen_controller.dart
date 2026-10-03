@@ -19,9 +19,16 @@ mixin ProductDetailScreenController on ConsumerState<ProductDetailScreen> {
 
   Future<void> _load() async {
     await _api.viewProduct(_productId);
-    final productResult = await _api.getProduct(_productId);
+    final productResult = await _api.getProduct(
+      _productId,
+      branchId: widget.branchId,
+    );
     final suggestionsResult = await _api.listProducts(page: 1, pageSize: 12);
-    final reviewsResult = await _api.getProductReviews(_productId, page: 1);
+    final reviewsResult = await _api.getProductReviews(
+      _productId,
+      page: 1,
+      branchId: widget.branchId,
+    );
     if (!mounted) return;
 
     productResult.fold(

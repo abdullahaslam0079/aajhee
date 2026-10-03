@@ -70,8 +70,16 @@ class CommerceApiService {
     );
   }
 
-  FutureEither<Map<String, dynamic>> getProduct(int productId) async {
-    final result = await _dio.get('/api/products/$productId');
+  FutureEither<Map<String, dynamic>> getProduct(
+    int productId, {
+    int? branchId,
+  }) async {
+    final result = await _dio.get(
+      '/api/products/$productId',
+      queryParameters: {
+        if (branchId != null) 'branch_id': branchId,
+      },
+    );
     return result.fold(
       left,
       (r) => right(Map<String, dynamic>.from(r.data as Map)),
@@ -351,10 +359,15 @@ class CommerceApiService {
     int productId, {
     int page = 1,
     String sort = 'newest',
+    int? branchId,
   }) async {
     final result = await _dio.get(
       '/api/products/$productId/reviews',
-      queryParameters: {'page': page, 'sort': sort},
+      queryParameters: {
+        'page': page,
+        'sort': sort,
+        if (branchId != null) 'branch_id': branchId,
+      },
     );
     return result.fold(
       left,

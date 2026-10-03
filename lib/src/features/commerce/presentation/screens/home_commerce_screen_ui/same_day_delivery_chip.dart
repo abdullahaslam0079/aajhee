@@ -13,40 +13,17 @@ class _SameDayDeliveryChip extends StatelessWidget {
         ? Icons.delivery_dining_rounded
         : Icons.local_shipping_outlined;
 
-    final base = HSLColor.fromColor(cs.primary);
-    final light = base
-        .withLightness((base.lightness + 0.16).clamp(0.0, 1.0))
-        .withSaturation((base.saturation + 0.06).clamp(0.0, 1.0))
-        .toColor();
-    final mid = cs.primary;
-    final dark = base
-        .withLightness((base.lightness - 0.14).clamp(0.0, 1.0))
-        .withSaturation((base.saturation + 0.04).clamp(0.0, 1.0))
-        .toColor();
-
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
       decoration: BoxDecoration(
+        color: cs.primary,
         borderRadius: AppBorders.full,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [light, mid, dark],
-          stops: const [0.0, 0.48, 1.0],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: cs.primary.withValues(alpha: 0.28),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: cs.onPrimary),
-          SizedBox(width: 4.w),
+          Icon(icon, size: 11, color: cs.onPrimary),
+          SizedBox(width: 3.w),
           Text(
             label,
             maxLines: 1,
@@ -54,9 +31,9 @@ class _SameDayDeliveryChip extends StatelessWidget {
             overflow: TextOverflow.fade,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: cs.onPrimary,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   height: 1.1,
-                  fontSize: 10,
+                  fontSize: 9.sp,
                 ),
           ),
         ],

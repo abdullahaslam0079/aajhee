@@ -3,6 +3,7 @@ import 'package:aajhee/src/features/commerce/data/commerce_api_service.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/cart_line.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/checkout_preview.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/customer_order.dart';
+import 'package:aajhee/src/features/commerce/domain/entities/home_feeds.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/product_page.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/upload_file.dart';
 import 'package:aajhee/src/features/commerce/domain/repositories/commerce_repository.dart';
@@ -12,6 +13,12 @@ class CommerceRepositoryImpl implements CommerceRepository {
   CommerceRepositoryImpl(this._api);
 
   final CommerceApiService _api;
+
+  @override
+  FutureEither<HomeFeeds> getHomeFeeds({String? addressId}) async {
+    final result = await _api.getHomeFeeds(addressId: addressId);
+    return result.map(HomeFeeds.fromJson);
+  }
 
   @override
   FutureEither<ProductPage> listProducts({
@@ -43,8 +50,11 @@ class CommerceRepositoryImpl implements CommerceRepository {
   }
 
   @override
-  FutureEither<Map<String, dynamic>> getProduct(int productId) {
-    return _api.getProduct(productId);
+  FutureEither<Map<String, dynamic>> getProduct(
+    int productId, {
+    int? branchId,
+  }) {
+    return _api.getProduct(productId, branchId: branchId);
   }
 
   @override
@@ -203,7 +213,13 @@ class CommerceRepositoryImpl implements CommerceRepository {
     int productId, {
     int page = 1,
     String sort = 'newest',
+    int? branchId,
   }) {
-    return _api.getProductReviews(productId, page: page, sort: sort);
+    return _api.getProductReviews(
+      productId,
+      page: page,
+      sort: sort,
+      branchId: branchId,
+    );
   }
 }

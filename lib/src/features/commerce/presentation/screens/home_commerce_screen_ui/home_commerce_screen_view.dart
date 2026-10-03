@@ -4,37 +4,45 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen>
     with HomeCommerceScreenController {
   @override
   Widget build(BuildContext context) {
+    // Reload home when the selected delivery location changes.
     ref.listen(savedAddressesProvider, (previous, next) {
       if (!next.selectedLocationChangedFrom(previous)) return;
       _load();
     });
-    ref.listen(homeFeedProvider, (previous, next) {
-      if (previous?.selectedCategoryId == next.selectedCategoryId) return;
-      _syncProductsToCategory(next);
-    });
 
+    // Watched providers used by header badges and feed sections.
     final addresses = ref.watch(savedAddressesProvider);
     final feed = ref.watch(homeFeedProvider);
     final unread = ref.watch(notificationsProvider).unreadCount;
     final cartCount = ref.watch(
       cartProvider.select((state) => state.totalQuantity),
     );
-    final tt = Theme.of(context).textTheme;
     final canvas = homeCanvasOf(context);
     final bottomInset =
         kHomeFeedBottomInset + MediaQuery.paddingOf(context).bottom;
 
-    final branches = feed.filteredBranches;
-    final sameDayIds = _sameDayBusinessIds(branches);
+    // Derived feed slices for each carousel / shop section.
+    final sameDayIds = _sameDayBusinessIds(_nearbyBranches);
     final locationText = _locationText(addresses.selectedAddress);
-    final todayProducts = _productsForBusinessIds(sameDayIds);
-    final visibleProducts = _applyListFilter(
-      _products,
-      sameDayBusinessIds: sameDayIds,
+    final todayProducts = _todayProducts(sameDayIds);
+    final nearbyShops =
+        _nearbyBranches.take(_kCarouselShopLimit).toList(growable: false);
+    final exploreShops = _exploreBranches(feed.categories);
+    final popularProducts = _popularProducts(
+      excludeIds: _productIds(todayProducts),
     );
-
+    final browseProducts = _browseProducts(
+      excludeIds: {
+        ..._productIds(todayProducts),
+        ..._productIds(popularProducts),
+      },
+    );
     final categoryLabels = feed.categoryLabels;
-    final showFeedSkeleton = _loading && _products.isEmpty;
+    // Show skeleton only on the initial empty load.
+    final showFeedSkeleton = _loading &&
+        _products.isEmpty &&
+        _nearbyBranches.isEmpty &&
+        _homeFeeds.trending.isEmpty;
 
     return Scaffold(
       backgroundColor: canvas,
@@ -43,11 +51,11 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen>
         child: RefreshIndicator(
           onRefresh: _onRefresh,
           child: CustomScrollView(
-            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(
               parent: BouncingScrollPhysics(),
             ),
             slivers: [
+              // Pinned location + actions header.
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _PinnedHomeHeaderDelegate(
@@ -62,6 +70,7 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen>
                   onCartTap: () => context.push(AppRoutes.cart),
                 ),
               ),
+              // Pinned search entry point.
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _PinnedSearchBarDelegate(
@@ -69,18 +78,22 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen>
                   onTap: _openSearch,
                 ),
               ),
+              // Initial loading placeholder.
               if (showFeedSkeleton)
                 SliverToBoxAdapter(
                   child: _MarketplaceSkeleton(bottomInset: bottomInset),
                 )
-              else if (_error != null && _products.isEmpty)
+              // Full-screen error when nothing loaded.
+              else if (_error != null &&
+                  _products.isEmpty &&
+                  _nearbyBranches.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Padding(
                     padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
                     child: AppEmptyState(
                       icon: Icons.error_outline_rounded,
-                      title: 'Could not load products',
+                      title: 'Could not load home',
                       subtitle: _error,
                       actionLabel: 'Retry',
                       onAction: _load,
@@ -88,239 +101,132 @@ class _HomeCommerceScreenState extends ConsumerState<HomeCommerceScreen>
                   ),
                 )
               else ...[
-                if (categoryLabels.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(
-                          height: CategoryWidget.rowHeight,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            padding: EdgeInsets.fromLTRB(
-                              AppSpacing.ms.w,
-                              2.h,
-                              AppSpacing.ms.w,
-                              0,
-                            ),
-                            itemCount: categoryLabels.length,
-                            itemBuilder: (context, index) {
-                              final label = categoryLabels[index];
-                              return CategoryWidget(
-                                selectedCategoryIndex:
-                                    feed.selectedCategoryIndex,
-                                index: index,
-                                label: label,
-                                icon: index == 0
-                                    ? Icons.grid_view_rounded
-                                    : categoryIconForName(label),
-                                onTap: () => ref
-                                    .read(homeFeedProvider.notifier)
-                                    .selectCategory(index),
-                              );
-                            },
-                          ),
-                        ),
-                        if (feed.selectedSubcategories.isNotEmpty)
-                          SizedBox(
-                            height: CategoryWidget.compactRowHeight,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              padding: EdgeInsets.fromLTRB(
-                                AppSpacing.ms.w,
-                                0,
-                                AppSpacing.ms.w,
-                                0,
-                              ),
-                              itemCount: feed.selectedSubcategories.length + 1,
-                              itemBuilder: (context, index) {
-                                if (index == 0) {
-                                  return CategoryWidget(
-                                    compact: true,
-                                    selectedCategoryIndex:
-                                        feed.selectedSubcategoryId == null
-                                            ? 0
-                                            : -1,
-                                    index: 0,
-                                    label: 'All',
-                                    icon: Icons.grid_view_rounded,
-                                    onTap: () => ref
-                                        .read(homeFeedProvider.notifier)
-                                        .selectSubcategory(null),
-                                  );
-                                }
-                                final sub =
-                                    feed.selectedSubcategories[index - 1];
-                                final selected =
-                                    feed.selectedSubcategoryId == sub.id;
-                                return CategoryWidget(
-                                  compact: true,
-                                  selectedCategoryIndex: selected ? index : -1,
-                                  index: index,
-                                  label: sub.name,
-                                  icon: categoryIconForName(sub.name),
-                                  onTap: () => ref
-                                      .read(homeFeedProvider.notifier)
-                                      .selectSubcategory(sub.id),
-                                );
-                              },
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+                // Same-day delivery products.
                 if (todayProducts.isNotEmpty) ...[
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                     child: _SectionTitle(
                       title: 'Get it today',
+                      subtitle: 'Fresh picks, delivered same-day',
                       icon: Icons.bolt_rounded,
+                      onSeeAll: _openSearch,
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 168.h,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.ms.w,
-                        ),
-                        itemCount: todayProducts.length,
-                        separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                        itemBuilder: (context, index) {
-                          final product = todayProducts[index];
-                          return CommerceProductCard(
-                            product: product,
-                            width: 126.w,
-                            onTap: () => _openProduct(product),
-                            onAddTap: () => _addProductToCart(product),
-                          );
-                        },
-                      ),
+                    child: _ProductCarousel(
+                      products: todayProducts,
+                      onProductTap: _openProduct,
+                      onAddTap: _addProductToCart,
                     ),
                   ),
                 ],
-                if (branches.isNotEmpty) ...[
-                  const SliverToBoxAdapter(
+                // Nearby shops carousel.
+                if (nearbyShops.isNotEmpty) ...[
+                  SliverToBoxAdapter(
                     child: _SectionTitle(
                       title: 'Shops near you',
+                      subtitle: 'Trusted local shops around your area',
                       icon: Icons.storefront_outlined,
+                      onSeeAll: () => _openShopsTab(),
                     ),
                   ),
                   SliverToBoxAdapter(
-                    child: Builder(
-                      builder: (context) {
-                        const imageHeight = 72.0;
-                        const imageWidth = 58.0;
-                        final pad = 8.w;
-                        final cardHeight = imageHeight.w + (pad * 2);
-                        return SizedBox(
-                          height: cardHeight,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.ms.w,
-                            ),
-                            itemCount: branches.length,
-                            separatorBuilder: (_, __) => SizedBox(width: 10.w),
-                            itemBuilder: (context, index) {
-                              final branch = branches[index];
-                              return _NearbyShopCard(
-                                branch: branch,
-                                imageHeight: imageHeight,
-                                imageWidth: imageWidth,
-                                padding: pad,
-                                onTap: () => _openBranch(branch),
-                              );
-                            },
-                          ),
-                        );
-                      },
+                    child: _ShopCarousel(
+                      branches: nearbyShops,
+                      onBranchTap: _openBranch,
                     ),
                   ),
                 ],
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _PinnedFiltersDelegate(
-                    textTheme: tt,
-                    backgroundColor: canvas,
-                    listFilter: _listFilter,
-                    onFilterSelected: (filter) {
-                      if (_listFilter == filter) return;
-                      setState(() => _listFilter = filter);
-                    },
-                  ),
-                ),
-                if (visibleProducts.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: AppSpacing.lg.w),
-                      child: AppEmptyState(
-                        icon: Icons.inventory_2_outlined,
-                        title: _listFilter == ProductListFilter.all
-                            ? 'No products yet'
-                            : 'No ${_listFilter.label.toLowerCase()} products',
-                        subtitle: _listFilter == ProductListFilter.all
-                            ? 'Check back soon for local picks.'
-                            : 'Try another filter to see more products.',
-                        actionLabel: _listFilter == ProductListFilter.all
-                            ? null
-                            : 'Show all',
-                        onAction: _listFilter == ProductListFilter.all
-                            ? null
-                            : () => setState(
-                                  () => _listFilter = ProductListFilter.all,
-                                ),
-                      ),
-                    ),
-                  )
-                else ...[
-                  SliverPadding(
-                    padding: EdgeInsets.fromLTRB(
-                      AppSpacing.ms.w,
-                      0,
-                      AppSpacing.ms.w,
-                      _loadingMore ? AppSpacing.sm.h : bottomInset,
-                    ),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 10.h,
-                        crossAxisSpacing: 10.w,
-                        childAspectRatio: 0.78,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final product = visibleProducts[index];
-                          return CommerceProductCard(
-                            product: product,
-                            onTap: () => _openProduct(product),
-                            onAddTap: () => _addProductToCart(product),
-                          );
-                        },
-                        childCount: visibleProducts.length,
-                      ),
+                // Category chips + filtered local shops.
+                if (categoryLabels.isNotEmpty || exploreShops.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(
+                      title: 'Explore local shops',
+                      subtitle: 'Browse by category and find what you need',
+                      icon: Icons.explore_outlined,
+                      onSeeAll: () =>
+                          _openShopsTab(categoryIndex: _exploreCategoryIndex),
                     ),
                   ),
-                  if (_loadingMore)
+                  if (categoryLabels.isNotEmpty)
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(0, 4.h, 0, bottomInset),
-                        child: const Center(
-                          child: SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          ),
+                        padding: EdgeInsets.only(bottom: 8.h),
+                        child: _ExploreCategoryChips(
+                          labels: categoryLabels,
+                          selectedIndex: _exploreCategoryIndex,
+                          onSelected: _onExploreCategorySelected,
+                        ),
+                      ),
+                    ),
+                  if (exploreShops.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: _ShopCarousel(
+                        branches: exploreShops,
+                        onBranchTap: _openBranch,
+                      ),
+                    )
+                  else
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          AppSpacing.ms.w,
+                          0,
+                          AppSpacing.ms.w,
+                          AppSpacing.xs.h,
+                        ),
+                        child: Text(
+                          'No shops in this category nearby yet.',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                         ),
                       ),
                     ),
                 ],
+                // Trending products, excluding same-day items.
+                if (popularProducts.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(
+                      title: 'Popular around you',
+                      subtitle: 'Trending products from nearby shops',
+                      icon: Icons.local_fire_department_outlined,
+                      onSeeAll: _openSearch,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _ProductCarousel(
+                      products: popularProducts,
+                      onProductTap: _openProduct,
+                      onAddTap: _addProductToCart,
+                    ),
+                  ),
+                ],
+                // Remaining products for browsing; keeps bottom inset.
+                if (browseProducts.isNotEmpty) ...[
+                  SliverToBoxAdapter(
+                    child: _SectionTitle(
+                      title: 'More to browse',
+                      subtitle: 'Keep exploring local picks',
+                      icon: Icons.shopping_bag_outlined,
+                      onSeeAll: _openSearch,
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: EdgeInsets.only(bottom: bottomInset),
+                      child: _ProductCarousel(
+                        products: browseProducts,
+                        onProductTap: _openProduct,
+                        onAddTap: _addProductToCart,
+                      ),
+                    ),
+                  ),
+                ] else
+                  // Spacer so last section clears the bottom nav.
+                  SliverToBoxAdapter(child: SizedBox(height: bottomInset)),
               ],
             ],
           ),

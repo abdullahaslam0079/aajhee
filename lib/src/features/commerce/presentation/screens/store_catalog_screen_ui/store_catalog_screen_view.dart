@@ -68,6 +68,15 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
         widget.args.branch?.id;
 
     final feedBranch = _matchingFeedBranch(businessId);
+    final favoriteBranchId = catalogBranchId ?? feedBranch?.id;
+    final isFavorite = favoriteBranchId != null
+        ? ref.watch(
+            favoriteStoresProvider.select(
+              (state) => state.isFavorite(favoriteBranchId),
+            ),
+          )
+        : false;
+
     final isVerified = business['is_verified'] == true ||
         business['verified'] == true ||
         branchData['is_verified'] == true ||
@@ -103,15 +112,36 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
     final supportsNationwide =
         (nationwideFlag ?? false) || _listHasNationwide(fulfillment);
 
-    final deliveryFee = _feeFromMaps(maps) ??
-        feedBranch?.deliveryFee ??
-        widget.args.branch?.deliveryFee;
-    final deliveryFeeLabel = formatRsOrNull(deliveryFee);
     final openingHours = _pickHours(
       business: business,
       branchData: branchData,
       feedBranch: feedBranch ?? widget.args.branch,
     );
+    final categoryName = _pickCategoryName(
+      business: business,
+      branchData: branchData,
+      feedBranch: feedBranch ?? widget.args.branch,
+    );
+    final distanceKm = _distanceKm(feedBranch ?? widget.args.branch);
+    final coverImageUrl = _coverImageUrl(
+      business: business,
+      branchData: branchData,
+      feedBranch: feedBranch ?? widget.args.branch,
+      discounted: discounted,
+    );
+
+    // Prefer this location's rating; fall back to feed/args, then business rollup.
+    final branchRatingAvg = branchData['rating_avg']?.toString() ??
+        (feedBranch?.ratingAvg != null
+            ? feedBranch!.ratingAvg!.toStringAsFixed(1)
+            : widget.args.branch?.ratingAvg?.toStringAsFixed(1));
+    final ratingAvg = branchRatingAvg ?? business['rating_avg']?.toString();
+    final branchRatingCount = int.tryParse('${branchData['rating_count'] ?? ''}') ??
+        feedBranch?.ratingCount ??
+        widget.args.branch?.ratingCount;
+    final ratingCount = branchRatingCount ??
+        int.tryParse('${business['rating_count'] ?? ''}') ??
+        0;
 
     Map<String, dynamic>? whatsappContact;
     final otherContacts = <Map<String, dynamic>>[];
@@ -125,26 +155,52 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
       }
     }
 
+    final categorySections = categories
+        .map(
+          (cat) => (
+            title: cat['category_name']?.toString() ?? 'Category',
+            items:
+                ((cat['products'] as List? ?? []).cast<Map<String, dynamic>>()),
+          ),
+        )
+        .where((section) => section.items.isNotEmpty)
+        .toList(growable: false);
+
     final productSections =
         <({String title, List<Map<String, dynamic>> items})>[
       if (discounted.isNotEmpty) (title: 'On sale', items: discounted),
-      for (final cat in categories)
-        (
-          title: cat['category_name']?.toString() ?? 'Category',
-          items:
-              ((cat['products'] as List? ?? []).cast<Map<String, dynamic>>()),
-        ),
+      ...categorySections,
     ];
+
+    final filterLabels = <String>[
+      'All',
+      ...categorySections.map((s) => s.title),
+    ];
+    final filteredSections = _categoryFilterIndex <= 0
+        ? productSections
+        : productSections
+            .where(
+              (section) =>
+                  section.title == filterLabels[_categoryFilterIndex],
+            )
+            .toList(growable: false);
+
     final totalProducts = productSections.fold<int>(
       0,
       (sum, section) => sum + section.items.length,
     );
 
+    final favoriteBranch = feedBranch ?? widget.args.branch;
+
     return Scaffold(
       backgroundColor: canvas,
       appBar: AppBar(
         backgroundColor: canvas,
-        title: const Text('Shop'),
+        title: Text(
+          businessName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             tooltip: 'Cart',
@@ -190,122 +246,261 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
                             businessName: businessName,
                             branchName: showInStore ? branchName : '',
                             logoUrl: logoUrl,
-                            ratingAvg: business['rating_avg']?.toString(),
-                            ratingCount: int.tryParse(
-                                    '${business['rating_count'] ?? 0}') ??
-                                0,
+                            ratingAvg: ratingAvg,
+                            ratingCount: ratingCount,
                             isVerified: isVerified,
-                            supportsSameDay: supportsSameDay,
-                            supportsNationwide: supportsNationwide,
-                            deliveryFeeLabel: deliveryFeeLabel,
-                            openingHours: openingHours,
-                            showOnline: showOnline,
-                            showInStore: showInStore,
+                            categoryName: categoryName,
+                            distanceKm: distanceKm,
                             address: showInStore ? address : '',
-                            canNavigate:
-                                showInStore && lat != null && lng != null,
-                            whatsappContact: whatsappContact,
-                            contacts: otherContacts,
-                            onNavigate: lat != null && lng != null
-                                ? () => _openGoogleMaps(
-                                      latitude: lat,
-                                      longitude: lng,
-                                    )
-                                : null,
-                            onContact: _contact,
-                            whatsAppColor:
-                                StoreCatalogScreenController._whatsAppGreen,
+                            isFavorite: isFavorite,
+                            canFavorite: favoriteBranchId != null,
+                            onFavoriteTap: () => _toggleFavorite(
+                              favoriteBranchId,
+                              favoriteBranch,
+                            ),
                           ),
                         ),
                       ),
-                      if (productSections.isEmpty)
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            child: const AppEmptyState(
-                              icon: Icons.inventory_2_outlined,
-                              title: 'No products yet',
-                              subtitle:
-                                  'This shop has not published listings yet.',
-                            ),
-                          ),
-                        )
-                      else ...[
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: EdgeInsets.fromLTRB(
-                              16.w,
-                              22.h,
-                              16.w,
-                              4.h,
-                            ),
-                            child: Row(
-                              children: [
-                                Text(
-                                  'Products',
-                                  style: tt.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w800,
-                                    color: cs.onSurface,
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Container(
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: 8.w,
-                                    vertical: 2.h,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: cs.primary.withValues(alpha: 0.1),
-                                    borderRadius: AppBorders.sm,
-                                  ),
-                                  child: Text(
-                                    '$totalProducts',
-                                    style: tt.labelMedium?.copyWith(
-                                      color: cs.primary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
+                          child: _StoreHighlights(
+                            supportsSameDay: supportsSameDay,
+                            supportsNationwide: supportsNationwide,
+                            hasWhatsApp: whatsappContact != null,
+                            showOnline: showOnline,
+                            showInStore: showInStore,
                           ),
                         ),
-                        for (final section in productSections) ...[
+                      ),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+                          child: _StoreSegmentTabs(
+                            selectedIndex: _tabIndex,
+                            onSelected: _selectTab,
+                            productCount: totalProducts,
+                          ),
+                        ),
+                      ),
+                      if (_tabIndex == 0) ...[
+                        if (coverImageUrl != null)
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
+                              child: _StoreCoverBanner(
+                                imageUrl: coverImageUrl,
+                                businessName: businessName,
+                                categoryName: categoryName,
+                                supportsSameDay: supportsSameDay,
+                              ),
+                            ),
+                          ),
+                        if (discounted.isNotEmpty &&
+                            (_categoryFilterIndex <= 0 ||
+                                filterLabels[_categoryFilterIndex] ==
+                                    'On sale')) ...[
                           SliverToBoxAdapter(
                             child: Padding(
                               padding: EdgeInsets.fromLTRB(
                                 16.w,
-                                14.h,
+                                20.h,
                                 16.w,
                                 8.h,
                               ),
-                              child: Text(
-                                section.title,
-                                style: tt.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: cs.onSurface,
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.local_offer_outlined,
+                                    size: 16,
+                                    color: cs.primary,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    'On sale',
+                                    style: tt.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 7.w,
+                                      vertical: 2.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: cs.primary.withValues(alpha: 0.1),
+                                      borderRadius: AppBorders.full,
+                                    ),
+                                    child: Text(
+                                      '${discounted.length}',
+                                      style: tt.labelSmall?.copyWith(
+                                        color: cs.primary,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          SliverPadding(
-                            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 8.h),
-                            sliver: SliverList.separated(
-                              itemCount: section.items.length,
-                              separatorBuilder: (_, __) =>
-                                  SizedBox(height: 10.h),
-                              itemBuilder: (context, index) {
-                                return _CatalogProductCard(
-                                  product: section.items[index],
-                                  branchId: catalogBranchId,
-                                );
-                              },
+                          SliverToBoxAdapter(
+                            child: _StoreProductCarousel(
+                              products: discounted,
+                              onProductTap: (product) =>
+                                  _openProduct(product, catalogBranchId),
+                              onAddTap: (product) => _addProductToCart(
+                                product,
+                                branchId: catalogBranchId,
+                              ),
                             ),
                           ),
                         ],
-                        SliverToBoxAdapter(child: SizedBox(height: 28.h)),
-                      ],
+                        if (categorySections.isNotEmpty) ...[
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: EdgeInsets.fromLTRB(
+                                16.w,
+                                18.h,
+                                16.w,
+                                8.h,
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.grid_view_rounded,
+                                    size: 16,
+                                    color: cs.primary,
+                                  ),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    'Store categories',
+                                    style: tt.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: _StoreCategoryCards(
+                              sections: categorySections,
+                              selectedIndex: _categoryFilterIndex > 0
+                                  ? _categoryFilterIndex - 1
+                                  : null,
+                              onSelected: (index) =>
+                                  _selectCategoryFilter(index + 1),
+                            ),
+                          ),
+                          if (filterLabels.length > 1)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.only(top: 14.h),
+                                child: _StoreFilterChips(
+                                  labels: filterLabels,
+                                  selectedIndex: _categoryFilterIndex,
+                                  onSelected: _selectCategoryFilter,
+                                ),
+                              ),
+                            ),
+                        ],
+                        if (productSections.isEmpty)
+                          SliverFillRemaining(
+                            hasScrollBody: false,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.w),
+                              child: const AppEmptyState(
+                                icon: Icons.inventory_2_outlined,
+                                title: 'No products yet',
+                                subtitle:
+                                    'This shop has not published listings yet.',
+                              ),
+                            ),
+                          )
+                        else ...[
+                          for (final section in filteredSections)
+                            if (section.title != 'On sale') ...[
+                              SliverToBoxAdapter(
+                                child: Padding(
+                                  padding: EdgeInsets.fromLTRB(
+                                    16.w,
+                                    18.h,
+                                    16.w,
+                                    8.h,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        categoryIconForName(section.title),
+                                        size: 16,
+                                        color: cs.primary,
+                                      ),
+                                      SizedBox(width: 6.w),
+                                      Expanded(
+                                        child: Text(
+                                          section.title == 'On sale'
+                                              ? 'On sale'
+                                              : section.title,
+                                          style: tt.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        '${section.items.length}',
+                                        style: tt.labelMedium?.copyWith(
+                                          color: cs.onSurfaceVariant,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SliverToBoxAdapter(
+                                child: _StoreProductCarousel(
+                                  products: section.items,
+                                  onProductTap: (product) =>
+                                      _openProduct(product, catalogBranchId),
+                                  onAddTap: (product) => _addProductToCart(
+                                    product,
+                                    branchId: catalogBranchId,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          SliverToBoxAdapter(child: SizedBox(height: 28.h)),
+                        ],
+                      ] else
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 28.h),
+                            child: _StoreAboutPanel(
+                              branchName: showInStore ? branchName : '',
+                              openingHours: openingHours,
+                              showOnline: showOnline,
+                              showInStore: showInStore,
+                              address: showInStore ? address : '',
+                              canNavigate:
+                                  showInStore && lat != null && lng != null,
+                              whatsappContact: whatsappContact,
+                              contacts: otherContacts,
+                              onNavigate: lat != null && lng != null
+                                  ? () => _openGoogleMaps(
+                                        latitude: lat,
+                                        longitude: lng,
+                                      )
+                                  : null,
+                              onContact: _contact,
+                              whatsAppColor:
+                                  StoreCatalogScreenController._whatsAppGreen,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),

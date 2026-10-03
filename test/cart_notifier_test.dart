@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:aajhee/src/features/commerce/domain/entities/cart_line.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/checkout_preview.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/customer_order.dart';
+import 'package:aajhee/src/features/commerce/domain/entities/home_feeds.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/product_page.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/upload_file.dart';
 import 'package:aajhee/src/features/commerce/domain/repositories/commerce_repository.dart';
@@ -131,6 +132,9 @@ class _SlowCartRepository implements CommerceRepository {
       _unused();
 
   @override
+  FutureEither<HomeFeeds> getHomeFeeds({String? addressId}) => _unused();
+
+  @override
   FutureEither<OrderDetail> getOrder(String publicId) => _unused();
 
   @override
@@ -138,13 +142,18 @@ class _SlowCartRepository implements CommerceRepository {
       _unused();
 
   @override
-  FutureEither<Map<String, dynamic>> getProduct(int productId) => _unused();
+  FutureEither<Map<String, dynamic>> getProduct(
+    int productId, {
+    int? branchId,
+  }) =>
+      _unused();
 
   @override
   FutureEither<Map<String, dynamic>> getProductReviews(
     int productId, {
     int page = 1,
     String sort = 'newest',
+    int? branchId,
   }) =>
       _unused();
 

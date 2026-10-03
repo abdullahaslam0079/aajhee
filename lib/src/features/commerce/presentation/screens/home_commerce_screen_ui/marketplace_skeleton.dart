@@ -25,62 +25,71 @@ class _MarketplaceSkeleton extends StatelessWidget {
       );
     }
 
+    Widget sectionHeader() => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            box(height: 16.h, width: 150.w),
+            SizedBox(height: 6.h),
+            box(height: 12.h, width: 200.w),
+          ],
+        );
+
+    Widget productRow() => SizedBox(
+          height: 168.h,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 3,
+            separatorBuilder: (_, __) => SizedBox(width: 10.w),
+            itemBuilder: (_, __) => box(height: 168.h, width: 122.w),
+          ),
+        );
+
+    Widget shopRow() => SizedBox(
+          height: _ShopCarousel._cardHeight,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 3,
+            separatorBuilder: (_, __) => SizedBox(width: 8.w),
+            itemBuilder: (_, __) =>
+                box(height: _ShopCarousel._cardHeight, width: 220.w),
+          ),
+        );
+
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.ms.w,
-        AppSpacing.sm.h,
+        AppSpacing.md.h,
         AppSpacing.ms.w,
         bottomInset,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          sectionHeader(),
+          SizedBox(height: AppSpacing.xs.h),
+          productRow(),
+          SizedBox(height: AppSpacing.md.h),
+          sectionHeader(),
+          SizedBox(height: AppSpacing.xs.h),
+          shopRow(),
+          SizedBox(height: AppSpacing.md.h),
+          sectionHeader(),
+          SizedBox(height: AppSpacing.xs.h),
           SizedBox(
-            height: 34.h,
+            height: 38.h,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: 5,
               separatorBuilder: (_, __) => SizedBox(width: 8.w),
-              itemBuilder: (_, __) => box(height: 34.h, width: 78.w),
+              itemBuilder: (_, __) =>
+                  box(height: 38.h, width: 96.w, radius: AppBorders.full),
             ),
           ),
-          SizedBox(height: AppSpacing.xs.h),
-          box(height: 16.h, width: 120.w),
-          SizedBox(height: AppSpacing.xs.h),
-          SizedBox(
-            height: 168.h,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 3,
-              separatorBuilder: (_, __) => SizedBox(width: 10.w),
-              itemBuilder: (_, __) => box(height: 168.h, width: 126.w),
-            ),
-          ),
-          SizedBox(height: AppSpacing.sm.h),
-          box(height: 16.h, width: 140.w),
-          SizedBox(height: AppSpacing.xs.h),
-          SizedBox(
-            height: 72.w + 16.w,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 3,
-              separatorBuilder: (_, __) => SizedBox(width: 10.w),
-              itemBuilder: (_, __) => box(height: 72.w + 16.w, width: 252.w),
-            ),
-          ),
-          SizedBox(height: AppSpacing.md.h),
-          box(height: 16.h, width: 110.w),
-          SizedBox(height: AppSpacing.xs.h),
-          Row(
-            children: [
-              Expanded(child: box(height: 180.h)),
-              SizedBox(width: 10.w),
-              Expanded(child: box(height: 180.h)),
-            ],
-          ),
+          SizedBox(height: 10.h),
+          shopRow(),
         ],
       ),
     );

@@ -5,6 +5,8 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
   Map<String, dynamic>? _catalog;
   bool _loading = true;
   String? _error;
+  int _tabIndex = 0;
+  int _categoryFilterIndex = 0;
 
   static const _whatsAppGreen = Color(0xFF25D366);
 
@@ -12,6 +14,16 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
   void initState() {
     super.initState();
     _load();
+  }
+
+  void _selectTab(int index) {
+    if (_tabIndex == index) return;
+    setState(() => _tabIndex = index);
+  }
+
+  void _selectCategoryFilter(int index) {
+    if (_categoryFilterIndex == index) return;
+    setState(() => _categoryFilterIndex = index);
   }
 
   Future<void> _load() async {
@@ -46,6 +58,7 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
       (data) => setState(() {
         _catalog = data;
         _loading = false;
+        _categoryFilterIndex = 0;
       }),
     );
   }
@@ -93,6 +106,49 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     }
   }
 
+  void _openProduct(Map<String, dynamic> product, int? branchId) {
+    final id = product['id'];
+    if (id == null) return;
+    final path = branchId != null
+        ? '${AppRoutes.productDetail('$id')}?branch_id=$branchId'
+        : AppRoutes.productDetail('$id');
+    context.push(path, extra: product);
+  }
+
+  Future<void> _addProductToCart(
+    Map<String, dynamic> product, {
+    int? branchId,
+  }) async {
+    final productId = _asInt(product['id']);
+    if (productId == null) return;
+    final resolvedBranch =
+        _asInt(product['branch_id']) ?? branchId ?? widget.args.resolvedBranchId;
+    final ok = await ref.read(cartProvider.notifier).addProduct(
+          productId: productId,
+          branchId: resolvedBranch,
+        );
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    if (ok) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Added to bag')),
+      );
+    } else {
+      final message = ref.read(cartProvider).errorMessage;
+      messenger.showSnackBar(
+        SnackBar(content: Text(message ?? 'Could not add to bag')),
+      );
+    }
+  }
+
+  Future<void> _toggleFavorite(int? branchId, MapBranchModel? branch) async {
+    if (branchId == null || branchId <= 0) return;
+    await ref.read(favoriteStoresProvider.notifier).toggle(
+          branchId,
+          branch: branch,
+        );
+  }
+
   MapBranchModel? _matchingFeedBranch(int? businessId) {
     if (businessId == null || businessId <= 0) return null;
     if (widget.args.branch != null &&
@@ -127,6 +183,70 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     final fromBranch = feedBranch?.openingHours?.trim();
     if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
     return null;
+  }
+
+  String? _pickCategoryName({
+    required Map<String, dynamic> business,
+    required Map<String, dynamic> branchData,
+    MapBranchModel? feedBranch,
+  }) {
+    for (final source in [branchData, business]) {
+      for (final key in ['category_name', 'business_category', 'category']) {
+        final value = source[key];
+        if (value is Map) {
+          final name = value['name']?.toString().trim() ?? '';
+          if (name.isNotEmpty) return name;
+        } else {
+          final name = value?.toString().trim() ?? '';
+          if (name.isNotEmpty && name != 'null') return name;
+        }
+      }
+    }
+    final fromBranch = feedBranch?.categoryName.trim();
+    if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
+    return widget.args.branch?.categoryName.trim().isNotEmpty == true
+        ? widget.args.branch!.categoryName.trim()
+        : null;
+  }
+
+  String? _coverImageUrl({
+    required Map<String, dynamic> business,
+    required Map<String, dynamic> branchData,
+    required List<Map<String, dynamic>> discounted,
+    MapBranchModel? feedBranch,
+  }) {
+    for (final source in [branchData, business]) {
+      for (final key in [
+        'cover_image_url',
+        'banner_url',
+        'cover_url',
+        'image_url',
+      ]) {
+        final resolved = resolveMediaUrl(source[key]?.toString());
+        if (resolved != null) return resolved;
+      }
+    }
+    final fromFeed = resolveMediaUrl(feedBranch?.coverImageUrl);
+    if (fromFeed != null) return fromFeed;
+    if (discounted.isNotEmpty) {
+      return resolveMediaUrl(discounted.first['image_url']?.toString());
+    }
+    return null;
+  }
+
+  double? _distanceKm(MapBranchModel? feedBranch) {
+    final fromBranch = feedBranch?.distanceKm ?? widget.args.branch?.distanceKm;
+    if (fromBranch != null) return fromBranch;
+
+    final selected = ref.read(savedAddressesProvider).selectedAddress;
+    final lat = selected?.latitude;
+    final lng = selected?.longitude;
+    final branchLat = feedBranch?.latitude ?? widget.args.branch?.latitude;
+    final branchLng = feedBranch?.longitude ?? widget.args.branch?.longitude;
+    if (lat == null || lng == null || branchLat == null || branchLng == null) {
+      return null;
+    }
+    return GeoDistanceUtils.haversineKm(lat, lng, branchLat, branchLng);
   }
 
   bool? _flagFromMaps(

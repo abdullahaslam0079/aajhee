@@ -13,12 +13,20 @@ class CommerceProductCard extends StatelessWidget {
     required this.onTap,
     this.width,
     this.onAddTap,
+    this.primaryAdd = false,
+    this.compact = false,
   });
 
   final CommerceProduct product;
   final VoidCallback onTap;
   final double? width;
   final VoidCallback? onAddTap;
+
+  /// When true, use a primary-colored quick-add button.
+  final bool primaryAdd;
+
+  /// Tighter padding / single-line title for horizontal carousels.
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +40,10 @@ class CommerceProductCard extends StatelessWidget {
         discount != null && basePrice != null && basePrice != price;
     final ratingAvg = product.ratingAvg;
     final ratingCount = product.ratingCount;
-    final showRating = ratingAvg != null &&
+    final hasRating = ratingAvg != null &&
         ratingAvg > 0 &&
         (ratingCount == null || ratingCount > 0);
+    final titleLines = compact ? 1 : 2;
 
     return Material(
       color: Colors.transparent,
@@ -47,7 +56,7 @@ class CommerceProductCard extends StatelessWidget {
             color: cs.surfaceContainerLowest,
             borderRadius: AppBorders.card,
             border: Border.all(
-              color: cs.outlineVariant.withValues(alpha: 0.65),
+              color: cs.outlineVariant.withValues(alpha: 0.45),
             ),
             boxShadow: AppShadows.subtle,
           ),
@@ -74,39 +83,45 @@ class CommerceProductCard extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(8.w, 6.h, 6.w, 6.h),
+                padding: EdgeInsets.fromLTRB(
+                  compact ? 7.w : 8.w,
+                  compact ? 5.h : 6.h,
+                  compact ? 5.w : 6.w,
+                  compact ? 5.h : 6.h,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       product.displayName,
-                      maxLines: 2,
+                      maxLines: titleLines,
                       overflow: TextOverflow.ellipsis,
                       style: tt.labelSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         height: 1.2,
                         color: cs.onSurface,
                         letterSpacing: -0.1,
+                        fontSize: compact ? 11.sp : null,
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    if (showRating)
+                    if (hasRating)
                       _CompactRating(
                         rating: ratingAvg,
                         count: ratingCount,
                       )
                     else
                       Text(
-                        'No reviews yet',
+                        'New',
                         style: tt.labelSmall?.copyWith(
-                          color: cs.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
+                          color: cs.primary,
+                          fontWeight: FontWeight.w700,
                           height: 1.1,
-                          fontSize: 9,
+                          fontSize: compact ? 10.sp : 10,
                         ),
                       ),
-                    SizedBox(height: 4.h),
+                    SizedBox(height: compact ? 4.h : 4.h),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -114,11 +129,15 @@ class CommerceProductCard extends StatelessWidget {
                           child: _StackedPrice(
                             price: price,
                             basePrice: showStrike ? basePrice : null,
-                            emphasize: discount != null,
+                            emphasize: discount != null || primaryAdd,
                           ),
                         ),
                         SizedBox(width: 4.w),
-                        _AddButton(onTap: onAddTap ?? onTap),
+                        _AddButton(
+                          onTap: onAddTap ?? onTap,
+                          primary: primaryAdd,
+                          compact: compact,
+                        ),
                       ],
                     ),
                   ],
@@ -310,26 +329,33 @@ class _StackedPrice extends StatelessWidget {
 }
 
 class _AddButton extends StatelessWidget {
-  const _AddButton({required this.onTap});
+  const _AddButton({
+    required this.onTap,
+    this.primary = false,
+    this.compact = false,
+  });
 
   final VoidCallback onTap;
+  final bool primary;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final size = compact ? 26.w : 28.w;
     return Material(
-      color: cs.surfaceContainerHighest,
+      color: primary ? cs.primary : cs.surfaceContainerHighest,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: SizedBox(
-          width: 26.w,
-          height: 26.w,
+          width: size,
+          height: size,
           child: Icon(
             Icons.shopping_cart_outlined,
-            size: 13,
-            color: cs.onSurface,
+            size: compact ? 13 : 14,
+            color: primary ? cs.onPrimary : cs.onSurface,
           ),
         ),
       ),

@@ -1,12 +1,15 @@
 import 'package:aajhee/src/features/commerce/domain/entities/cart_line.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/checkout_preview.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/customer_order.dart';
+import 'package:aajhee/src/features/commerce/domain/entities/home_feeds.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/product_page.dart';
 import 'package:aajhee/src/features/commerce/domain/entities/upload_file.dart';
 import 'package:aajhee/src/utils/typedefs.dart';
 
 /// Commerce data boundary. Presentation calls this, never Dio.
 abstract class CommerceRepository {
+  FutureEither<HomeFeeds> getHomeFeeds({String? addressId});
+
   FutureEither<ProductPage> listProducts({
     int page = 1,
     int pageSize = 20,
@@ -21,7 +24,10 @@ abstract class CommerceRepository {
 
   FutureEither<Map<String, dynamic>> getBusinessCatalog(int businessId);
 
-  FutureEither<Map<String, dynamic>> getProduct(int productId);
+  FutureEither<Map<String, dynamic>> getProduct(
+    int productId, {
+    int? branchId,
+  });
 
   FutureEither<void> viewProduct(int productId);
 
@@ -88,5 +94,6 @@ abstract class CommerceRepository {
     int productId, {
     int page = 1,
     String sort = 'newest',
+    int? branchId,
   });
 }

@@ -1,56 +1,35 @@
 part of 'package:aajhee/src/features/commerce/presentation/screens/home_commerce_screen.dart';
 
+const int _kShopsTabIndex = 1;
+const int _kCarouselShopLimit = 10;
+const int _kCarouselProductLimit = 12;
+
 mixin HomeCommerceScreenController on ConsumerState<HomeCommerceScreen> {
   CommerceRepository get _api => ref.read(commerceRepositoryProvider);
-  final _scrollController = ScrollController();
+  DiscoveryService get _discovery => ref.read(discoveryServiceProvider);
 
   List<CommerceProduct> _products = const [];
-  ProductListFilter _listFilter = ProductListFilter.all;
+  List<MapBranchModel> _nearbyBranches = const [];
+  HomeFeeds _homeFeeds = const HomeFeeds();
   String? _error;
   bool _loading = true;
-  bool _loadingMore = false;
-  bool _hasMore = false;
-  int _page = 1;
+
+  /// 0 = All, 1..n = root categories (local to Explore section).
+  int _exploreCategoryIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
     Future.microtask(() {
       _ensureHomeFeedLoaded();
       _load();
     });
   }
 
-  @override
-  void dispose() {
-    _scrollController
-      ..removeListener(_onScroll)
-      ..dispose();
-    super.dispose();
-  }
-
-  int? _lastProductCategoryId;
-
-  void _syncProductsToCategory(HomeFeedState feed) {
-    final categoryId = feed.selectedCategoryId;
-    if (categoryId == _lastProductCategoryId && _products.isNotEmpty) return;
-    _lastProductCategoryId = categoryId;
-    unawaited(_load());
-  }
-
   void _ensureHomeFeedLoaded() {
     final feed = ref.read(homeFeedProvider);
     if (feed.categories.isEmpty && !feed.isLoading) {
       unawaited(ref.read(homeFeedProvider.notifier).load());
-    }
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients || _loadingMore || !_hasMore) return;
-    final position = _scrollController.position;
-    if (position.pixels >= position.maxScrollExtent - 240) {
-      _loadMoreProducts();
     }
   }
 
@@ -61,59 +40,44 @@ mixin HomeCommerceScreenController on ConsumerState<HomeCommerceScreen> {
     });
 
     _ensureHomeFeedLoaded();
-    final categoryId = ref.read(homeFeedProvider).selectedCategoryId;
-    _lastProductCategoryId = categoryId;
-    final productsResult = await _api.listProducts(
+    final addressId = ref.read(savedAddressesProvider).selectedAddress?.id;
+
+    final productsFuture = _api.listProducts(page: 1, pageSize: 20);
+    final feedsFuture = _api.getHomeFeeds(addressId: addressId);
+    final branchesFuture = _discovery.getMapBranches(
+      addressId: addressId,
       page: 1,
       pageSize: 20,
-      categoryId: categoryId,
     );
+
+    final productsResult = await productsFuture;
+    final feedsResult = await feedsFuture;
+    final branchesResult = await branchesFuture;
     unawaited(ref.read(cartProvider.notifier).refresh());
     if (!mounted) return;
 
     String? error;
     var products = <CommerceProduct>[];
-    var hasMore = false;
+    var nearby = <MapBranchModel>[];
+    var feeds = const HomeFeeds();
 
     productsResult.fold(
       (f) => error = f.message,
-      (page) {
-        products = page.products;
-        hasMore = page.hasMore;
-      },
+      (page) => products = page.products,
+    );
+    feedsResult.fold((_) {}, (value) => feeds = value);
+    branchesResult.fold(
+      (f) => error ??= f.message,
+      (page) => nearby = page.results,
     );
 
     setState(() {
       _products = products;
-      _hasMore = hasMore;
-      _page = 1;
+      _nearbyBranches = nearby;
+      _homeFeeds = feeds;
       _loading = false;
-      _error = products.isEmpty ? error : null;
+      _error = products.isEmpty && nearby.isEmpty ? error : null;
     });
-  }
-
-  Future<void> _loadMoreProducts() async {
-    if (_loadingMore || !_hasMore) return;
-    setState(() => _loadingMore = true);
-    final nextPage = _page + 1;
-    final categoryId = ref.read(homeFeedProvider).selectedCategoryId;
-    final result = await _api.listProducts(
-      page: nextPage,
-      pageSize: 20,
-      categoryId: categoryId,
-    );
-    if (!mounted) return;
-    result.fold(
-      (_) => setState(() => _loadingMore = false),
-      (page) {
-        setState(() {
-          _products = _dedupeById([..._products, ...page.products]);
-          _page = nextPage;
-          _hasMore = page.hasMore;
-          _loadingMore = false;
-        });
-      },
-    );
   }
 
   Future<void> _onRefresh() async {
@@ -121,17 +85,6 @@ mixin HomeCommerceScreenController on ConsumerState<HomeCommerceScreen> {
       ref.read(homeFeedProvider.notifier).load(),
       _load(),
     ]);
-  }
-
-  List<CommerceProduct> _dedupeById(List<CommerceProduct> items) {
-    final seen = <Object?>{};
-    final out = <CommerceProduct>[];
-    for (final item in items) {
-      final id = item.id;
-      if (id != null && !seen.add(id)) continue;
-      out.add(item);
-    }
-    return out;
   }
 
   Set<int> _sameDayBusinessIds(List<MapBranchModel> branches) {
@@ -149,35 +102,80 @@ mixin HomeCommerceScreenController on ConsumerState<HomeCommerceScreen> {
     }).toList();
   }
 
-  List<CommerceProduct> _applyListFilter(
-    List<CommerceProduct> products, {
-    required Set<int> sameDayBusinessIds,
-  }) {
-    switch (_listFilter) {
-      case ProductListFilter.all:
-        return products;
-      case ProductListFilter.sameDay:
-        if (sameDayBusinessIds.isEmpty) return const [];
-        return products.where((product) {
-          final id = product.businessId;
-          return id != null && sameDayBusinessIds.contains(id);
-        }).toList();
-      case ProductListFilter.topRated:
-        final sorted = [...products];
-        sorted.sort((a, b) {
-          final aRating = a.ratingAvg;
-          final bRating = b.ratingAvg;
-          if (aRating == null && bRating == null) return 0;
-          if (aRating == null) return 1;
-          if (bRating == null) return -1;
-          return bRating.compareTo(aRating);
-        });
-        return sorted;
-      case ProductListFilter.priceLowToHigh:
-        final sorted = [...products];
-        sorted.sort((a, b) => a.sortPrice.compareTo(b.sortPrice));
-        return sorted;
+  List<CommerceProduct> _todayProducts(Set<int> sameDayBusinessIds) {
+    final fromShops = _productsForBusinessIds(sameDayBusinessIds);
+    if (fromShops.isNotEmpty) {
+      return fromShops.take(_kCarouselProductLimit).toList();
     }
+    if (_homeFeeds.offers.isNotEmpty) {
+      return _homeFeeds.offers.take(_kCarouselProductLimit).toList();
+    }
+    return _products.take(_kCarouselProductLimit).toList();
+  }
+
+  List<CommerceProduct> _popularProducts({
+    Set<int> excludeIds = const {},
+  }) {
+    final candidates = <CommerceProduct>[
+      ..._homeFeeds.trending,
+      ..._homeFeeds.topPicks,
+    ];
+    if (candidates.isEmpty) {
+      final sorted = [..._products];
+      sorted.sort((a, b) {
+        final aRating = a.ratingAvg;
+        final bRating = b.ratingAvg;
+        if (aRating == null && bRating == null) return 0;
+        if (aRating == null) return 1;
+        if (bRating == null) return -1;
+        return bRating.compareTo(aRating);
+      });
+      candidates.addAll(sorted);
+    }
+    return _takeUniqueProducts(candidates, excludeIds: excludeIds);
+  }
+
+  List<CommerceProduct> _browseProducts({
+    Set<int> excludeIds = const {},
+  }) {
+    return _takeUniqueProducts(_products, excludeIds: excludeIds);
+  }
+
+  List<CommerceProduct> _takeUniqueProducts(
+    List<CommerceProduct> source, {
+    Set<int> excludeIds = const {},
+  }) {
+    final seen = <int>{...excludeIds};
+    final out = <CommerceProduct>[];
+    for (final product in source) {
+      final id = product.id;
+      if (id != null && !seen.add(id)) continue;
+      out.add(product);
+      if (out.length >= _kCarouselProductLimit) break;
+    }
+    return out;
+  }
+
+  Set<int> _productIds(List<CommerceProduct> products) {
+    return {
+      for (final product in products)
+        if (product.id != null) product.id!,
+    };
+  }
+
+  List<MapBranchModel> _exploreBranches(List<CategoryModel> categories) {
+    if (_exploreCategoryIndex <= 0) {
+      return _nearbyBranches.take(_kCarouselShopLimit).toList();
+    }
+    final categoryIndex = _exploreCategoryIndex - 1;
+    if (categoryIndex < 0 || categoryIndex >= categories.length) {
+      return _nearbyBranches.take(_kCarouselShopLimit).toList();
+    }
+    final categoryId = categories[categoryIndex].id;
+    return _nearbyBranches
+        .where((branch) => branch.categoryId == categoryId)
+        .take(_kCarouselShopLimit)
+        .toList();
   }
 
   String _locationText(SavedAddress? address) {
@@ -237,5 +235,16 @@ mixin HomeCommerceScreenController on ConsumerState<HomeCommerceScreen> {
 
   void _openBranch(MapBranchModel branch) {
     context.push(AppRoutes.businessStore, extra: branch);
+  }
+
+  void _openShopsTab({int categoryIndex = 0}) {
+    ref.read(homeFeedProvider.notifier).selectCategory(categoryIndex);
+    ref.read(bottomNavBarControllerProvider.notifier).selectedIndex =
+        _kShopsTabIndex;
+  }
+
+  void _onExploreCategorySelected(int index) {
+    if (_exploreCategoryIndex == index) return;
+    setState(() => _exploreCategoryIndex = index);
   }
 }
