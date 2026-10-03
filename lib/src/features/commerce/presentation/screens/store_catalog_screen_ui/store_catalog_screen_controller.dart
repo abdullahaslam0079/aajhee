@@ -201,9 +201,9 @@ mixin StoreCatalogScreenController on ConsumerState<StoreCatalogScreen> {
     if (hours is String && hours.trim().isNotEmpty) return hours.trim();
     final fromBranch = feedBranch?.openingHours?.trim();
     if (fromBranch != null && fromBranch.isNotEmpty) return fromBranch;
-    return widget.args.branch?.openingHours?.trim().isNotEmpty == true
-        ? widget.args.branch!.openingHours!.trim()
-        : null;
+    final argsHours = widget.args.branch?.openingHours?.trim();
+    if (argsHours?.isNotEmpty ?? false) return argsHours;
+    return null;
   }
 
   String? _pickCategoryName(MapBranchModel? feedBranch) {

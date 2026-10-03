@@ -15,7 +15,6 @@ import 'package:aajhee/src/imports/core_imports.dart';
 import 'package:aajhee/src/imports/packages_imports.dart';
 import 'package:aajhee/src/routing/app_routes.dart';
 import 'package:aajhee/src/services/url_launcher_service.dart';
-import 'package:aajhee/src/utils/geo_distance_utils.dart';
 
 part 'store_catalog_screen_ui/store_catalog_screen_controller.dart';
 part 'store_catalog_screen_ui/store_catalog_screen_view.dart';

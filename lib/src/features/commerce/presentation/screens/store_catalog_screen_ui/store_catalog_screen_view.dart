@@ -26,10 +26,10 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
         : (widget.args.businessName ??
             widget.args.branch?.businessName ??
             'Shop');
-    final branchName = branch?.name.isNotEmpty == true
+    final branchName = (branch?.name.isNotEmpty ?? false)
         ? branch!.name
         : (widget.args.branch?.name ?? '');
-    final address = branch?.formattedAddress.isNotEmpty == true
+    final address = (branch?.formattedAddress.isNotEmpty ?? false)
         ? branch!.formattedAddress
         : (widget.args.branch?.formattedAddress ?? '');
     final lat = branch?.latitude ?? widget.args.branch?.latitude;
@@ -60,7 +60,7 @@ class _StoreCatalogScreenState extends ConsumerState<StoreCatalogScreen>
           )
         : false;
 
-    final isVerified = business?.isVerified == true ||
+    final isVerified = (business?.isVerified ?? false) ||
         (feedBranch?.isVerified ?? false) ||
         (widget.args.branch?.isVerified ?? false);
 
